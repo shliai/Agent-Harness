@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Harness · 智能客服</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #111318; --surface: #1a1d23; --surface2: #22262e;
+    --primary: #6366f1; --primary-dim: #4f46e5;
+    --text: #e4e6ea; --text-secondary: #9ca3af; --text-muted: #6b7280;
+    --border: #2d3139; --shadow: 0 1px 3px rgba(0,0,0,.3);
+    --radius: 10px; --sidebar-w: 260px; --panel-w: 280px;
+    --green: #22c55e; --yellow: #eab308; --red: #ef4444; --blue: #3b82f6;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden;
+  }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  /* ── Left Sidebar ── */
+  .sidebar {
+    width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sidebar-header h1 { font-size: 16px; font-weight: 700; color: var(--primary); }
+  .sidebar-header .sub { font-size: 11px; color: var(--text-muted); }
+  .btn-new {
+    background: var(--primary); color: #fff; border: none; border-radius: 6px;
+    padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 500;
+    white-space: nowrap; transition: opacity .15s;
+  }
+  .btn-new:hover { opacity: .85; }
+  .btn-new svg { vertical-align: middle; margin-right: 4px; }
+  .session-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .session-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    transition: background .15s; position: relative;
+  }
+  .session-item:hover { background: var(--surface2); }
+  .session-item.active { background: var(--primary); color: #fff; }
+  .session-item.active .session-time { color: rgba(255,255,255,.7); }
+  .session-icon { flex-shrink: 0; font-size: 16px; width: 20px; text-align: center; }
+  .session-info { flex: 1; min-width: 0; }
+  .session-title {
+    font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .session-title[contenteditable="true"] {
+    background: rgba(99,102,241,.15); border-radius: 4px; padding: 0 4px;
+    outline: 1px solid var(--primary); cursor: text;
+  }
+  .session-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .session-del {
+    opacity: 0; background: none; border: none; color: var(--text-secondary);
+    cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px;
+    transition: all .15s; flex-shrink: 0;
+  }
+  .session-item:hover .session-del { opacity: 1; }
+  .session-del:hover { background: rgba(239,68,68,.2); color: var(--red); }
+
+  /* ── Main Chat ── */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+  .chat-header {
+    padding: 12px 20px; background: var(--surface);
+    border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  .chat-header .badge {
+    font-size: 10px; background: rgba(99,102,241,.2); color: var(--primary);
+    padding: 2px 8px; border-radius: 8px; font-weight: 500;
+  }
+  .chat-header .session-label { color: var(--text-secondary); font-weight: 400; font-size: 13px; margin-left: auto; }
+
+  /* ── Messages ── */
+  .messages {
+    flex: 1; overflow-y: auto; padding: 20px; display: flex;
+    flex-direction: column; gap: 12px;
+  }
+  .message {
+    max-width: 78%; padding: 10px 14px; border-radius: var(--radius);
+    line-height: 1.65; font-size: 14px; animation: fadeIn .2s ease;
+  }
+  .message.user {
+    align-self: flex-end; background: var(--primary); color: #fff;
+    border-bottom-right-radius: 4px; max-width: 70%;
+  }
+  .message.assistant {
+    align-self: flex-start; background: var(--surface);
+    border: 1px solid var(--border); border-bottom-left-radius: 4px; max-width: 80%;
+  }
+  .message .meta {
+    font-size: 11px; color: var(--text-secondary); margin-top: 6px; display: flex; gap: 8px;
+  }
+  .message.user .meta { color: rgba(255,255,255,.6); }
+
+  /* ── Assistant message formatting ── */
+  .msg-content {
+    font-size: 14px; line-height: 1.6;
+  }
+  .msg-content h1, .msg-content h2, .msg-content h3 {
+    color: var(--primary); margin: 12px 0 8px; font-weight: 600;
+  }
+  .msg-content h1 { font-size: 16px; }
+  .msg-content h2 { font-size: 15px; }
+  .msg-content h3 { font-size: 14px; }
+  .msg-content ul, .msg-content ol { margin: 8px 0; padding-left: 20px; }
+  .msg-content li { margin: 4px 0; }
+  .msg-content strong { color: var(--primary); font-weight: 600; }
+  .msg-content code {
+    background: var(--surface2); padding: 2px 6px; border-radius: 4px;
+    font-family: 'Courier New', monospace; font-size: 13px;
+  }
+  .msg-content pre {
+    background: var(--surface2); padding: 12px; border-radius: 6px;
+    overflow-x: auto; margin: 8px 0;
+    font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4;
+  }
+  .msg-content table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
+  .msg-content th, .msg-content td {
+    border: 1px solid var(--border); padding: 6px 8px; text-align: left;
+  }
+  .msg-content th { background: var(--surface2); font-weight: 600; }
+  .msg-content blockquote {
+    border-left: 3px solid var(--primary); padding-left: 12px;
+    margin: 8px 0; color: var(--text-secondary); font-style: italic;
+  }
+  .msg-content p { margin: 6px 0; }
+  .msg-content p:first-child { margin-top: 0; }
+  .msg-content p:last-child { margin-bottom: 0; }
+  .msg-content a { color: var(--primary); text-decoration: underline; word-break: break-all; }
+  .msg-content hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .msg-content em { font-style: italic; color: var(--text-secondary); }
+
+  /* ── Step Cards ── */
+  .step-card {
+    align-self: flex-start; width: 100%; max-width: 90%;
+    border-radius: 8px; overflow: hidden; animation: fadeIn .25s ease;
+  }
+  .step-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600;
+    border-radius: 8px 8px 0 0;
+  }
+  .step-header.thought { background: rgba(234,179,8,.12); color: var(--yellow); }
+  .step-header.tool-call { background: rgba(59,130,246,.12); color: var(--blue); }
+  .step-header.tool-result { background: rgba(34,197,94,.12); color: var(--green); }
+  .step-header.tool-error { background: rgba(239,68,68,.12); color: var(--red); }
+  .step-body {
+    background: var(--surface2); padding: 8px 12px; font-size: 13px;
+    line-height: 1.6; border-radius: 0 0 8px 8px; white-space: pre-wrap;
+    word-break: break-word; max-height: 200px; overflow-y: auto;
+  }
+
+  /* ── Loading ── */
+  .loading {
+    align-self: flex-start; display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .dots { display: flex; gap: 4px; }
+  .dots span {
+    width: 7px; height: 7px; background: var(--primary); border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+  }
+  .dots span:nth-child(1) { animation-delay: -.32s; }
+  .dots span:nth-child(2) { animation-delay: -.16s; }
+  .loading-text { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── Input ── */
+  .input-area { padding: 12px 20px; background: var(--surface); border-top: 1px solid var(--border); }
+  .input-row { display: flex; gap: 8px; max-width: 900px; margin: 0 auto; }
+  .input-row input {
+    flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; outline: none; background: var(--surface2); color: var(--text);
+    transition: border .2s;
+  }
+  .input-row input:focus { border-color: var(--primary); }
+  .input-row input::placeholder { color: var(--text-muted); }
+  .input-row button {
+    padding: 10px 20px; background: var(--primary); color: #fff; border: none;
+    border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: opacity .2s;
+  }
+  .input-row button:hover { opacity: .85; }
+  .input-row button:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── Right Panel ── */
+  .panel {
+    width: var(--panel-w); background: var(--surface); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+  }
+  .panel.hidden { display: none; }
+  .panel-tabs {
+    display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .panel-tab {
+    flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text-muted); transition: all .15s;
+    border-bottom: 2px solid transparent;
+  }
+  .panel-tab:hover { color: var(--text); }
+  .panel-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .panel-content { flex: 1; overflow-y: auto; padding: 12px; }
+  .panel-content.hidden { display: none; }
+
+  .tool-item {
+    padding: 10px; background: var(--surface2); border-radius: 8px; margin-bottom: 8px;
+  }
+  .tool-item .tool-name { font-weight: 600; font-size: 13px; color: var(--primary); }
+  .tool-item .tool-desc { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+
+  .metric-card {
+    padding: 12px; background: var(--surface2); border-radius: 8px; margin-bottom: 8px;
+  }
+  .metric-card .metric-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+  .metric-card .metric-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+  .metric-card .metric-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ── ReAct Traces ── */
+  .react-step {
+    border-left: 3px solid var(--primary);
+    margin-left: 0; padding-left: 8px; margin-bottom: 6px;
+  }
+  .react-step.thought { border-left-color: var(--yellow); }
+  .react-step.tool-call { border-left-color: var(--blue); }
+  .react-step.tool-result { border-left-color: var(--green); }
+  .react-step .step-time { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+
+  .thought-content {
+    background: rgba(234,179,8,.1); border-radius: 4px; padding: 6px;
+    margin: 4px 0; font-size: 12px; line-height: 1.4;
+  }
+  .tool-params {
+    background: rgba(59,130,246,.1); border-radius: 4px; padding: 4px 6px;
+    margin-top: 4px; font-size: 11px; color: var(--blue);
+  }
+  .tool-result-box {
+    border-radius: 4px; padding: 6px; margin: 4px 0;
+  }
+  .tool-result-box.success { background: rgba(34,197,94,.1); }
+  .tool-result-box.error { background: rgba(239,68,68,.1); }
+
+  .panel-toggle {
+    position: absolute; right: 0; top: 60px; z-index: 10;
+    background: var(--surface); border: 1px solid var(--border); border-right: none;
+    border-radius: 6px 0 0 6px; padding: 6px 8px; cursor: pointer;
+    color: var(--text-muted); font-size: 14px;
+    transition: color .15s;
+  }
+  .panel-toggle:hover { color: var(--text); }
+
+  /* ── Empty state ── */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; color: var(--text-muted); gap: 12px;
+  }
+  .empty-state .icon { font-size: 40px; }
+  .empty-state .text { font-size: 14px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<!-- ─── Sidebar ─── -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div>
+      <h1>Agent Harness</h1>
+      <div class="sub">智能客服 · ReAct 推理</div>
+    </div>
+    <button class="btn-new" onclick="newSession()">+ 新对话</button>
+  </div>
+  <div class="session-list" id="sessionList"></div>
+</aside>
+
+<!-- ─── Chat ─── -->
+<div class="main">
+  <button class="panel-toggle" id="panelToggle" onclick="togglePanel()" title="切换侧面板">&#9654;</button>
+
+  <div class="chat-header">
+    &#128172; 智能客服对话
+    <span class="badge">ReAct</span>
+    <span class="session-label" id="sessionLabel"></span>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="empty-state">
+      <div class="icon">&#129302;</div>
+      <div class="text">您好！我是智能客服助手小慧，有什么可以帮助您的？</div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <input type="text" id="input" placeholder="输入您的问题..." autofocus>
+      <button id="sendBtn" onclick="send()">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Panel ─── -->
+<aside class="panel" id="panel">
+  <div class="panel-tabs">
+    <div class="panel-tab active" data-tab="tools" onclick="switchPanelTab('tools')">工具</div>
+    <div class="panel-tab" data-tab="metrics" onclick="switchPanelTab('metrics')">指标</div>
+  </div>
+  <div class="panel-content" id="panelTools"><div id="toolsList"></div></div>
+  <div class="panel-content hidden" id="panelMetrics"><div id="metricsList"></div></div>
+</aside>
+
+<script>
+// ─── State ───
+let sessionId = null;
+let sessions = [];
+let panelVisible = true;
+let isStreaming = false;
+let metricsAccum = { totalDuration: 0, totalSteps: 0, toolCalls: 0, errors: 0, successes: 0 };
+let pendingSteps = [];
+let allTraces = [];
+let lastUserMessage = '';
+let emptyStateEl = null;
+
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const sessionListEl = document.getElementById('sessionList');
+const toolsListEl = document.getElementById('toolsList');
+const metricsListEl = document.getElementById('metricsList');
+const sessionLabelEl = document.getElementById('sessionLabel');
+const panelToggle = document.getElementById('panelToggle');
+
+inputEl.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+
+// ─── Init ───
+loadSessions();
+loadTools();
+
+// ─── Utilities ───
+function escapeHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function timeStr() {
+  return new Date().toLocaleTimeString();
+}
+
+function formatRelativeTime(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  var now = new Date();
+  var diff = (now - d) / 1000; // 秒
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+  if (diff < 172800) return '昨天';
+  if (diff < 604800) return Math.floor(diff / 86400) + ' 天前';
+  // 超过一周，显示具体日期
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  var hh = String(d.getHours()).padStart(2, '0');
+  var mi = String(d.getMinutes()).padStart(2, '0');
+  return mm + '-' + dd + ' ' + hh + ':' + mi;
+}
+
+function removeEmptyState() {
+  var el = messagesEl.querySelector('.empty-state');
+  if (el) el.remove();
+}
+
+function showEmptyState() {
+  removeEmptyState();
+  var div = document.createElement('div');
+  div.className = 'empty-state';
+  div.innerHTML = '<div class="icon">&#129302;</div><div class="text">您好！我是智能客服助手小慧，有什么可以帮助您的？</div>';
+  messagesEl.appendChild(div);
+}
+
+// ─── Sessions ───
+async function loadSessions() {
+  try {
+    var resp = await fetch('/api/sessions');
+    var data = await resp.json();
+    sessions = data.sessions || [];
+    renderSessions();
+  } catch (e) {
+    console.error('Failed to load sessions:', e);
+  }
+}
+
+function renderSessions() {
+  sessionListEl.innerHTML = '';
+  if (sessions.length === 0) {
+    sessionListEl.innerHTML = '<div class="empty-state"><div class="icon">&#128172;</div><div class="text">暂无对话</div></div>';
+    return;
+  }
+  sessions.forEach(function(s) {
+    var div = document.createElement('div');
+    div.className = 'session-item' + (s.id === sessionId ? ' active' : '');
+    div.dataset.id = s.id;
+
+    var timeStr2 = formatRelativeTime(s.updated_at);
+    var titleText = s.title === '(空会话)' ? '新对话' : s.title;
+    div.innerHTML =
+      '<span class="session-icon">&#128172;</span>' +
+      '<div class="session-info">' +
+        '<div class="session-title" title="' + escapeHtml(titleText) + '">' + escapeHtml(titleText) + '</div>' +
+        '<div class="session-time">' + (timeStr2 ? timeStr2 + ' · ' : '') + s.message_count + ' 条消息</div>' +
+      '</div>' +
+      '<button class="session-del" title="删除">&times;</button>';
+
+    div.querySelector('.session-del').addEventListener('click', function(e) {
+      e.stopPropagation();
+      deleteSession(s.id);
+    });
+
+    div.querySelector('.session-title').addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (this.contentEditable === 'true') return;
+      this.contentEditable = 'true';
+      this.focus();
+      var range = document.createRange();
+      range.selectNodeContents(this);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
+
+    div.querySelector('.session-title').addEventListener('blur', function() {
+      this.contentEditable = 'false';
+      var newTitle = this.textContent.trim().slice(0, 50) || '(未命名)';
+      this.textContent = newTitle;
+      var sid = div.dataset.id;
+      fetch('/api/sessions/' + sid, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle }),
+      }).catch(function(e) { console.error('重命名失败', e); });
+    });
+
+    div.querySelector('.session-title').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+
+    div.addEventListener('click', function() { switchSession(s.id); });
+    sessionListEl.appendChild(div);
+  });
+}
+
+async function switchSession(id) {
+  if (id === sessionId || isStreaming) return;
+  try {
+    var resp = await fetch('/api/sessions/' + id);
+    var data = await resp.json();
+    sessionId = id;
+    messagesEl.innerHTML = '';
+    var msgs = data.messages || [];
+    msgs.forEach(function(m) {
+      if (m.role === 'user') {
+        addMessage('user', m.content);
+      } else if (m.role === 'assistant') {
+        addMessage('assistant', m.content || '');
+      }
+    });
+    if (msgs.length === 0) showEmptyState();
+    sessionLabelEl.textContent = data.title || '新对话';
+    renderSessions();
+  } catch (e) {
+    messagesEl.innerHTML = '<div class="step-card"><div class="step-header tool-error">&#10060; 加载会话失败</div><div class="step-body">' + escapeHtml(e.message) + '</div></div>';
+  }
+}
+
+function newSession() {
+  if (isStreaming) return;
+  sessionId = null;
+  messagesEl.innerHTML = '';
+  showEmptyState();
+  sessionLabelEl.textContent = '';
+  metricsAccum = { totalDuration: 0, totalSteps: 0, toolCalls: 0, errors: 0, successes: 0 };
+  allTraces = [];
+  pendingSteps = [];
+  inputEl.focus();
+  renderSessions();
+}
+
+async function deleteSession(id) {
+  if (isStreaming) return;
+  if (!confirm('确定删除此对话？')) return;
+  try {
+    await fetch('/api/sessions/' + id, { method: 'DELETE' });
+    if (sessionId === id) newSession();
+    else loadSessions();
+  } catch (e) {
+    console.error('Delete failed:', e);
+  }
+}
+
+// ─── Tools ───
+async function loadTools() {
+  try {
+    var resp = await fetch('/api/tools');
+    var data = await resp.json();
+    toolsListEl.innerHTML = '';
+    (data.tools || []).forEach(function(t) {
+      var params = '无';
+      if (t.parameters && t.parameters.properties) {
+        params = Object.keys(t.parameters.properties).join(', ');
+      }
+      var div = document.createElement('div');
+      div.className = 'tool-item';
+      div.innerHTML =
+        '<div class="tool-name">&#128295; ' + t.name + '</div>' +
+        '<div class="tool-desc">' + (t.description || '') + '</div>' +
+        '<div class="tool-desc" style="margin-top:2px;color:var(--text-muted)">参数: ' + params + '</div>';
+      toolsListEl.appendChild(div);
+    });
+  } catch (e) {
+    console.error('加载工具列表失败:', e);
+    toolsListEl.innerHTML = '<div class="tool-item"><div class="tool-desc">加载失败</div></div>';
+  }
+}
+
+// ─── Panel ───
+function togglePanel() {
+  panelVisible = !panelVisible;
+  document.getElementById('panel').classList.toggle('hidden', !panelVisible);
+  panelToggle.innerHTML = panelVisible ? '&#9654;' : '&#9664;';
+  if (panelVisible) updateMetrics();
+}
+
+function switchPanelTab(tab) {
+  document.querySelectorAll('.panel-tab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  document.getElementById('panelTools').classList.toggle('hidden', tab !== 'tools');
+  document.getElementById('panelMetrics').classList.toggle('hidden', tab !== 'metrics');
+  if (tab === 'metrics') updateMetrics();
+}
+
+// ─── Metrics ───
+function renderTraceStep(step, index) {
+  var icon = '';
+  var cls = 'react-step';
+  var bodyHtml = '';
+
+  if (step.type === 'thought') {
+    cls += ' thought';
+    icon = '&#129300;';
+    var lines = (step.content || '').split('\n').filter(function(l) { return l.trim(); });
+    bodyHtml = '<div class="thought-content">' + escapeHtml(lines.join('\n')) + '</div>';
+  } else if (step.type === 'tool_call') {
+    cls += ' tool-call';
+    icon = '&#128295;';
+    var toolName = step.content.tool_name;
+    var args = step.content.arguments || {};
+    var argsHtml = Object.keys(args).length > 0
+      ? '<div class="tool-params">' + Object.keys(args).map(function(k) {
+          return '<div>' + k + ': <strong>' + escapeHtml(String(args[k])) + '</strong></div>';
+        }).join('') + '</div>'
+      : '';
+    bodyHtml = '<div style="margin-bottom:4px;"><div style="color:var(--blue);font-weight:600;">&#128295; 调用工具: <strong>' + escapeHtml(toolName) + '</strong></div>' + argsHtml + '</div>';
+  } else if (step.type === 'tool_result') {
+    cls += ' tool-result';
+    var sc = step.content.success;
+    icon = sc ? '&#9989;' : '&#10060;';
+    var output = String(step.content.output || '');
+    var duration = step.content.duration_ms ? ' (' + step.content.duration_ms + 'ms)' : '';
+    var formattedOutput = output;
+    try { formattedOutput = JSON.stringify(JSON.parse(output), null, 2); } catch (e) {}
+    var resultClass = sc ? 'success' : 'error';
+    var resultColor = sc ? 'var(--green)' : 'var(--red)';
+    bodyHtml = '<div class="tool-result-box ' + resultClass + '">' +
+      '<div style="color:' + resultColor + ';font-weight:600;">' + icon + ' 执行结果' + duration + '</div>' +
+      '<div style="margin-top:4px;white-space:pre-wrap;font-size:11px;color:var(--text);">' + escapeHtml(formattedOutput.slice(0, 300)) + (output.length > 300 ? '...' : '') + '</div>' +
+    '</div>';
+  }
+
+  return '<div class="' + cls + '">' +
+    '<div class="step-time">步骤 ' + (index + 1) + ' · ' + timeStr() + ' ' + icon + '</div>' +
+    bodyHtml +
+  '</div>';
+}
+
+function updateMetrics() {
+  var traceHtml = '';
+  if (allTraces.length > 0) {
+    var lastTrace = allTraces[allTraces.length - 1];
+    var stepsHtml = lastTrace.steps.map(function(step, idx) { return renderTraceStep(step, idx); }).join('');
+    traceHtml =
+      '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">' +
+        '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px">&#129504; ReAct 推理轨迹</div>' +
+        '<div style="margin-bottom:12px;padding:10px;background:var(--surface2);border-radius:8px">' +
+          '<div style="font-size:11px;font-weight:600;color:var(--primary);margin-bottom:6px;word-break:break-word;">&#128172; 用户问题: ' + escapeHtml(lastTrace.user) + '</div>' +
+          '<div style="margin-bottom:8px">' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">' +
+              '<span>&#129302; AI 推理过程</span>' +
+              '<span style="font-size:10px;">' + lastTrace.steps.length + ' 步 · ' + lastTrace.totalDuration + 'ms</span>' +
+            '</div>' +
+            '<div style="background:var(--surface);border-radius:6px;padding:8px;">' + stepsHtml + '</div>' +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--text);padding:8px;background:var(--surface);border-radius:6px;margin-top:8px">' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">' +
+              '<span>&#128221; 最终回答</span>' +
+              '<span style="font-size:10px;">' + lastTrace.assistant.length + ' 字符</span>' +
+            '</div>' +
+            '<div style="white-space:pre-wrap;line-height:1.5;">' + escapeHtml(lastTrace.assistant.slice(0, 500)) + (lastTrace.assistant.length > 500 ? '\n\n[... 省略部分内容 ...]' : '') + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  metricsListEl.innerHTML =
+    '<div class="metric-card">' +
+      '<div class="metric-label">总耗时</div>' +
+      '<div class="metric-value">' + metricsAccum.totalDuration + 'ms</div>' +
+    '</div>' +
+    '<div class="metric-card">' +
+      '<div class="metric-label">总步骤数</div>' +
+      '<div class="metric-value">' + metricsAccum.totalSteps + '</div>' +
+    '</div>' +
+    '<div class="metric-card">' +
+      '<div class="metric-label">工具调用</div>' +
+      '<div class="metric-value">' + metricsAccum.toolCalls + '</div>' +
+    '</div>' +
+    '<div class="metric-card">' +
+      '<div class="metric-label">成功 / 失败</div>' +
+      '<div class="metric-value" style="color:var(--green)">' + metricsAccum.successes + '<span style="color:var(--text-secondary);font-size:14px"> / </span><span style="color:var(--red)">' + metricsAccum.errors + '</span></div>' +
+    '</div>' +
+    (allTraces.length === 0
+      ? '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;text-align:center">暂无推理轨迹</div>'
+      : '') +
+    traceHtml;
+
+  metricsListEl.scrollTop = metricsListEl.scrollHeight;
+}
+
+// ─── Messages ───
+function formatAnswer(text) {
+  if (!text) return '';
+  var escaped = escapeHtml(text);
+
+  // 1. 先抽出代码块，避免被后续规则破坏
+  var codeBlocks = [];
+  escaped = escaped.replace(/```([\s\S]*?)```/g, function(_, code) {
+    codeBlocks.push(code.replace(/^\n/, '').replace(/\n$/, ''));
+    return '\u0000CODEBLOCK' + (codeBlocks.length - 1) + '\u0000';
+  });
+
+  // 2. 业务字段高亮（订单/物流场景）
+  escaped = escaped
+    .replace(/订单号：([^\n]+)/g, '<strong>订单号：</strong> <code>$1</code>')
+    .replace(/商品：([^\n]+)/g, '<strong>商品：</strong> $1')
+    .replace(/金额：¥([\d.]+)/g, '<strong>金额：</strong> ¥$1')
+    .replace(/状态：([^\n]+)/g, '<strong>状态：</strong> $1')
+    .replace(/下单时间：([^\n]+)/g, '<strong>下单时间：</strong> $1')
+    .replace(/物流单号：([^\n]+)/g, '<strong>物流单号：</strong> <code>$1</code>')
+    .replace(/快递公司：([^\n]+)/g, '<strong>快递公司：</strong> $1')
+    .replace(/最新状态：([^\n]+)/g, '<strong>最新状态：</strong> $1');
+
+  // 3. 标题 # / ## / ###
+  escaped = escaped
+    .replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
+    .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+    .replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
+  // 4. 分隔线 ---
+  escaped = escaped.replace(/^(?:---|\*\*\*|___)\s*$/gm, '<hr>');
+
+  // 5. 行内格式：粗体、斜体、行内代码、链接
+  escaped = escaped
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/(^|[^"=])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+
+  // 6. 列表（无序 - / *，有序 1.），同类型连续合并为 ul/ol
+  var lines = escaped.split('\n');
+  var out = [];
+  var listType = null; // 'ul' | 'ol'
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var ulMatch = line.match(/^\s*[-*]\s+(.+)$/);
+    var olMatch = line.match(/^\s*(\d+)\.\s+(.+)$/);
+    if (ulMatch) {
+      if (listType !== 'ul') { if (listType) out.push('</' + listType + '>'); out.push('<ul>'); listType = 'ul'; }
+      out.push('<li>' + ulMatch[1] + '</li>');
+    } else if (olMatch) {
+      if (listType !== 'ol') { if (listType) out.push('</' + listType + '>'); out.push('<ol>'); listType = 'ol'; }
+      out.push('<li>' + olMatch[2] + '</li>');
+    } else {
+      if (listType) { out.push('</' + listType + '>'); listType = null; }
+      out.push(line);
+    }
+  }
+  if (listType) out.push('</' + listType + '>');
+  escaped = out.join('\n');
+
+  // 7. 段落与换行：按空行分段，段内换行转 <br>
+  var paragraphs = escaped.split(/\n{2,}/);
+  escaped = paragraphs.map(function(p) {
+    p = p.trim();
+    if (!p) return '';
+    // 已是块级元素则不再包裹
+    if (/^<(h[1-3]|ul|ol|pre|hr|div|blockquote)/.test(p)) return p;
+    return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+  }).join('\n');
+
+  // 8. 还原代码块
+  escaped = escaped.replace(/\u0000CODEBLOCK(\d+)\u0000/g, function(_, idx) {
+    return '<pre>' + codeBlocks[idx] + '</pre>';
+  });
+
+  return '<div class="msg-content">' + escaped + '</div>';
+}
+
+function addMessage(role, content, meta) {
+  removeEmptyState();
+  var div = document.createElement('div');
+  div.className = 'message ' + role;
+
+  var body = document.createElement('div');
+  if (role === 'assistant') {
+    body.innerHTML = formatAnswer(content);
+  } else {
+    body.textContent = content;
+  }
+  div.appendChild(body);
+
+  if (meta) {
+    var metaEl = document.createElement('div');
+    metaEl.className = 'meta';
+    metaEl.textContent = meta;
+    div.appendChild(metaEl);
+  }
+
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return div;
+}
+
+function showLoading() {
+  var div = document.createElement('div');
+  div.className = 'loading';
+  div.id = 'loading';
+  div.innerHTML = '<div class="dots"><span></span><span></span><span></span></div><span class="loading-text">思考中...</span>';
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function hideLoading() {
+  var el = document.getElementById('loading');
+  if (el) el.remove();
+}
+
+function setLoadingText(text) {
+  var el = document.getElementById('loading');
+  if (el) {
+    var t = el.querySelector('.loading-text');
+    if (t) t.textContent = text;
+  }
+}
+
+// ─── Send ───
+async function send() {
+  var message = inputEl.value.trim();
+  if (!message || isStreaming) return;
+
+  inputEl.value = '';
+  addMessage('user', message);
+  lastUserMessage = message;
+  showLoading();
+  sendBtn.disabled = true;
+  isStreaming = true;
+  pendingSteps = [];
+
+  try {
+    var resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: message, session_id: sessionId, stream: true }),
+    });
+
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+    var reader = resp.body.getReader();
+    var decoder = new TextDecoder('utf-8');
+    var buffer = '';
+
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+
+      buffer += decoder.decode(result.value, { stream: true });
+      var lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (line.indexOf('data: ') !== 0) continue;
+        var data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+
+        try {
+          var parsed = JSON.parse(data);
+          handleSSE(parsed);
+        } catch (e) {
+          console.warn('SSE parse error:', e);
+        }
+      }
+    }
+
+  } catch (err) {
+    hideLoading();
+    pendingSteps = [];
+    if (!resp || !resp.ok) {
+      addMessage('assistant', '&#10060; 连接错误：' + err.message);
+    }
+  } finally {
+    sendBtn.disabled = false;
+    isStreaming = false;
+    renderSessions();
+  }
+}
+
+// ─── SSE Handler ───
+function handleSSE(data) {
+  switch (data.type) {
+    case 'meta':
+      sessionId = data.session_id;
+      sessionLabelEl.textContent = lastUserMessage ? lastUserMessage.slice(0, 20) + (lastUserMessage.length > 20 ? '...' : '') : '新对话';
+      break;
+
+    case 'step': {
+      hideLoading();
+
+      if (data.thought) {
+        var thought = data.thought;
+        var thoughtMatch = thought.match(/THOUGHT:\s*(.+)/);
+        var content = thoughtMatch ? thoughtMatch[1] : thought;
+        pendingSteps.push({ type: 'thought', content: content });
+        setLoadingText('&#129300; 思考中...');
+      }
+
+      if (data.tool_call) {
+        pendingSteps.push({ type: 'tool_call', content: data.tool_call });
+        metricsAccum.toolCalls++;
+        setLoadingText('&#128295; 调用 ' + data.tool_call.tool_name);
+      }
+
+      if (data.tool_result) {
+        pendingSteps.push({ type: 'tool_result', content: data.tool_result });
+        setLoadingText('&#128202; 分析结果...');
+        if (data.tool_result.success) metricsAccum.successes++;
+        else metricsAccum.errors++;
+      }
+      break;
+    }
+
+    case 'result': {
+      hideLoading();
+      var secs = (data.total_duration_ms / 1000).toFixed(1);
+      var metaText = '回复耗时 ' + secs + ' 秒 · 共 ' + (data.total_steps || 0) + ' 步推理';
+      addMessage('assistant', data.answer, metaText);
+
+      if (pendingSteps.length > 0) {
+        allTraces.push({
+          user: lastUserMessage,
+          steps: pendingSteps,
+          assistant: data.answer,
+          totalDuration: data.total_duration_ms || 0,
+          totalSteps: data.total_steps || 0,
+          ts: timeStr(),
+        });
+        pendingSteps = [];
+      }
+
+      metricsAccum.totalDuration += data.total_duration_ms || 0;
+      metricsAccum.totalSteps += data.total_steps || 0;
+      if (panelVisible) updateMetrics();
+      break;
+    }
+
+    case 'error': {
+      hideLoading();
+      pendingSteps = [];
+      addMessage('assistant', '&#9888;&#65039; ' + escapeHtml(data.message));
+      break;
+    }
+  }
+}
+</script>
+</body>
+</html>

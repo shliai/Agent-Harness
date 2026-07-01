@@ -1,0 +1,26 @@
+from __future__ import annotations
+
+import sys
+import argparse
+
+from harness.config import settings
+from harness.observability.logger import setup_logging
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Agent Harness — 智能体运行时外壳")
+    parser.add_argument("--port", type=int, default=8000, help="Web 服务端口 (默认 8000)")
+    parser.add_argument("--host", type=str, default="localhost", help="Web 服务监听地址 (默认 0.0.0.0)")
+    args = parser.parse_args()
+
+    setup_logging(level=settings.log_level, fmt=settings.log_format)
+    run_web(host=args.host, port=args.port)
+
+
+def run_web(host: str = "0.0.0.0", port: int = 8000) -> None:
+    from harness.web.api import run_server
+    run_server(host=host, port=port)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
