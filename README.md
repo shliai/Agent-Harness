@@ -4,7 +4,7 @@
 
 单纯调 API 做 Demo 很简单，但要落地到真实场景，LLM 需要配套的**运行基础设施**：循环控制、工具管理、记忆持久化、安全护栏、可观测。这个项目就是我对这套基础设施的完整实现。
 
-## 快速开始
+## 🚀 快速开始
 
 ```bash
 # 安装
@@ -21,7 +21,7 @@ python -m harness.main --port 8000
 # 浏览器打开 http://localhost:8000
 ```
 
-## Harness 工作一览
+## 📊 Harness 工作一览
 
 完整的 Agent Harness 需要四大构成，本项目每个都有落地实现：
 
@@ -34,38 +34,38 @@ python -m harness.main --port 8000
 
 除此之外，还覆盖了 Harness 所需的 **可观测**（结构化日志 + 指标 + 调用链追踪）和 **LLM 抽象层**（工厂模式，智谱 / OpenAI 双供应商）。
 
-### 代码量
+### 📈 代码量
 
 | 分类 | 文件数 | 行数 |
 |---|---|---|
-| 核心源码 `src/harness/` | 39 `.py` | 2,994 |
-| 前端界面 `index.html` | 1 | 1,820 |
-| 测试用例 `tests/` | 11 `.py` | 493 |
-| 工具脚本 `scripts/` | 2 `.py` | 83 |
-| **总计** | **53** | **约5,500** |
+| 核心源码 `src/harness/` | 40 `.py` | 3,241 |
+| 前端界面 `index.html` | 1 | 878 |
+| 测试用例 `tests/` | 12 `.py` | 763 |
+| 工具脚本 `scripts/` | 1 `.py` | 80 |
+| **总计** | **54** | **约4,962** |
 
 其中 harness 核心逻辑（循环引擎 + 工具系统 + 记忆 + 护栏 + 可观测）约占 1,800 行。
 
-## 架构总览
+## 🏗️ 架构总览
 
 ```
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌────────────┐
 │  Web API  │───→│  ReAct   │───→│  Tools   │───→│  Memory    │
 │ (FastAPI) │    │   Loop   │    │  x5      │    │  三层记忆   │
 └──────────┘    └──────────┘    └──────────┘    └────────────┘
-                      │
-                      ↓
-                ┌──────────┐    ┌──────────────┐
-                │ Guardrails│───→│ Observability│
-                │  4道关卡   │    │ 日志/指标/追踪 │
-                └──────────┘    └──────────────┘
+                       │
+                       ↓
+                 ┌──────────┐    ┌──────────────┐
+                 │ Guardrails│───→│ Observability│
+                 │  4道关卡   │    │ 日志/指标/追踪 │
+                 └──────────┘    └──────────────┘
 ```
 
 完整链路：Guardrails 拦截 → 记忆装配 → LLM 推理 → 工具执行（可选循环） → 输出过滤 → 持久化 → 流式返回。
 
-## Harness 模块详解
+## 🔧 Harness 模块详解
 
-### 循环引擎 — 自研 ReAct
+### 🔄 循环引擎 — 自研 ReAct
 
 没有用 LangChain / LangGraph，核心循环自己实现，每步都可控：
 
@@ -77,12 +77,12 @@ python -m harness.main --port 8000
 - **失败重试**：工具调用失败后让 LLM 修正参数重试，而不是直接抛异常
 - **终止控制**：LLM 直接回答 或 超过 MAX_ITERATIONS 上限即停止，防止死循环
 
-### 工具接口层 — 插拔式注册
+### 🛠️ 工具接口层 — 插拔式注册
 
 ```python
 class BaseTool(ABC):
     @abstractmethod
-    def run(self, **kwargs) -> ToolResult: ...
+    async def run(self, **kwargs) -> str: ...
     @abstractmethod
     def spec(self) -> ToolSpec: ...
 ```
@@ -97,7 +97,7 @@ class BaseTool(ABC):
 | `calculator` | 数学计算 | 正则白名单，只允许 +-*/()% 和数字 |
 | `subtask_dispatch` | 子任务分发 | 防递归自检，禁止调用自身 |
 
-### 上下文管理器 — 三层记忆
+### 🧠 上下文管理器 — 三层记忆
 
 LLM 上下文窗口有限，不能把所有历史都塞进去：
 
@@ -109,7 +109,7 @@ LLM 上下文窗口有限，不能把所有历史都塞进去：
 
 > 长期记忆默认关闭，开启后仅在 ReAct 循环正常完成时写入，避免噪声污染；初始化失败自动降级，不影响主流程。
 
-### 安全护栏 — 流水线短路
+### 🛡️ 安全护栏 — 流水线短路
 
 ```
 InputValidator → RateLimiter → AuditLogger → OutputFilter
@@ -121,14 +121,16 @@ InputValidator → RateLimiter → AuditLogger → OutputFilter
 - `check_tool_output()` — 工具返回阶段：工具结果脱敏
 - `check_output()` — 最终输出阶段：身份证 / 手机号 / 银行卡 / API Key 正则掩码
 
-### 可观测
+### 📈 可观测
 
 - **结构化日志**：console / json 双格式，生产环境用 json 方便采集
 - **指标统计**：Token 消耗、工具调用次数、各步骤耗时
 - **调用链追踪**：按 session_id 聚合每轮对话的完整决策路径
 
-## 项目结构
+## 📁 项目结构
 
+```
+src/harness/
 ```
 src/harness/
 ├── core/              ReAct 循环引擎
@@ -142,10 +144,11 @@ src/harness/
 ├── config.py          Pydantic Settings 配置中心
 └── main.py            启动入口
 ```
+```
 
 各层单向依赖，核心层不感知 Web 层，通过接口抽象解耦。
 
-## API 端点
+## 🌐 API 端点
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -158,13 +161,17 @@ src/harness/
 | `PUT` | `/api/sessions/{id}` | 重命名会话 |
 | `DELETE` | `/api/sessions/{id}` | 删除会话 |
 
-## 配置项
+## ⚙️ 配置项
 
 | 环境变量 | 默认值 | 说明 |
 |---|---|---|
 | `LLM_PROVIDER` | `zhipu` | 供应商选择 |
 | `ZHIPU_API_KEY` | — | 智谱 API Key |
+| `ZHIPU_API_URL` | `https://open.bigmodel.cn/api/paas/v4` | 智谱AI API URL |
+| `ZHIPU_MODEL` | `glm-4` | 智谱AI模型选择 |
 | `OPENAI_API_KEY` | — | OpenAI API Key |
+| `OPENAI_API_URL` | `https://api.openai.com/v1` | OpenAI API URL |
+| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI模型选择 |
 | `TEMPERATURE` | `0.3` | 生成温度 |
 | `MAX_TOKENS` | `2048` | 最大 Token |
 | `MAX_ITERATIONS` | `6` | ReAct 最大步数 |
@@ -173,10 +180,20 @@ src/harness/
 | `LONG_TERM_TOP_K` | `3` | 长期记忆召回条数 |
 | `LONG_TERM_STORE_PATH` | `./data/memory_store` | 长期记忆 ChromaDB 存储路径 |
 | `RATE_LIMIT_MAX_REQUESTS` | `60` | 每分钟最大请求 |
+| `RATE_LIMIT_WINDOW_SECONDS` | `60` | 限流窗口时间 |
+| `KNOWLEDGE_STORE_PATH` | `./data/chroma_db` | 知识库存储路径 |
 | `HYBRID_SEARCH_ALPHA` | `0.5` | 混合检索 BM25 权重 |
 | `RETRIEVAL_TOP_K` | `5` | 知识检索返回条数 |
+| `TOOL_MAX_RETRIES` | `1` | 工具最大重试次数 |
+| `LOG_LEVEL` | `INFO` | 日志级别 |
+| `LOG_FORMAT` | `console` | 日志格式（json/console） |
+| `TRACING_ENABLED` | `true` | 调用链追踪开关 |
+| `WEB_HOST` | `localhost` | Web服务主机 |
+| `WEB_PORT` | `8000` | Web服务端口 |
+| `DATA_DIR` | `./data` | 数据目录 |
+| `SESSION_CLEANUP_HOURS` | `24` | 会话清理时间 |
 
-## 测试
+## 🧪 测试
 
 ```bash
 pytest tests/ -v
@@ -184,7 +201,7 @@ pytest tests/ -v
 
 56 个用例（48 单元 + 8 集成），覆盖核心循环、工具执行、护栏检查、API 端点、长期记忆。
 
-## 演示场景
+## 🎯 演示场景
 
 ```
 # 知识检索
@@ -200,9 +217,38 @@ pytest tests/ -v
 > 我想买一个预算3000元以内的手机，主要用来拍照
 ```
 
-## 设计取舍
+## 🎨 设计取舍
 
 - **为什么自研不用 LangChain？** — 框架封装太厚，循环被黑盒化，出问题难排查。自研 ~150 行核心，每一行都可控
 - **为什么 SSE 而不是 WebSocket？** — AI 回复是单工流，SSE 更轻量，浏览器原生支持 EventSource
 - **为什么 JSON 做持久化？** — Demo 阶段减少外部依赖，接口已抽象，换 PostgreSQL / Redis 只需实现接口
 - **为什么向量 + BM25 双检索？** — 向量擅长语义相似，BM25 擅长关键词精确匹配，互补效果好
+
+## 🏷️ 版本信息
+
+当前版本特性：
+- **v0.2.0**：全异步架构、BGE模型共享预热、长期记忆异步写入、直接回答推送step事件
+
+## 📋 技术栈
+
+- **Python 3.11+**
+- **FastAPI** - Web 框架
+- **ChromaDB** - 向量数据库
+- **Sentence Transformers** - 嵌入模型
+- **Pydantic** - 数据验证
+- **Uvicorn** - ASGI 服务器
+- **Pytest** - 测试框架
+- **Ruff** - 代码格式化
+- **MyPy** - 类型检查
+
+## 📄 许可证
+
+MIT License
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
+
+MIT License
