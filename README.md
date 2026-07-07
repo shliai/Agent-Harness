@@ -16,7 +16,7 @@ cp .env.example .env
 # 初始化向量知识库（自动下载 BGE 嵌入模型，首次约 2 分钟）
 python scripts/seed_products.py
 
-# 启动服务
+# 启动服务（启动时预热 BGE 模型约 21 秒，之后首次请求只需 ~4 秒）
 python -m harness.main --port 8000
 # 浏览器打开 http://localhost:8000
 ```
@@ -70,6 +70,9 @@ python -m harness.main --port 8000
 没有用 LangChain / LangGraph，核心循环自己实现，每步都可控：
 
 - **SSE 流式推送**：每轮 Thought → Action → Observation 逐帧推送到前端，不是等全部跑完再返回
+- **全异步**（v0.2.0）：LLM 调用和长期记忆读写全部走 async 路径，事件循环不阻塞，SSE step 事件可即时推送
+- **BGE 模型共享与启动预热**（v0.2.0）：`memory/embeddings.py` 全局单例，`KnowledgeRetrievalTool` 和 `LongTermMemory` 共用；启动时 `warmup()` 主动加载，首次请求从 48 秒降至 4 秒
+- **直接回答也推送 step**（v0.2.0）：LLM 不调工具直接回答时也推送 thought 事件，前端能看到完整思考过程
 - **工具调用解析**：LLM 输出格式不稳定，用 `json.JSONDecoder.raw_decode` 兜底，兼容各种变体
 - **失败重试**：工具调用失败后让 LLM 修正参数重试，而不是直接抛异常
 - **终止控制**：LLM 直接回答 或 超过 MAX_ITERATIONS 上限即停止，防止死循环
@@ -88,7 +91,7 @@ class BaseTool(ABC):
 
 | 工具 | 说明 | 要点 |
 |---|---|---|
-| `knowledge_retrieval` | 商品知识检索 | ChromaDB 向量 + BM25 混合，双编码器分数归一化 |
+| `knowledge_retrieval` | 商品知识检索 | ChromaDB 向量 + BM25 混合，双编码器分数归一化；预算场景价格接近度加权（v0.2.0） |
 | `order_query` | 订单查询 | 50 条模拟订单 |
 | `logistics_query` | 物流轨迹 | 41 个单号，多节点轨迹 |
 | `calculator` | 数学计算 | 正则白名单，只允许 +-*/()% 和数字 |
@@ -99,9 +102,12 @@ class BaseTool(ABC):
 LLM 上下文窗口有限，不能把所有历史都塞进去：
 
 - **短期记忆**：`deque` 滑动窗口，保留最近 N 轮，超出丢弃最旧的（O(1) 头部删除）
-- **长期记忆**：ChromaDB + BGE 嵌入，语义检索召回相关历史
+- **长期记忆**（v0.2.0）：ChromaDB 独立 collection + BGE 嵌入，跨 session_id 语义检索召回相关历史，受 `LONG_TERM_ENABLED` 开关控制；检索/写入异步执行不阻塞事件循环，写入用 `create_task` 后台执行
 - **持久化**：JSON 文件保存全量对话，24h 自动清理过期会话
 - **会话隔离**：按 session_id 独立上下文，互不污染
+- **BGE 共享**（v0.2.0）：长期记忆和知识检索共用 `memory/embeddings.py` 提供的全局单例，避免重复加载模型
+
+> 长期记忆默认关闭，开启后仅在 ReAct 循环正常完成时写入，避免噪声污染；初始化失败自动降级，不影响主流程。
 
 ### 安全护栏 — 流水线短路
 
@@ -163,7 +169,9 @@ src/harness/
 | `MAX_TOKENS` | `2048` | 最大 Token |
 | `MAX_ITERATIONS` | `6` | ReAct 最大步数 |
 | `SHORT_TERM_WINDOW` | `20` | 短期记忆窗口 |
-| `LONG_TERM_ENABLED` | `false` | 长期记忆开关 |
+| `LONG_TERM_ENABLED` | `false` | 长期记忆开关（启用后跨会话语义检索历史对话） |
+| `LONG_TERM_TOP_K` | `3` | 长期记忆召回条数 |
+| `LONG_TERM_STORE_PATH` | `./data/memory_store` | 长期记忆 ChromaDB 存储路径 |
 | `RATE_LIMIT_MAX_REQUESTS` | `60` | 每分钟最大请求 |
 | `HYBRID_SEARCH_ALPHA` | `0.5` | 混合检索 BM25 权重 |
 | `RETRIEVAL_TOP_K` | `5` | 知识检索返回条数 |
@@ -174,7 +182,7 @@ src/harness/
 pytest tests/ -v
 ```
 
-37 个用例（29 单元 + 8 集成），覆盖核心循环、工具执行、护栏检查、API 端点。
+56 个用例（48 单元 + 8 集成），覆盖核心循环、工具执行、护栏检查、API 端点、长期记忆。
 
 ## 演示场景
 

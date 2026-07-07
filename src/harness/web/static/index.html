@@ -306,6 +306,7 @@
     <div class="input-row">
       <input type="text" id="input" placeholder="输入您的问题..." autofocus>
       <button id="sendBtn" onclick="send()">发送</button>
+      <button id="stopBtn" onclick="stopGeneration()" style="display:none;background:var(--red);color:white;">停止</button>
     </div>
   </div>
 </div>
@@ -326,6 +327,7 @@ let sessionId = null;
 let sessions = [];
 let panelVisible = true;
 let isStreaming = false;
+let currentController = null;  // AbortController 实例，用于取消正在进行的请求
 let metricsAccum = { totalDuration: 0, totalSteps: 0, toolCalls: 0, errors: 0, successes: 0 };
 let pendingSteps = [];
 let allTraces = [];
@@ -335,6 +337,7 @@ let emptyStateEl = null;
 const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('sendBtn');
+const stopBtn = document.getElementById('stopBtn');
 const sessionListEl = document.getElementById('sessionList');
 const toolsListEl = document.getElementById('toolsList');
 const metricsListEl = document.getElementById('metricsList');
@@ -464,7 +467,13 @@ function renderSessions() {
 }
 
 async function switchSession(id) {
-  if (id === sessionId || isStreaming) return;
+  if (id === sessionId) return;
+  // 切换会话时取消正在进行的流（如果有）
+  if (isStreaming && currentController) {
+    currentController.abort();
+    // 等待 send 的 finally 执行完
+    await new Promise(function(r) { setTimeout(r, 50); });
+  }
   try {
     var resp = await fetch('/api/sessions/' + id);
     var data = await resp.json();
@@ -500,7 +509,12 @@ function newSession() {
 }
 
 async function deleteSession(id) {
-  if (isStreaming) return;
+  // 删除当前会话时取消正在进行的流
+  if (isStreaming && sessionId === id && currentController) {
+    currentController.abort();
+    await new Promise(function(r) { setTimeout(r, 50); });
+  }
+  if (isStreaming) return;  // 删除其它会话不影响进行中的流
   if (!confirm('确定删除此对话？')) return;
   try {
     await fetch('/api/sessions/' + id, { method: 'DELETE' });
@@ -587,7 +601,7 @@ function renderTraceStep(step, index) {
     var resultColor = sc ? 'var(--green)' : 'var(--red)';
     bodyHtml = '<div class="tool-result-box ' + resultClass + '">' +
       '<div style="color:' + resultColor + ';font-weight:600;">' + icon + ' 执行结果' + duration + '</div>' +
-      '<div style="margin-top:4px;white-space:pre-wrap;font-size:11px;color:var(--text);">' + escapeHtml(formattedOutput.slice(0, 300)) + (output.length > 300 ? '...' : '') + '</div>' +
+      '<div style="margin-top:4px;white-space:pre-wrap;font-size:11px;color:var(--text);">' + escapeHtml(formattedOutput.slice(0, 600)) + (output.length > 600 ? '...' : '') + '</div>' +
     '</div>';
   }
 
@@ -787,19 +801,29 @@ async function send() {
   lastUserMessage = message;
   showLoading();
   sendBtn.disabled = true;
+  stopBtn.style.display = 'inline-block';
   isStreaming = true;
   pendingSteps = [];
 
+  // 创建 AbortController，支持手动停止和超时取消
+  currentController = new AbortController();
+  // 90 秒超时：LLM 长时间无响应时自动取消
+  var timeoutId = setTimeout(function() { currentController.abort(); }, 90000);
+
+  var resp = null;
+  var reader = null;
+
   try {
-    var resp = await fetch('/api/chat', {
+    resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: message, session_id: sessionId, stream: true }),
+      signal: currentController.signal,
     });
 
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-    var reader = resp.body.getReader();
+    reader = resp.body.getReader();
     var decoder = new TextDecoder('utf-8');
     var buffer = '';
 
@@ -828,14 +852,49 @@ async function send() {
 
   } catch (err) {
     hideLoading();
-    pendingSteps = [];
-    if (!resp || !resp.ok) {
-      addMessage('assistant', '&#10060; 连接错误：' + err.message);
+
+    // 区分用户主动取消、网络错误、服务器错误
+    var errMsg = '';
+    if (err.name === 'AbortError') {
+      errMsg = '&#9940; 已停止生成';
+    } else if (err.message && err.message.indexOf('Failed to fetch') !== -1) {
+      errMsg = '&#10060; 连接错误：网络中断或服务不可用';
+    } else {
+      errMsg = '&#10060; 错误：' + (err.message || '未知错误');
     }
+    addMessage('assistant', errMsg);
+
+    // 错误时保留已收到的部分推理轨迹，便于排查
+    if (pendingSteps.length > 0) {
+      allTraces.push({
+        user: lastUserMessage,
+        steps: pendingSteps,
+        assistant: errMsg,
+        totalDuration: 0,
+        totalSteps: pendingSteps.length,
+        ts: timeStr(),
+      });
+      pendingSteps = [];
+    }
+    if (panelVisible) updateMetrics();
   } finally {
+    clearTimeout(timeoutId);
+    // 确保 reader 释放（如果还存在）
+    if (reader) {
+      try { reader.releaseLock(); } catch (e) {}
+    }
+    currentController = null;
     sendBtn.disabled = false;
+    stopBtn.style.display = 'none';
     isStreaming = false;
     renderSessions();
+  }
+}
+
+// 停止正在生成的响应
+function stopGeneration() {
+  if (currentController) {
+    currentController.abort();
   }
 }
 

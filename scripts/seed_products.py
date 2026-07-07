@@ -1,4 +1,4 @@
-"""将 data/products.json 追加入库 ChromaDB，自动生成 id 并使用本地 BGE 模型"""
+"""将 data/products.json 入库 ChromaDB，使用 upsert 模式避免重复数据"""
 from __future__ import annotations
 
 import json
@@ -43,26 +43,38 @@ def main() -> None:
     client = chromadb.PersistentClient(path=CHROMA_PATH, settings=ChromaSettings(anonymized_telemetry=False))
     collection = get_collection(client, embed_fn)
 
-    exist_count = collection.count()
-    logger.info("当前 ChromaDB 已有 %d 条记录", exist_count)
-
+    # 使用稳定的确定性 id（基于 products.json 索引），配合 upsert 避免重复
+    # 多次运行 seed 不会产生重复数据，已有记录会被覆盖更新
     ids: list[str] = []
     documents: list[str] = []
     metadatas: list[dict] = []
 
     for i, product in enumerate(products):
-        ids.append(f"product_{exist_count + i:03d}")
-        documents.append(json.dumps(product, ensure_ascii=False))
+        ids.append(f"product_{i:03d}")
+        # document 用自然语言拼接（含 description），让 BGE 语义检索更准确
+        # JSON 字符串对 BGE 检索效果差，自然语言文本匹配度更高
+        name = product.get("name", "")
+        category = product.get("category", "")
+        brand = product.get("brand", "")
+        price = product.get("price", 0)
+        description = product.get("description", "")
+        tags = " ".join(product.get("tags", []))
+        specs = product.get("specs", {})
+        specs_str = " ".join(f"{k}:{v}" for k, v in specs.items())
+        document = f"{name} | {brand}{category} | ¥{price} | {description} | {specs_str} | 标签：{tags}"
+        documents.append(document)
         metadatas.append({
-            "category": product.get("category", ""),
-            "brand": product.get("brand", ""),
-            "price": product.get("price", 0),
+            "category": category,
+            "brand": brand,
+            "price": price,
         })
 
-    collection.add(ids=ids, documents=documents, metadatas=metadatas)
-    logger.info("追加成功: %d 条", len(ids))
+    # upsert：存在则更新，不存在则插入，幂等操作
+    collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+    logger.info("upsert 成功: %d 条", len(ids))
     logger.info("ChromaDB 当前总计: %d 条记录", collection.count())
 
 
 if __name__ == "__main__":
     main()
+

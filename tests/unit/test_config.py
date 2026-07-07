@@ -22,6 +22,6 @@ class TestSettings:
         from harness.config import Settings
         s = Settings()
         assert s.llm_provider == "zhipu"
-        assert s.max_iterations == 10
+        assert s.max_iterations == 6
         assert s.short_term_window == 20
         assert s.retrieval_top_k == 5

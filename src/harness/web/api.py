@@ -36,32 +36,50 @@ _sessions: dict[str, Agent] = {}
 _session_mgr = SessionManager()
 
 
+def _build_agent() -> Agent:
+    """构造一个完整的 Agent 实例（注册工具 + 装配护栏）。"""
+    registry = Registry()
+    registry.register_tool(KnowledgeRetrievalTool())
+    registry.register_tool(CalculatorTool())
+    registry.register_tool(OrderQueryTool())
+    registry.register_tool(LogisticsQueryTool())
+
+    guardrails = GuardrailPipeline()
+    guardrails.add(InputValidator(max_length=4096))
+    guardrails.add(OutputFilter())
+    guardrails.add(RateLimiter(
+        max_requests=settings.rate_limit_max_requests,
+        window_seconds=settings.rate_limit_window_seconds,
+    ))
+    guardrails.add(AuditLogger())
+
+    return Agent(registry=registry, guardrails=guardrails)
+
+
 def get_agent(session_id: str | None = None) -> Agent:
     global _agent
     if session_id and session_id in _sessions:
         return _sessions[session_id]
 
     if _agent is None:
-        registry = Registry()
-        registry.register_tool(KnowledgeRetrievalTool())
-        registry.register_tool(CalculatorTool())
-        registry.register_tool(OrderQueryTool())
-        registry.register_tool(LogisticsQueryTool())
-
-        guardrails = GuardrailPipeline()
-        guardrails.add(InputValidator(max_length=4096))
-        guardrails.add(OutputFilter())
-        guardrails.add(RateLimiter(
-            max_requests=settings.rate_limit_max_requests,
-            window_seconds=settings.rate_limit_window_seconds,
-        ))
-        guardrails.add(AuditLogger())
-
-        _agent = Agent(registry=registry, guardrails=guardrails)
+        _agent = _build_agent()
 
     if session_id:
         _sessions[session_id] = _agent
     return _agent
+
+
+def warmup_agent() -> None:
+    """服务启动时主动初始化 Agent，把工具注册和 ChromaDB 初始化提前到启动阶段。
+
+    这样首次请求不再需要等待这些初始化，直接进入 LLM 调用。
+    """
+    global _agent
+    if _agent is None:
+        _agent = _build_agent()
+        logger.info("Agent 预热完成 | tools=%d guardrails=%d",
+                    len(_agent.registry.list_tools()),
+                    len(_agent.guardrails.pipes))
 
 
 # ── 请求/响应模型 ─────────────────────────────────────
@@ -104,11 +122,19 @@ def create_app() -> FastAPI:
     if static_dir.exists():
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
+    # 启动时主动初始化 Agent，避免首次请求等待工具注册和 ChromaDB 初始化
+    warmup_agent()
+
     @app.get("/")
     async def index():
         index_path = static_dir / "index.html"
         if index_path.exists():
-            return HTMLResponse(index_path.read_text(encoding="utf-8"))
+            # no-cache: 浏览器每次都发请求验证，确保拿到最新版本
+            # 避免静态 HTML 被缓存导致前端改动不生效
+            return HTMLResponse(
+                index_path.read_text(encoding="utf-8"),
+                headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+            )
         return HTMLResponse("<h1>Agent Harness</h1><p>Frontend not found</p>")
 
     @app.get("/health")

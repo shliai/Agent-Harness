@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     short_term_window: int = 20
     long_term_enabled: bool = False
     long_term_store_path: Path = Path("./data/memory_store")
+    long_term_top_k: int = 3
 
     # ── Guardrails ──────────────────────────────────
     rate_limit_max_requests: int = 60

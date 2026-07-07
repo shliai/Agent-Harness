@@ -4,6 +4,7 @@ import sys
 import argparse
 
 from harness.config import settings
+from harness.memory.embeddings import warmup
 from harness.observability.logger import setup_logging
 
 
@@ -14,6 +15,9 @@ def main() -> None:
     args = parser.parse_args()
 
     setup_logging(level=settings.log_level, fmt=settings.log_format)
+    # 启动时预热 BGE 嵌入模型（约 21 秒），避免首次请求时阻塞
+    # 模型加载完成后，KnowledgeRetrievalTool 和 LongTermMemory 共享同一实例
+    warmup()
     run_web(host=args.host, port=args.port)
 
 

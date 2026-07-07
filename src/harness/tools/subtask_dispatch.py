@@ -129,7 +129,7 @@ class SubTaskDispatchTool(BaseTool):
                     *memory.get_context(),
                 ]
 
-                thought = self._llm.chat(messages, temperature=settings.temperature)
+                thought = await self._llm.chat_async(messages, temperature=settings.temperature)
                 tool_call = self._parse_tool_call(thought)
 
                 if tool_call is None:
@@ -205,7 +205,7 @@ class SubTaskDispatchTool(BaseTool):
                             AgentMessage(role=ChatRole.system, content=system_prompt),
                             *memory.get_context(),
                         ]
-                        thought = self._llm.chat(messages, temperature=settings.temperature)
+                        thought = await self._llm.chat_async(messages, temperature=settings.temperature)
                         new_call = self._parse_tool_call(thought)
                         if new_call is None:
                             memory.add(AgentMessage(role=ChatRole.assistant, content=thought))

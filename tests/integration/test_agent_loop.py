@@ -45,7 +45,13 @@ class StatefulMockLLM(AbstractLLMClient):
         self.call_count += 1
         return self.responses[i] if i < len(self.responses) else self.responses[-1]
 
-    def stream_chat(self, messages: list[AgentMessage], temperature: float | None = None) -> None:
+    async def chat_async(self, messages: list[AgentMessage], temperature: float | None = None) -> str:
+        return self.chat(messages, temperature)
+
+    def stream_chat(self, messages: list[AgentMessage], temperature: float | None = None):
+        yield self.chat(messages, temperature)
+
+    async def stream_chat_async(self, messages: list[AgentMessage], temperature: float | None = None):
         yield self.chat(messages, temperature)
 
 

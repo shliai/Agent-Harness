@@ -16,12 +16,12 @@ from chromadb.config import Settings as ChromaSettings
 
 from harness.config import settings
 from harness.domain.exceptions import ToolExecutionError
+from harness.memory.embeddings import get_embed_fn
 from harness.tools.base import BaseTool, ToolSpec
 
 logger = logging.getLogger("harness.tools.knowledge_retrieval")
 
 COLLECTION_NAME = "ecommerce_knowledge"
-MODEL_PATH = "models/bge-small-zh-v1.5"
 
 KNOWN_CATEGORIES = {"手机", "笔记本", "耳机", "平板", "穿戴", "配件"}
 
@@ -80,20 +80,11 @@ class KnowledgeRetrievalTool(BaseTool):
                 path=str(settings.knowledge_store_path),
                 settings=ChromaSettings(anonymized_telemetry=False),
             )
-            self._embed_fn = self._build_embed_fn()
+            self._embed_fn = get_embed_fn()
             self.collection = self._get_or_create_collection()
             logger.info("KnowledgeRetrievalTool 初始化完成 (ChromaDB + BGE + BM25)")
         except Exception as e:
             logger.warning("知识库初始化失败，降级运行: %s", e)
-
-    @staticmethod
-    def _build_embed_fn():
-        try:
-            from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
-            return SentenceTransformerEmbeddingFunction(model_name=MODEL_PATH)
-        except Exception as e:
-            logger.warning("嵌入模型加载失败: %s", e)
-            return None
 
     def _get_or_create_collection(self) -> chromadb.Collection | None:
         ef = self._embed_fn or None
@@ -121,6 +112,16 @@ class KnowledgeRetrievalTool(BaseTool):
         m = re.search(r"(\d+)\s*元以上", query)
         if m:
             filters["price_min"] = float(m.group(1))
+
+        # 精确预算表达：3999的手机 / 3999元的手机 / 预算3999 / 3999预算
+        # 理解为"预算 X 元"，按价格上限 X 处理（允许检索到 ≤X 的商品，由 LLM 按接近度排序）
+        if "price_max" not in filters and "price_min" not in filters:
+            m = re.search(r"(?:预算\s*(\d+)|(\d+)\s*元?\s*的|\b(\d+)\s*元?\s*预算)", query)
+            if m:
+                budget = float(next(g for g in m.groups() if g))
+                # 只对合理的手机/3C 预算生效（100-99999 元），避免误匹配型号数字
+                if 100 <= budget <= 99999:
+                    filters["price_max"] = budget
 
         for cat in KNOWN_CATEGORIES:
             if cat in query:
@@ -182,12 +183,33 @@ class KnowledgeRetrievalTool(BaseTool):
 
             bm25 = BM25([d["document"] for d in all_docs])
             max_dist = max(d["distance"] for d in all_docs) if all_docs else 1
-            for d in all_docs:
+            for idx, d in enumerate(all_docs):
                 vec_score = 1 - (d["distance"] / max_dist) if max_dist > 0 else 0
-                bm25_score = bm25.score(user_query, all_docs.index(d))
+                bm25_score = bm25.score(user_query, idx)
                 d["hybrid_score"] = settings.hybrid_search_alpha * bm25_score + (1 - settings.hybrid_search_alpha) * vec_score
 
-            all_docs.sort(key=lambda x: x["hybrid_score"], reverse=True)
+            # 预算约束场景：用户给了具体预算（如"3999的手机"）时，
+            # 纯语义排序会让低价"性价比"款挤掉正好匹配预算的商品（如小米14 ¥3999）。
+            # 这里用预算接近度加权：越接近预算上限的，分数越高。
+            price_max = filters.get("price_max")
+            if price_max is not None:
+                for d in all_docs:
+                    price = d["metadata"].get("price", 0)
+                    try:
+                        price = float(price)
+                    except (TypeError, ValueError):
+                        price = 0.0
+                    # 接近度：1.0 表示正好等于预算上限，越低越远离
+                    if price_max > 0:
+                        proximity = price / price_max  # 0~1，越大越好（越接近预算）
+                        # 语义分占 40%，预算接近度占 60%（预算场景下价格是主诉求）
+                        d["final_score"] = 0.4 * d["hybrid_score"] + 0.6 * proximity
+                    else:
+                        d["final_score"] = d["hybrid_score"]
+                all_docs.sort(key=lambda x: x["final_score"], reverse=True)
+            else:
+                all_docs.sort(key=lambda x: x["hybrid_score"], reverse=True)
+
             top = all_docs[:settings.retrieval_top_k]
 
             lines: list[str] = []

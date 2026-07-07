@@ -27,6 +27,7 @@ from harness.domain.models import (
 from harness.guardrails.base import GuardrailPipeline
 from harness.llm.base import AbstractLLMClient
 from harness.memory.conversation_history import ConversationHistory
+from harness.memory.long_term import LongTermMemory
 from harness.memory.short_term import ShortTermMemory
 from harness.observability.metrics import MetricsCollector
 from harness.observability.tracer import Tracer
@@ -56,6 +57,22 @@ SYSTEM_PROMPT_TEMPLATE = """你是专业的电商智能客服助手，名叫小�
 - 仅基于已提供的信息回答，不要编造不存在的信息
 - 语气亲切、简洁明了，符合电商客服风格
 - 无法处理时引导用户联系人工客服
+
+## 预算约束（重要）
+- 用户提到具体金额（如"3999的手机"、"5000元以内的笔记本"）时，**严格视为预算上限**
+- **预算在多轮对话中持续生效**：如果用户在之前的对话中提到过预算，后续推荐同一品类商品时仍需遵守该预算，除非用户明确变更或取消预算
+- **调用 knowledge_retrieval 工具时，务必把上下文中的预算信息合并到 query 参数里**（如用户之前说 3999 预算，现在问"高性能手机"，应传入 query="高性能手机 3999元以内"），让检索工具做价格过滤
+- **禁止推荐价格超过预算的商品**，即使用户预算内有更便宜的选项，也不要主动推荐"略超预算"的商品
+- 优先推荐**接近预算上限**的商品（让用户觉得钱花得值），而非远低于预算的廉价款
+- 如果预算内有多个选项，按价格从高到低排序展示（最接近预算的排第一）
+- 如果预算内完全无匹配商品，明确告知"当前价位暂无匹配商品"，再推荐最接近预算的 2-3 款（必须标注"略超预算"），让用户自己决定是否加钱
+- 绝不擅自把"3999的手机"理解成"3999 左右"或"3999-5999 都行"
+
+## 空结果处理（重要）
+- 当工具返回"暂无匹配的商品"或空结果时，**不要重复用相似关键词重试**
+- 应换一种思路：放宽预算区间（如 3000 元以内无结果时，推荐 3000-3500 元最接近的款），或换品类建议
+- 最多重试 1 次，若仍无结果，直接告知用户"当前价位暂无匹配商品，为您推荐最接近的款："并列出 2-3 款相近商品
+- 绝不能陷入反复查询同一类信息的死循环
 """
 
 
@@ -69,6 +86,7 @@ class ReActLoop:
         metrics: MetricsCollector,
         conversation_history: ConversationHistory,
         max_iterations: int = 10,
+        long_term_memory: LongTermMemory | None = None,
     ) -> None:
         self.llm = llm
         self.registry = registry
@@ -77,6 +95,7 @@ class ReActLoop:
         self.metrics = metrics
         self.conversation_history = conversation_history
         self.max_iterations = max_iterations
+        self.long_term_memory = long_term_memory
 
     async def execute(self, user_input: str, session_id: str | None = None) -> AgentResult:
         """非流式执行：消费 execute_stream 并返回最终结果"""
@@ -114,6 +133,21 @@ class ReActLoop:
                 tool_descriptions=tool_descriptions or "（当前没有可用工具）"
             )
 
+            # 长期记忆：检索与当前用户输入相关的历史对话，注入 system prompt
+            if self.long_term_memory is not None and self.long_term_memory.enabled:
+                hits = await self.long_term_memory.search(validated_input)
+                if hits:
+                    recall_lines = []
+                    for i, h in enumerate(hits, 1):
+                        recall_lines.append(f"[{i}] {h['document']}")
+                    system_prompt += (
+                        "\n\n## 相关历史记忆\n"
+                        "以下是与当前问题可能相关的历史对话片段，"
+                        "若与本次问题相关可参考，无关则忽略：\n"
+                        + "\n\n".join(recall_lines)
+                    )
+                    logger.info("长期记忆召回 %d 条相关历史", len(hits))
+
             memory.add(AgentMessage(role=ChatRole.user, content=validated_input))
             self.metrics.reset()
 
@@ -122,7 +156,7 @@ class ReActLoop:
             for step_index in range(self.max_iterations):
                 messages = self._build_messages(system_prompt, memory)
 
-                thought = self.llm.chat(messages, temperature=settings.temperature)
+                thought = await self.llm.chat_async(messages, temperature=settings.temperature)
                 actual_tokens = self.llm.last_token_usage
                 self.metrics.record_llm_call(actual_tokens or len(thought) // 4)
                 total_tokens += actual_tokens or len(thought) // 4
@@ -133,6 +167,15 @@ class ReActLoop:
                     memory.add(AgentMessage(role=ChatRole.assistant, content=thought))
                     self.tracer.record_step(step_index, thought, None, None)
                     steps.append(StepRecord(step_index=step_index, thought=thought))
+
+                    # 直接回答也推送 step 事件，让前端看到 LLM 的思考过程
+                    step_payload: dict[str, Any] = {
+                        "type": "step",
+                        "step_index": step_index,
+                        "thought": thought,
+                    }
+                    yield step_payload
+                    await asyncio.sleep(0.001)
 
                     duration = (time.perf_counter() - start_time) * 1000
                     self.metrics.record_duration(duration)
@@ -198,7 +241,7 @@ class ReActLoop:
                             ))
 
                             messages = self._build_messages(system_prompt, memory)
-                            thought = self.llm.chat(messages, temperature=settings.temperature)
+                            thought = await self.llm.chat_async(messages, temperature=settings.temperature)
                             actual_tokens = self.llm.last_token_usage
                             self.metrics.record_llm_call(actual_tokens or len(thought) // 4)
                             total_tokens += actual_tokens or len(thought) // 4
@@ -250,6 +293,17 @@ class ReActLoop:
             assert result is not None
             result.answer = self.guardrails.check_output(result.answer)
             self.conversation_history.save(sid, memory.get_context())
+
+            # 长期记忆：将本轮完整对话（用户输入 + 最终回答）异步写入向量库
+            # 用 create_task 后台执行，不阻塞响应流
+            if self.long_term_memory is not None and self.long_term_memory.enabled:
+                asyncio.create_task(
+                    self.long_term_memory.add(
+                        user_input=validated_input,
+                        assistant_answer=result.answer,
+                        session_id=sid,
+                    )
+                )
 
             yield {
                 "type": "result",

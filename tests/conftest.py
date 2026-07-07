@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -23,7 +23,15 @@ class MockLLMClient(AbstractLLMClient):
         self.last_token_usage = len(self.response) // 4
         return self.response
 
+    async def chat_async(self, messages: list[AgentMessage], temperature: float | None = None) -> str:
+        self.last_messages = messages
+        self.last_token_usage = len(self.response) // 4
+        return self.response
+
     def stream_chat(self, messages: list[AgentMessage], temperature: float | None = None) -> Generator[str, None, None]:
+        yield self.response
+
+    async def stream_chat_async(self, messages: list[AgentMessage], temperature: float | None = None) -> AsyncGenerator[str, None]:
         yield self.response
 
 
