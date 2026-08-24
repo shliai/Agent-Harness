@@ -14,6 +14,8 @@ _TRACKING_RE = re.compile(
 )
 _MAX_LIST = 10
 _MAX_TOPICS = 5
+# 可变关系：同一实体再次出现时新值替换旧值（状态机会推进，旧状态即过期）
+_MUTABLE_RELATIONS = {"状态", "进度", "预计", "地址"}
 
 
 class WorkingMemory(BaseModel):
@@ -68,17 +70,31 @@ class WorkingMemory(BaseModel):
         )
 
     def add_fact(self, fact: str) -> bool:
-        """登记一条实体-关系事实（不设上限——工作记忆随会话存续，事实是会话资产）。
+        """登记实体-关系事实，带更新语义：
 
-        仅做近似去重（互相包含视为重复）控制增长质量；
-        压缩事件时整块烘入冻结章节后清零。
+        - 近似去重：互相包含视为重复（不重复登记）
+        - 可变关系（状态/进度等）：同实体同关系 → 原地替换旧值（旧状态即过期）
+        - 其余关系（偏好/决定等）：只追加共存；数量不设上限
         """
         fact = " ".join(fact.split()).strip()[:100]
         if not fact:
             return False
+
+        # 先做包含去重
         for existing in self.important_facts:
             if fact == existing or fact in existing or existing in fact:
                 return False
+
+        # 解析 subject / relation（格式：实体 关系 值…）
+        tokens = fact.split(" ")
+        if len(tokens) >= 2 and tokens[1] in _MUTABLE_RELATIONS:
+            subject, relation = tokens[0], tokens[1]
+            for idx, existing in enumerate(self.important_facts):
+                etoks = existing.split(" ")
+                if len(etoks) >= 2 and etoks[0] == subject and etoks[1] == relation:
+                    self.important_facts[idx] = fact  # 原位替换，保持时间序稳定
+                    return True
+
         self.important_facts.append(fact)
         return True
 

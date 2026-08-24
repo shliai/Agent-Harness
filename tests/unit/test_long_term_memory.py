@@ -343,3 +343,78 @@ class TestReActLoopIntegration:
         await asyncio.sleep(0.05)
         long_term.add.assert_not_called()
         assert result.success is False
+
+
+# ── v0.7.4 更新语义：可变关系替换 / 读时保鲜 ──────────────
+
+import pytest as _pytest
+
+
+class FakeCollection:
+    """按脚本回放 query/get，记录 delete/add 调用"""
+
+    def __init__(self, query_result=None, get_result=None):
+        self._query_result = query_result or {}
+        self._get_result = get_result or {}
+        self.deleted = []
+        self.added = []
+
+    def query(self, query_texts=None, n_results=None, where=None):
+        return self._query_result
+
+    def get(self, where=None, include=None):
+        return self._get_result
+
+    def delete(self, ids=None):
+        self.deleted.extend(ids or [])
+
+    def add(self, ids=None, documents=None, metadatas=None):
+        self.added.extend(zip(ids, documents, metadatas))
+
+    def count(self):
+        return len(self._query_result.get("documents", [[]])[0])
+
+
+def _bare_lt(collection):
+    from harness.memory.long_term import LongTermMemory
+
+    lt = LongTermMemory.__new__(LongTermMemory)
+    lt.enabled = True
+    lt.collection = collection
+    return lt
+
+
+@_pytest.mark.asyncio
+async def test_search_keeps_newest_for_mutable_relation():
+    """同订单两条状态（跨会话旧新并存）→ 只返回最新；不可变关系不受影响"""
+    col = FakeCollection(query_result={
+        "documents": [["订单1 状态 待审核", "订单1 状态 已退款", "用户 偏好 小米品牌"]],
+        "metadatas": [[
+            {"entity_key": "订单1", "relation": "状态", "timestamp": "2026-08-01T10:00:00", "session_id": "s1"},
+            {"entity_key": "订单1", "relation": "状态", "timestamp": "2026-08-20T10:00:00", "session_id": "s2"},
+            {"timestamp": "2026-08-10T10:00:00", "session_id": "s3"},
+        ]],
+        "distances": [[0.10, 0.12, 0.20]],
+    })
+    hits = await _bare_lt(col).search("订单怎么样了")
+    docs = [h["document"] for h in hits]
+    assert docs == ["用户 偏好 小米品牌", "订单1 状态 已退款"]
+
+
+@_pytest.mark.asyncio
+async def test_add_supersedes_stale_mutable_in_same_session():
+    """写时替换：同会话同实体同可变关系的旧记录被删除"""
+    col = FakeCollection(get_result={"ids": ["old-1", "old-2"]})
+    lt = _bare_lt(col)
+    await lt.add(
+        user_input="退款到哪一步了",
+        assistant_answer="已退款",
+        session_id="s1",
+        user_id="u1",
+        document="订单1 状态 已退款",
+    )
+    assert col.deleted == ["old-1", "old-2"]
+    assert len(col.added) == 1
+    _id, doc, meta = col.added[0]
+    assert doc == "订单1 状态 已退款"
+    assert meta["entity_key"] == "订单1" and meta["relation"] == "状态"

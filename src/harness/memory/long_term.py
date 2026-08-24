@@ -74,29 +74,79 @@ class LongTermMemory:
         user_id: str = "default",
         document: str | None = None,
     ) -> None:
-        """异步写入一轮记忆（优先使用整理后的结构化文档，而非原始问答全文）"""
+        """异步写入一轮记忆（优先使用整理后的结构化事实文档）
+
+        文档按「事实行」拆分为多条记录（每条带 entity_key/relation 元数据），
+        支持写时替换：同会话同实体同可变关系的旧记录被删除，只留最新值。
+        """
         if not self.enabled or self.collection is None:
             return
         if not document and (not user_input.strip() or not assistant_answer.strip()):
             return
 
         try:
-            doc = document or self._format_conversation(user_input, assistant_answer)
-            ts = datetime.now().isoformat()
-            doc_id = f"{session_id}-{ts}"
+            ts = datetime.now().isoformat(timespec="seconds")
 
-            await asyncio.to_thread(
-                self.collection.add,
-                ids=[doc_id],
-                documents=[doc],
-                metadatas=[{
-                    "session_id": session_id,
-                    "user_id": user_id,
-                    "timestamp": ts,
-                    "role": "facts" if document else "conversation",
-                }],
-            )
-            logger.debug("长期记忆已写入: %s", doc_id)
+            if document:
+                # 事实级写入：一行一记录，元数据携带实体键用于更新语义
+                lines = [ln.strip() for ln in document.splitlines() if ln.strip()]
+                entries = []
+                for idx, line in enumerate(lines):
+                    toks = line.split(" ")
+                    subject = toks[0] if toks else ""
+                    relation = toks[1] if len(toks) > 1 else ""
+                    entries.append({
+                        "id": f"{session_id}-{ts}-{idx}",
+                        "doc": line[:200],
+                        "entity_key": subject,
+                        "relation": relation,
+                    })
+                # 写时替换：同会话内同实体+可变关系的旧记录删除
+                mutable = {"状态", "进度", "预计", "地址"}
+                for e in entries:
+                    if e["relation"] in mutable and e["entity_key"]:
+                        stale = await asyncio.to_thread(
+                            self.collection.get,
+                            where={"$and": [
+                                {"user_id": user_id},
+                                {"session_id": session_id},
+                                {"entity_key": e["entity_key"]},
+                                {"relation": e["relation"]},
+                            ]},
+                            include=["metadatas"],
+                        )
+                        old_ids = [i for i in (stale.get("ids") or [])]
+                        if old_ids:
+                            await asyncio.to_thread(self.collection.delete, ids=old_ids)
+                await asyncio.to_thread(
+                    self.collection.add,
+                    ids=[e["id"] for e in entries],
+                    documents=[e["doc"] for e in entries],
+                    metadatas=[{
+                        "session_id": session_id,
+                        "user_id": user_id,
+                        "timestamp": ts,
+                        "role": "facts",
+                        "entity_key": e["entity_key"],
+                        "relation": e["relation"],
+                    } for e in entries],
+                )
+                logger.debug("长期记忆已写入 %d 条事实 (%s)", len(entries), session_id)
+            else:
+                doc = self._format_conversation(user_input, assistant_answer)
+                doc_id = f"{session_id}-{ts}"
+                await asyncio.to_thread(
+                    self.collection.add,
+                    ids=[doc_id],
+                    documents=[doc],
+                    metadatas=[{
+                        "session_id": session_id,
+                        "user_id": user_id,
+                        "timestamp": ts,
+                        "role": "conversation",
+                    }],
+                )
+                logger.debug("长期记忆已写入: %s", doc_id)
         except Exception as e:
             logger.warning("长期记忆写入失败: %s", e)
 
@@ -156,6 +206,28 @@ class LongTermMemory:
                 if threshold is not None and dist is not None and float(dist) > float(threshold):
                     continue  # 不相关的历史不注入
                 hits.append({"document": doc, "metadata": meta or {}, "distance": dist})
+
+            # 读时保鲜：可变关系（状态/进度等）同实体多命中时只保留时间戳最新一条，
+            # 抑制跨会话的过期状态误导；其余关系全部保留
+            mutable = {"状态", "进度", "预计", "地址"}
+            newest: dict[tuple[str, str], dict[str, Any]] = {}
+            keep: list[dict[str, Any]] = []
+            for h in hits:
+                meta = h.get("metadata") or {}
+                ek, rel = str(meta.get("entity_key") or ""), str(meta.get("relation") or "")
+                if rel in mutable and ek:
+                    key = (ek, rel)
+                    cur = newest.get(key)
+                    if cur is None or str(meta.get("timestamp") or "") > str(
+                        (cur.get("metadata") or {}).get("timestamp") or ""
+                    ):
+                        newest[key] = h
+                else:
+                    keep.append(h)
+            hits = sorted(
+                keep + list(newest.values()),
+                key=lambda h: str((h.get("metadata") or {}).get("timestamp") or ""),
+            )
             return hits
         except Exception as e:
             logger.warning("长期记忆检索失败: %s", e)

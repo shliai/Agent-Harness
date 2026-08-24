@@ -305,6 +305,16 @@ class TestChapterMemory:
         b_note = next(m for m in turn_b_msgs if m.role == ChatRole.system and m.content.startswith("## 当前任务状态"))
         assert "8000" in b_note.content and "3000" not in b_note.content
 
+    def test_add_fact_mutable_relation_replaces(self) -> None:
+        """可变关系（状态/进度）：同实体同关系新值原地替换旧值；不可变关系共存"""
+        wm = WorkingMemory()
+        wm.add_fact("订单20240601001 状态 待审核")
+        assert wm.add_fact("订单20240601001 状态 已退款") is True
+        assert wm.important_facts == ["订单20240601001 状态 已退款"]  # 旧状态被替换
+        assert wm.add_fact("用户 偏好 小米品牌") is True
+        assert wm.add_fact("用户 偏好 华为品牌") is True              # 不同偏好共存
+        assert len(wm.important_facts) == 3
+
     def test_prompt_block_renders_facts(self) -> None:
         wm = WorkingMemory()
         wm.add_fact("用户 偏好 小米品牌")
