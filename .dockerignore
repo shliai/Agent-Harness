@@ -1,0 +1,34 @@
+# 版本控制
+.git
+.github
+
+# Python 缓存
+__pycache__
+*.py[cod]
+*.egg-info
+.venv
+venv
+
+# 运行时数据（容器内通过 volume 挂载持久化）
+data/harness.db
+data/harness.db-wal
+data/harness.db-shm
+data/chroma_db
+data/conversations
+data/audit_logs
+data/memory_store
+data/memory_store_test
+data/tickets
+data/aftersale
+data/eval/report_*.json
+data/eval/badcase_*.jsonl
+
+# 开发与测试（镜像不需要）
+tests
+docs
+.github
+*.md
+!README.md
+
+# 前端临时
+*.tmp.js

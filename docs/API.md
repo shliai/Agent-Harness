@@ -1,434 +1,228 @@
 # Agent Harness API 文档
 
-## 概述
-
-本文档提供了 Agent Harness 演示系统的 API 接口说明，帮助开发者了解和使用系统。
+> 版本：v0.5.0 · 更新日期：2026-08-23
 
 ## 基础信息
 
-- **基础URL**: `http://localhost:8000`
+- **基础 URL**: `http://localhost:8000`
 - **数据格式**: JSON
-- **认证方式**: 演示系统无需认证
-- **系统类型**: 电商客服场景 ReAct 循环演示系统
+- **认证**: 聊天/会话接口无需认证；商品管理接口需 `X-Admin-Token` 请求头（配置项 `ADMIN_TOKEN`，限流 30 次/分钟）
+- **交互协议**: 聊天默认 SSE 流式
 
-## 端点列表
+## 端点总览
 
-### 1. 健康检查
+| 方法 | 路径 | 说明 | 鉴权 |
+|---|---|---|---|
+| GET | `/` | Web 控制台页面 | - |
+| GET | `/health` | 健康检查（含组件状态） | - |
+| GET | `/api/tools` | 工具清单（8 个） | - |
+| GET | `/api/metrics` | 进程级聚合指标 + 最近追踪 | - |
+| POST | `/api/chat` | 对话（SSE 流式 / JSON） | - |
+| POST | `/api/session/clear` | 清空会话 | - |
+| POST | `/api/sessions/batch-delete` | 批量删除会话（body: ids 数组；越权跳过） | - |
+| GET | `/api/sessions` | 会话列表 | - |
+| GET | `/api/sessions/{id}` | 会话详情（含推理轨迹） | - |
+| PUT | `/api/sessions/{id}` | 重命名会话 | - |
+| DELETE | `/api/sessions/{id}` | 删除会话 | - |
+| POST | `/api/admin/products` | 新增商品（联动向量库） | Admin |
+| PUT | `/api/admin/products/{pid}` | 更新商品（重嵌入） | Admin |
+| DELETE | `/api/admin/products/{pid}` | 删除商品（DB+向量同步删） | Admin |
+| GET | `/api/admin/products?status=` | 商品列表 | Admin |
+| POST | `/api/admin/products/reindex` | 向量库对账式全量重建 | Admin |
+| GET | `/api/admin/aftersales?status=` | 售后单列表（商家视图） | Admin |
+| POST | `/api/admin/aftersales/{as_id}/approve` | 审批通过（body: note） | Admin |
+| POST | `/api/admin/aftersales/{as_id}/reject` | 驳回（body: note 必填原因） | Admin |
+| POST | `/api/admin/aftersales/{as_id}/complete` | 完成打款（已通过→已完成） | Admin |
 
-#### GET `/`
+> 所有 `{id}` 路径参数均做白名单校验 `^[A-Za-z0-9_-]{1,64}$`，非法值返回 400。
 
-**描述**: 返回 Web 聊天界面（HTML 页面从 `src/harness/web/static/index.html` 加载）
+---
 
-**请求**:
-```bash
-GET /
-```
+## 1. 健康检查
 
-**响应**: 200 — HTML 页面
+### GET `/health`
 
-#### GET `/health`
-
-**描述**: 健康检查端点
-
-**请求**:
-```bash
-GET /health
-```
-
-**响应**:
 ```json
 {
   "status": "ok",
-  "version": "0.1.0"
+  "version": "0.5.0",
+  "components": {
+    "knowledge_base_documents": 62,
+    "long_term_memory_enabled": true,
+    "long_term_memory_records": 106,
+    "tools": 8
+  }
 }
 ```
 
-### 2. 聊天接口
+## 2. 对话 POST `/api/chat`
 
-#### POST `/api/chat`
+**请求体**：
 
-**描述**: 发送消息给 Agent，支持 SSE 流式响应
+| 参数 | 类型 | 必需 | 说明 |
+|---|---|---|---|
+| message | string | 是 | 用户消息（1-4096 字符） |
+| session_id | string | 否 | 会话 ID；缺省自动生成并经 meta 事件返回 |
+| user_id | string | 否 | 用户身份：决定订单归属校验、我的订单、售后归属、长期记忆隔离；缺省 `demo_user` |
+| stream | boolean | 否 | 默认 true |
 
-**请求体**:
-```json
-{
-  "message": "你好，我想查询商品信息",
-  "session_id": "optional_session_id",
-  "stream": true
-}
-```
+**同会话并发约束**：同一 session_id 同时仅允许一个进行中请求，
+流式下返回 `error` 事件、非流式返回 HTTP 429。
 
-**参数**:
-| 参数 | 类型 | 必需 | 默认值 | 描述 |
-|---|---|---|---|---|
-| `message` | string | 是 | - | 用户消息（1-4096 字符） |
-| `session_id` | string | 否 | 自动生成 | 会话ID |
-| `stream` | boolean | 否 | true | 是否使用流式响应 |
+### 流式响应事件（SSE，按发生顺序）
 
-**流式响应（SSE）**:
 ```
 data: {"type":"meta","session_id":"abc123"}
 
-data: {"type":"step","step_index":0,"thought":"用户需要查询商品信息","tool_call":null,"tool_result":null}
+# token 级增量（每轮 LLM 输出实时推送）
+data: {"type":"delta","content":"您好"}
 
-data: {"type":"step","step_index":1,"thought":"需要使用知识检索工具","tool_call":{"tool_name":"knowledge_retrieval","arguments":{"query":"拍照手机"}},"tool_result":{"success":true,"output":"查询结果","duration_ms":500}}
+# 该轮实为工具规划 → 回滚已推送的临时文本
+data: {"type":"delta_reset"}
 
-data: {"type":"result","answer":"根据您的查询，我找到了以下商品...","total_duration_ms":1500,"total_steps":2,"success":true}
+# 每完成一步推送（Thought / Action / Observation）
+data: {"type":"step","step_index":0,"thought":"需要查订单",
+       "tool_call":{"tool_name":"order_query","arguments":{"order_id":"2026082200131"}},
+       "tool_result":{"success":true,"output":"订单号：...","duration_ms":12.5}}
+
+# 最终回答经脱敏后若与流式原文不一致 → 整体覆盖
+data: {"type":"answer_replace","content":"您的手机号***已登记..."}
+
+data: {"type":"result","answer":"...","total_duration_ms":3200.5,
+       "total_steps":2,"total_tokens":4410,"success":true}
 
 data: [DONE]
 ```
 
-**SSE 事件类型**:
-| 事件 | 触发时机 | 关键字段 |
-|------|---------|---------|
-| `meta` | 连接建立后 | session_id |
-| `step` | 每个 ReAct 步骤 | step_index, thought, tool_call, tool_result |
-| `result` | 最终结果 | answer, total_duration_ms, total_steps, success |
-| `error` | 发生异常 | message |
-| `[DONE]` | 流结束 | - |
+错误以 `{"type":"error","message":"..."}` 事件推送（如限流/护栏拦截/上游超时），随后仍发送 `[DONE]`。
 
-**普通响应**（stream=false）:
+### 非流式响应（stream=false）
+
 ```json
 {
-  "answer": "根据您的查询，我找到了以下商品...",
+  "answer": "...",
   "session_id": "abc123",
-  "steps": [
-    {
-      "step_index": 0,
-      "thought": "用户需要查询商品信息",
-      "tool_call": null,
-      "tool_result": null
-    },
-    {
-      "step_index": 1,
-      "thought": "需要使用知识检索工具",
-      "tool_call": {
-        "tool_name": "knowledge_retrieval",
-        "arguments": {"query": "拍照手机"}
-      },
-      "tool_result": {
-        "success": true,
-        "output": "查询结果",
-        "duration_ms": 500
-      }
-    }
-  ],
-  "total_duration_ms": 1500,
+  "steps": [{"step_index": 0, "thought": "...", "tool_call": {...}, "tool_result": {...}}],
+  "total_duration_ms": 3200.5,
+  "total_tokens": 4410,
   "success": true,
   "error": null
 }
 ```
 
-### 3. 工具管理
 
-#### GET `/api/tools`
+## 3. 会话管理
 
-**描述**: 获取所有已注册工具的详细信息
+### GET `/api/sessions`
 
-**请求**:
-```bash
-GET /api/tools
-```
+按更新时间倒序返回：
 
-**响应**:
 ```json
-{
-  "tools": [
-    {
-      "name": "knowledge_retrieval",
-      "description": "检索电商商品知识库，用于回答商品信息、价格查询、参数对比等",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "query": {"type": "string", "description": "用户问题"},
-          "category": {"type": "string", "description": "商品类别"},
-          "price_min": {"type": "number", "description": "最低价格"},
-          "price_max": {"type": "number", "description": "最高价格"}
-        },
-        "required": ["query"]
-      }
-    },
-    {
-      "name": "order_query",
-      "description": "根据订单号查询订单详情",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "order_id": {"type": "string", "description": "订单号，如 20240601001"}
-        },
-        "required": ["order_id"]
-      }
-    },
-    {
-      "name": "logistics_query",
-      "description": "查询物流轨迹，返回详细运输节点和状态",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "logistics_no": {"type": "string", "description": "物流单号，如 SF1234567890"}
-        },
-        "required": ["logistics_no"]
-      }
-    },
-    {
-      "name": "calculator",
-      "description": "执行数学计算，支持加减乘除、幂运算等",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "expression": {"type": "string", "description": "数学表达式，如 2 + 3 * 4"}
-        },
-        "required": ["expression"]
-      }
-    },
-    {
-      "name": "subtask_dispatch",
-      "description": "将复杂任务拆分为多个子任务，逐一分发执行并汇总",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "tasks": {
-            "type": "array",
-            "description": "子任务列表",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "string"},
-                "description": {"type": "string"},
-                "tools": {"type": "array", "items": {"type": "string"}}
-              }
-            }
-          }
-        },
-        "required": ["tasks"]
-      }
-    }
-  ]
-}
+{"sessions": [{"id": "abc123", "title": "查询订单", "updated_at": "...", "message_count": 6}]}
 ```
 
-### 4. 会话管理
+### GET `/api/sessions/{id}`
 
-#### GET `/api/sessions`
+完整会话状态（前端据此回放对话与推理轨迹）：
 
-**描述**: 获取所有会话列表
-
-**请求**:
-```bash
-GET /api/sessions
-```
-
-**响应**:
-```json
-{
-  "sessions": [
-    {
-      "id": "abc123",
-      "title": "查询订单信息",
-      "updated_at": "2026-07-01T09:30:00",
-      "message_count": 5
-    }
-  ]
-}
-```
-
-#### GET `/api/sessions/{id}`
-
-**描述**: 获取指定会话的完整历史记录
-
-**请求**:
-```bash
-GET /api/sessions/abc123
-```
-
-**响应**: 返回存储在 `data/conversations/{id}.json` 的完整内容
 ```json
 {
   "session_id": "abc123",
-  "updated_at": "2026-07-01T09:30:00",
-  "messages": [
-    {"role": "user", "content": "你好"},
-    {"role": "assistant", "content": "你好！有什么可以帮助您的吗？"}
-  ]
+  "title": "查询订单",
+  "summary": "早期对话的滚动摘要...",
+  "working_memory": {"budget_amount": 3000.0, "order_ids": ["..."], "awaiting_slot": null},
+  "traces": [{"ts": "...", "user": "查订单", "steps": [{"thought": "...", "tool_call": {...}}]}],
+  "messages": [{"role": "user", "content": "...", "timestamp": "..."}],
+  "updated_at": "..."
 }
 ```
 
-#### PUT `/api/sessions/{id}`
+| 字段 | 说明 |
+|---|---|
+| user_id | 会话归属者；携带 X-User-Id 访问他人会话将返回 403 |
+| summary | 超窗历史经 LLM 压缩的滚动摘要（未触发压缩时为空） |
+| working_memory | 结构化槽位：预算(金额/品类/轮次)、订单号、物流号、近期话题、澄清等待项 |
+| traces | 最近 8 轮推理轨迹（Thought/Action/Observation） |
 
-**描述**: 重命名会话
+### PUT `/api/sessions/{id}`
 
-**请求**:
-```bash
-curl -X PUT http://localhost:8000/api/sessions/abc123 \
-  -H "Content-Type: application/json" \
-  -d '{"title": "新的会话标题"}'
+```json
+{"title": "新名称"}
 ```
 
-**响应**:
+### POST `/api/session/clear` · DELETE `/api/sessions/{id}`
+
+清空与删除均同步删除消息与状态，返回 `{"status": "cleared"/"deleted"}`。
+
+## 4. 商品管理（需 `X-Admin-Token` 头）
+
+超限返回 HTTP 429；鉴权失败返回 403。
+
+### POST `/api/admin/products`
+
 ```json
 {
-  "status": "renamed",
-  "title": "新的会话标题"
+  "name": "小米17 Pro",
+  "category": "手机",
+  "brand": "小米",
+  "price": 5499,
+  "description": "骁龙8 Elite2 旗舰",
+  "specs": {"屏幕": "6.73英寸", "存储": "256GB"},
+  "tags": ["旗舰", "拍照"],
+  "status": "在售"
 }
 ```
 
-#### DELETE `/api/sessions/{id}`
+响应：`{"status": "created", "id": "product_xxxxxxxxxx"}`
 
-**描述**: 删除指定会话
+行为：写 SQLite → 文档渲染 → BGE 编码 → 向量库 upsert（全程联动，无需手动重建索引）。
 
-**请求**:
-```bash
-DELETE /api/sessions/abc123
+### PUT `/api/admin/products/{pid}`
+
+请求体同上；upsert 幂等覆盖，语义字段变化自动重嵌入。404=商品不存在。
+
+### DELETE `/api/admin/products/{pid}`
+
+**DB 与向量索引同步删除**（下架残留双保险之一）。404=不存在。
+
+### GET `/api/admin/products?status=在售`
+
+```json
+{"products": [{...}], "total": 62}
 ```
 
-**响应**:
+### POST `/api/admin/products/reindex`
+
+以 SQLite 为事实源对账式重建：全量 upsert + 清理向量库脏 id。
+
+```json
+{"status": "reindexed", "upserted": 62, "pruned": 0, "final_count": 62}
+```
+
+## 5. 指标与追踪
+
+### GET `/api/metrics`
+
 ```json
 {
-  "status": "deleted"
+  "metrics": {
+    "total_llm_calls": 42, "total_tokens": 51000,
+    "tool_call_counts": {"knowledge_retrieval": 12, "order_query": 8},
+    "total_duration_ms": 98000, "uptime_seconds": 3600
+  },
+  "recent_traces": [ ... 最近 50 条步骤记录（带 session_id）... ]
 }
 ```
 
-#### POST `/api/session/clear`
+## 错误码约定
 
-**描述**: 清空指定会话的记忆
+| 码 | 场景 |
+|---|---|
+| 400 | session_id 非法 |
+| 403 | 管理 Token 错误；或向他人会话写入 / 读取他人会话 |
+| 404 | 会话/商品不存在 |
+| 429 | 同会话请求并发冲突 / 管理接口限流 |
+| 500 | 未预期异常（日志含堆栈） |
 
-**请求**:
-```json
-{
-  "session_id": "abc123"
-}
-```
-
-**响应**:
-```json
-{
-  "status": "cleared",
-  "session_id": "abc123"
-}
-```
-
-## 错误处理
-
-### 错误响应格式
-
-错误通过以下方式返回：
-- **HTTP 404**: 会话不存在时返回
-- **SSE error 事件**: 流式响应中发生异常时推送
-- **非流式响应**: error 字段不为 null
-
-### SSE 错误示例
-
-```
-data: {"type":"error","message":"输入内容不能为空"}
-
-data: [DONE]
-```
-
-### 常见错误
-
-| 场景 | HTTP 状态码 | 说明 |
-|-----|------------|------|
-| 输入为空 | 422 | message 字段为空 |
-| 输入超长 | 422 | message 超过 4096 字符 |
-| 会话不存在 | 404 | 指定的 session_id 无对应文件 |
-| 速率超限 | 429 | 超过 60 次/分钟的限制 |
-| 服务器错误 | 500 | 内部异常 |
-
-## 安全考虑
-
-### 输入验证
-
-- 所有输入经过 InputValidator 检查
-- 拦截空内容、超长输入（>4096 字符）、控制字符
-
-### 输出过滤
-
-- OutputFilter 自动脱敏敏感信息
-- 正则匹配并替换为 `***`：身份证号（18位）、手机号（11位）、银行卡号（16-19位）、API Key（sk-开头）
-
-### 速率限制
-
-- RateLimiter 滑动窗口算法
-- 默认限制：60 次/60 秒
-- 超限抛出 RateLimitError
-
-### 审计日志
-
-- AuditLogger 记录所有 guardrail 检查
-- 写入 `data/audit_logs/audit_{date}.jsonl`
-
-## 示例代码
-
-### Python 示例
-
-```python
-import requests
-import json
-
-# 发送消息（流式）
-response = requests.post(
-    "http://localhost:8000/api/chat",
-    json={"message": "你好", "session_id": "test_session", "stream": True},
-    stream=True
-)
-
-for line in response.iter_lines():
-    if not line:
-        continue
-    line = line.decode("utf-8")
-    if line.startswith("data: "):
-        data_str = line[6:]
-        if data_str == "[DONE]":
-            break
-        data = json.loads(data_str)
-        if data["type"] == "result":
-            print(f"答案: {data['answer']}")
-        elif data["type"] == "step":
-            print(f"步骤 {data['step_index']}: {data['thought']}")
-
-# 获取工具列表
-response = requests.get("http://localhost:8000/api/tools")
-tools = response.json()["tools"]
-print(f"可用工具: {len(tools)} 个")
-```
-
-### JavaScript 示例
-
-```javascript
-async function sendMessage(message, sessionId = null) {
-    const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message, session_id: sessionId, stream: true})
-    });
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-        const {done, value} = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, {stream: true});
-        const lines = buffer.split("\n");
-        buffer = lines.pop();
-
-        for (const line of lines) {
-            if (line.startsWith("data: ")) {
-                const payload = line.slice(6);
-                if (payload === "[DONE]") return;
-                const data = JSON.parse(payload);
-                if (data.type === "result") {
-                    console.log("答案:", data.answer);
-                } else if (data.type === "step") {
-                    console.log(`步骤 ${data.step_index}:`, data.thought);
-                }
-            }
-        }
-    }
-}
-```
-
----
-
-**最后更新**: 2026-07-01 (v0.1.0)
+业务级失败（订单不属于当前账户 / 待发货不可售后 / 政策库未命中引导转人工 等）
+不以 HTTP 错误表达，而是作为工具输出文本交由 LLM 组织回复。

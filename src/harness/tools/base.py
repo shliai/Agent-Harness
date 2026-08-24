@@ -19,9 +19,6 @@ class ToolSpec(BaseModel):
 class BaseTool(ABC):
     spec: ToolSpec
 
-    def set_llm(self, llm: Any) -> None:
-        pass
-
     @abstractmethod
     async def run(self, **kwargs: Any) -> str:
         ...

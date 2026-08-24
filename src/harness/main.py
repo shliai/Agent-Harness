@@ -10,8 +10,10 @@ from harness.observability.logger import setup_logging
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Agent Harness — 智能体运行时外壳")
-    parser.add_argument("--port", type=int, default=8000, help="Web 服务端口 (默认 8000)")
-    parser.add_argument("--host", type=str, default="localhost", help="Web 服务监听地址 (默认 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=settings.web_port,
+                        help=f"Web 服务端口 (默认 {settings.web_port})")
+    parser.add_argument("--host", type=str, default=settings.web_host,
+                        help=f"Web 服务监听地址 (默认 {settings.web_host})")
     args = parser.parse_args()
 
     setup_logging(level=settings.log_level, fmt=settings.log_format)

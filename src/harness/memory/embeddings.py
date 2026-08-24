@@ -5,7 +5,20 @@ from typing import Any
 
 logger = logging.getLogger("harness.memory.embeddings")
 
-MODEL_PATH = "models/bge-small-zh-v1.5"
+# 模型路径解析：本地目录优先；无则返回 HF 模型 ID 让 sentence_transformers 自动下载
+LOCAL_MODEL_DIR = "models/bge-small-zh-v1.5"
+HF_MODEL_ID = "BAAI/bge-small-zh-v1.5"
+
+import os as _os
+
+def _resolve_model_path() -> str:
+    if _os.path.isdir(LOCAL_MODEL_DIR) and _os.path.exists(
+        _os.path.join(LOCAL_MODEL_DIR, "config.json")
+    ):
+        return LOCAL_MODEL_DIR
+    return HF_MODEL_ID
+
+MODEL_PATH = _resolve_model_path()
 
 # 全局单例：整个进程共享一个 BGE 嵌入模型实例
 # 避免多个模块（KnowledgeRetrievalTool、LongTermMemory）各自加载模型

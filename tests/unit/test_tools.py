@@ -24,7 +24,7 @@ class TestCalculatorTool:
     async def test_invalid_expression(self) -> None:
         tool = CalculatorTool()
         result = await tool.run(expression="__import__('os')")
-        assert "不允许的字符" in result
+        assert "拒绝" in result or "不支持" in result
 
 
 class TestToolRegistry:

@@ -1,0 +1,20 @@
+services:
+  harness:
+    build: .
+    container_name: agent-harness
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env            # OPENAI_API_URL / OPENAI_API_KEY / OPENAI_MODEL 等
+    environment:
+      - WEB_HOST=0.0.0.0
+      - LOG_FORMAT=json
+    volumes:
+      # 业务库/向量库/审计日志持久化在宿主 ./data
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # 预留：多实例时把限流/风控计数器迁到 Redis（当前为进程内实现）
+  # redis:
+  #   image: redis:7-alpine
+  #   ports: ["6379:6379"]

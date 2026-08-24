@@ -6,7 +6,7 @@ dist/
 build/
 *.egg
 
-# 环境变量
+# 环境变量（严禁提交真实密钥）
 .env
 !.env.example
 
@@ -16,24 +16,33 @@ build/
 *.swp
 *.swo
 
-# 运行时数据（保留 products.json 种子数据）
+# 运行时数据（seed 和 policies 是策划源文件，保留入库）
+data/harness.db
+data/harness.db-wal
+data/harness.db-shm
 data/chroma_db/
 data/conversations/
 data/audit_logs/
 data/memory_store/
+data/memory_store_test/
+data/tickets/
+data/aftersale/
 
-# 本地模型（通过 seed_products.py 自动下载）
+# 评测产物（golden_set.jsonl 保留）
+data/eval/report_*.json
+data/eval/badcase_*.jsonl
+
+# 本地模型（Docker 构建时 COPY，git 不追踪二进制大文件）
 models/
 
-# 测试
+# 测试与覆盖率
 .coverage
 htmlcov/
 .pytest_cache/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# 运行时
-*.log
-logs/
+# 临时文件
+*.tmp
+*.bak
+*.orig
+*.repaired
+_tmp_check.js

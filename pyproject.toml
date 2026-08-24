@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "harness"
-version = "0.1.0"
+version = "0.7.2"
 description = "Agent Harness — 智能体运行时外壳，支持 ReAct 循环、工具系统、分级记忆、安全控制与可观测性"
 requires-python = ">=3.11"
 dependencies = [
@@ -18,6 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cn = ["jieba>=0.42"]  # 可选：更精准的中文分词（未安装时自动使用内置分词器）
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

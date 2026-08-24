@@ -18,15 +18,11 @@ COLLECTION_NAME = "agent_long_term_memory"
 
 
 class LongTermMemory:
-    """长期记忆：基于 ChromaDB 的向量存储，跨会话语义检索历史对话
+    """长期记忆：基于 ChromaDB 的向量存储，语义检索历史对话
 
-    与短期记忆（滑动窗口）和会话历史（JSON 持久化）不同：
-    - 短期记忆服务单次 ReAct 循环内的上下文
-    - 会话历史按 session_id 隔离，精确恢复
-    - 长期记忆跨 session_id，按语义相似度召回，让 Agent "记得"过往交互
-
-    所有写入/检索操作均为 async，内部用 to_thread 把同步的 ChromaDB 调用
-    放到线程池执行，避免阻塞 asyncio 事件循环。
+    - 跨 session_id 语义召回，但按 user_id 隔离（多用户互不可见）
+    - 检索带距离阈值过滤：不相关的历史不注入 prompt
+    - 所有 IO 均为 async（to_thread），不阻塞事件循环
     """
 
     def __init__(self, store_path: Path | None = None) -> None:
@@ -55,7 +51,11 @@ class LongTermMemory:
         try:
             return self.client.get_collection(COLLECTION_NAME, embedding_function=ef)
         except (ValueError, chromadb.errors.NotFoundError):
-            return self.client.create_collection(COLLECTION_NAME, embedding_function=ef)
+            return self.client.create_collection(
+                COLLECTION_NAME,
+                embedding_function=ef,
+                metadata={"hnsw:space": "cosine"},  # 显式余弦空间，距离语义稳定
+            )
         except Exception as e:
             logger.warning("无法获取或创建长期记忆集合: %s", e)
             return None
@@ -70,13 +70,9 @@ class LongTermMemory:
         user_input: str,
         assistant_answer: str,
         session_id: str,
-        user_id: str = "anonymous",
+        user_id: str = "default",
     ) -> None:
-        """异步写入一轮完整对话到长期记忆
-
-        ChromaDB 的 add() 是同步阻塞操作（包含 BGE 编码），放到线程池执行
-        以避免阻塞 asyncio 事件循环。
-        """
+        """异步写入一轮完整对话到长期记忆"""
         if not self.enabled or self.collection is None:
             return
         if not user_input.strip() or not assistant_answer.strip():
@@ -102,11 +98,13 @@ class LongTermMemory:
         except Exception as e:
             logger.warning("长期记忆写入失败: %s", e)
 
-    async def search(self, query: str, top_k: int | None = None) -> list[dict[str, Any]]:
+    async def search(
+        self, query: str, top_k: int | None = None, user_id: str | None = None
+    ) -> list[dict[str, Any]]:
         """异步语义检索相关历史对话
 
-        ChromaDB 的 query() 是同步阻塞操作（包含 BGE 编码），放到线程池执行
-        以避免阻塞 asyncio 事件循环。
+        - 按 user_id 过滤（多用户隔离）；None 表示不过滤
+        - 距离超过 long_term_max_distance 的结果视为不相关，直接丢弃
         """
         if not self.enabled or self.collection is None:
             return []
@@ -115,6 +113,8 @@ class LongTermMemory:
 
         try:
             k = top_k or settings.long_term_top_k
+            threshold = settings.long_term_max_distance
+            where = {"user_id": user_id} if user_id else None
 
             def _do_query():
                 count = self.collection.count()
@@ -124,6 +124,7 @@ class LongTermMemory:
                 return self.collection.query(
                     query_texts=[query],
                     n_results=n_results,
+                    where=where,
                 )
 
             results = await asyncio.to_thread(_do_query)
@@ -133,14 +134,13 @@ class LongTermMemory:
             docs_list = results.get("documents", [[]])[0]
             metas_list = results.get("metadatas", [[]])[0]
             dists_list = results.get("distances", [[]])[0]
-            return [
-                {
-                    "document": doc,
-                    "metadata": meta or {},
-                    "distance": dist,
-                }
-                for doc, meta, dist in zip(docs_list, metas_list or [], dists_list or [])
-            ]
+
+            hits: list[dict[str, Any]] = []
+            for doc, meta, dist in zip(docs_list, metas_list or [], dists_list or []):
+                if threshold is not None and dist is not None and float(dist) > float(threshold):
+                    continue  # 不相关的历史不注入
+                hits.append({"document": doc, "metadata": meta or {}, "distance": dist})
+            return hits
         except Exception as e:
             logger.warning("长期记忆检索失败: %s", e)
             return []

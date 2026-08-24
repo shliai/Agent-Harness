@@ -240,13 +240,12 @@ class TestReActLoopIntegration:
             max_iterations=3,
             long_term_memory=long_term,
         )
-        loop.conversation_history.load.return_value = None  # type: ignore[attr-defined]
-        loop.conversation_history.save = MagicMock()  # type: ignore[attr-defined]
+        loop.conversation_history.aload_state.return_value = None  # type: ignore[attr-defined]
 
         result = await loop.execute("我想买手机", session_id="test-sid")
 
-        # 应检索过长期记忆
-        long_term.search.assert_called_once_with("我想买手机")
+        # 应检索过长期记忆（带 user_id 隔离参数）
+        long_term.search.assert_called_once_with("我想买手机", user_id="demo_user")
         # 注入到 system prompt 的消息应包含「相关历史记忆」
         system_msg = llm.last_messages[0]
         assert "相关历史记忆" in system_msg.content
@@ -287,8 +286,7 @@ class TestReActLoopIntegration:
             max_iterations=3,
             long_term_memory=long_term,
         )
-        loop.conversation_history.load.return_value = None  # type: ignore[attr-defined]
-        loop.conversation_history.save = MagicMock()  # type: ignore[attr-defined]
+        loop.conversation_history.aload_state.return_value = None  # type: ignore[attr-defined]
 
         await loop.execute("你好", session_id="test-sid")
 
@@ -327,8 +325,7 @@ class TestReActLoopIntegration:
             max_iterations=2,
             long_term_memory=long_term,
         )
-        loop.conversation_history.load.return_value = None  # type: ignore[attr-defined]
-        loop.conversation_history.save = MagicMock()  # type: ignore[attr-defined]
+        loop.conversation_history.aload_state.return_value = None  # type: ignore[attr-defined]
 
         result = await loop.execute("复杂问题", session_id="fail-sid")
 

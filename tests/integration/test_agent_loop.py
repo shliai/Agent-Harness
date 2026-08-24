@@ -4,7 +4,7 @@ import pytest
 
 from harness.core.agent import Agent
 from harness.core.registry import Registry
-from harness.domain.models import AgentMessage, ChatRole
+from harness.domain.models import AgentMessage
 from harness.llm.base import AbstractLLMClient
 from harness.tools.base import BaseTool, ToolSpec
 from tests.conftest import MockLLMClient, MockTool
@@ -38,21 +38,20 @@ class StatefulMockLLM(AbstractLLMClient):
     def __init__(self, responses: list[str]) -> None:
         self.responses = responses
         self.call_count = 0
-        self.last_token_usage = 0
 
-    def chat(self, messages: list[AgentMessage], temperature: float | None = None) -> str:
+    def _next_reply(self) -> str:
         i = self.call_count
         self.call_count += 1
         return self.responses[i] if i < len(self.responses) else self.responses[-1]
 
-    async def chat_async(self, messages: list[AgentMessage], temperature: float | None = None) -> str:
-        return self.chat(messages, temperature)
+    async def chat_async(self, messages: list[AgentMessage], temperature: float | None = None):
+        from harness.llm.base import LLMReply
 
-    def stream_chat(self, messages: list[AgentMessage], temperature: float | None = None):
-        yield self.chat(messages, temperature)
+        content = self._next_reply()
+        return LLMReply(content=content, total_tokens=len(content) // 4)
 
     async def stream_chat_async(self, messages: list[AgentMessage], temperature: float | None = None):
-        yield self.chat(messages, temperature)
+        yield self._next_reply()
 
 
 class TestAgentLoop:

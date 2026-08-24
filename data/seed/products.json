@@ -1,0 +1,8075 @@
+[
+ {
+  "id": "product_000",
+  "name": "小米17 Pro",
+  "category": "手机",
+  "brand": "小米",
+  "price": 5499.0,
+  "description": "骁龙8 Elite2 旗舰，徕卡光影主摄与 2K 全等深微曲屏",
+  "specs": {
+   "屏幕": "6.73英寸 2K AMOLED",
+   "芯片": "骁龙8 Elite2",
+   "存储": "256GB",
+   "摄像头": "5000万徕卡三摄"
+  },
+  "tags": [
+   "旗舰",
+   "拍照",
+   "徕卡",
+   "安卓"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_001",
+  "name": "小米17",
+  "category": "手机",
+  "brand": "小米",
+  "price": 4499.0,
+  "description": "小屏旗舰，单手友好的 6.36 英寸黄金尺寸",
+  "specs": {
+   "屏幕": "6.36英寸 1.5K",
+   "芯片": "骁龙8 Elite2",
+   "存储": "256GB",
+   "摄像头": "5000万光影"
+  },
+  "tags": [
+   "旗舰",
+   "小屏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 67
+ },
+ {
+  "id": "product_002",
+  "name": "Redmi K90 Pro+",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 3299.0,
+  "description": "性能越级行业标杆，2K 直屏 + 120W 秒充",
+  "specs": {
+   "屏幕": "6.67英寸 2K直屏",
+   "芯片": "骁龙8 Gen5",
+   "存储": "512GB",
+   "电池": "6000mAh"
+  },
+  "tags": [
+   "性价比",
+   "游戏",
+   "快充"
+  ],
+  "status": "在售",
+  "stock": 104
+ },
+ {
+  "id": "product_003",
+  "name": "Redmi K90",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 2599.0,
+  "description": "中端水桶机，续航与性能均衡之选",
+  "specs": {
+   "屏幕": "6.67英寸 OLED",
+   "芯片": "骁龙8s Gen5",
+   "存储": "256GB",
+   "电池": "6500mAh"
+  },
+  "tags": [
+   "性价比",
+   "长续航",
+   "中端"
+  ],
+  "status": "在售",
+  "stock": 141
+ },
+ {
+  "id": "product_004",
+  "name": "iPhone 17 Pro Max",
+  "category": "手机",
+  "brand": "Apple",
+  "price": 9999.0,
+  "description": "A19 Pro 芯片 + 潜望长焦，钛金属机身",
+  "specs": {
+   "屏幕": "6.9英寸 XDR",
+   "芯片": "A19 Pro",
+   "存储": "256GB",
+   "摄像头": "4800万三摄"
+  },
+  "tags": [
+   "旗舰",
+   "iOS",
+   "拍照",
+   "商务"
+  ],
+  "status": "在售",
+  "stock": 178
+ },
+ {
+  "id": "product_005",
+  "name": "iPhone 17",
+  "category": "手机",
+  "brand": "Apple",
+  "price": 5999.0,
+  "description": "标准版 iPhone，灵动岛与 A19 芯片",
+  "specs": {
+   "屏幕": "6.3英寸 XDR",
+   "芯片": "A19",
+   "存储": "128GB",
+   "摄像头": "4800万双摄"
+  },
+  "tags": [
+   "iOS",
+   "主力机",
+   "送礼"
+  ],
+  "status": "在售",
+  "stock": 215
+ },
+ {
+  "id": "product_006",
+  "name": "iPhone 16e",
+  "category": "手机",
+  "brand": "Apple",
+  "price": 4499.0,
+  "description": "苹果入门新选择，A18 芯片单镜头",
+  "specs": {
+   "屏幕": "6.1英寸 OLED",
+   "芯片": "A18",
+   "存储": "128GB",
+   "摄像头": "4800万"
+  },
+  "tags": [
+   "iOS",
+   "入门",
+   "学生"
+  ],
+  "status": "在售",
+  "stock": 252
+ },
+ {
+  "id": "product_007",
+  "name": "华为 Mate80 Pro",
+  "category": "手机",
+  "brand": "华为",
+  "price": 6999.0,
+  "description": "麒麟 9020 卫星通信旗舰，玄武水冷散热",
+  "specs": {
+   "屏幕": "6.8英寸 昆仑玻璃",
+   "芯片": "麒麟9020",
+   "存储": "512GB",
+   "摄像头": "5000万可变光圈"
+  },
+  "tags": [
+   "旗舰",
+   "鸿蒙",
+   "卫星通信",
+   "商务"
+  ],
+  "status": "在售",
+  "stock": 289
+ },
+ {
+  "id": "product_008",
+  "name": "华为 nova 14",
+  "category": "手机",
+  "brand": "华为",
+  "price": 2699.0,
+  "description": "人像自拍特调，前后双 5000 万",
+  "specs": {
+   "屏幕": "6.7英寸 OLED",
+   "芯片": "麒麟8020",
+   "存储": "256GB",
+   "摄像头": "5000万人像"
+  },
+  "tags": [
+   "自拍",
+   "轻薄",
+   "鸿蒙",
+   "中端"
+  ],
+  "status": "在售",
+  "stock": 55
+ },
+ {
+  "id": "product_009",
+  "name": "OPPO Find X8 Ultra",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 6499.0,
+  "description": "双潜望四主摄，哈苏影调人像",
+  "specs": {
+   "屏幕": "6.82英寸 2K",
+   "芯片": "骁龙8 Elite2",
+   "存储": "512GB",
+   "摄像头": "一英寸四主摄"
+  },
+  "tags": [
+   "影像旗舰",
+   "哈苏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 92
+ },
+ {
+  "id": "product_010",
+  "name": "vivo X300 Pro",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 5999.0,
+  "description": "蔡司 APO 长焦，演唱会神器",
+  "specs": {
+   "屏幕": "6.78英寸 1.5K",
+   "芯片": "天玑9500",
+   "存储": "512GB",
+   "摄像头": "2亿蔡司长焦"
+  },
+  "tags": [
+   "影像旗舰",
+   "蔡司",
+   "长焦",
+   "演唱"
+  ],
+  "status": "在售",
+  "stock": 129
+ },
+ {
+  "id": "product_011",
+  "name": "iQOO 15",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 4399.0,
+  "description": "电竞级散热与 144Hz 竞速屏",
+  "specs": {
+   "屏幕": "6.85英寸 144Hz",
+   "芯片": "骁龙8 Elite2",
+   "存储": "512GB",
+   "电池": "7000mAh"
+  },
+  "tags": [
+   "游戏",
+   "电竞",
+   "大电池"
+  ],
+  "status": "在售",
+  "stock": 166
+ },
+ {
+  "id": "product_012",
+  "name": "荣耀 Magic8 Pro",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 5699.0,
+  "description": "鹰眼相机与青海湖大电池",
+  "specs": {
+   "屏幕": "6.8英寸 LTPO",
+   "芯片": "骁龙8 Elite2",
+   "存储": "512GB",
+   "电池": "5800mAh"
+  },
+  "tags": [
+   "旗舰",
+   "拍照",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 203
+ },
+ {
+  "id": "product_013",
+  "name": "一加 Ace 6 Pro",
+  "category": "手机",
+  "brand": "一加",
+  "price": 3399.0,
+  "description": "性能铁三角 + 冰川散热 Pro",
+  "specs": {
+   "屏幕": "6.78英寸 1.5K",
+   "芯片": "骁龙8 Gen5",
+   "存储": "512GB",
+   "充电": "100W"
+  },
+  "tags": [
+   "游戏",
+   "性价比",
+   "快充"
+  ],
+  "status": "在售",
+  "stock": 240
+ },
+ {
+  "id": "product_014",
+  "name": "真我 GT8 Pro",
+  "category": "手机",
+  "brand": "realme",
+  "price": 3899.0,
+  "description": "越级影像与万元级屏幕下放",
+  "specs": {
+   "屏幕": "6.79英寸 2K",
+   "芯片": "骁龙8 Elite2",
+   "存储": "256GB",
+   "摄像头": "5000万潜望"
+  },
+  "tags": [
+   "性价比",
+   "拍照",
+   "中高端"
+  ],
+  "status": "在售",
+  "stock": 277
+ },
+ {
+  "id": "product_015",
+  "name": "魅族 22",
+  "category": "手机",
+  "brand": "魅族",
+  "price": 3699.0,
+  "description": "极简设计 Flyme AIOS，白面板手感党",
+  "specs": {
+   "屏幕": "6.55英寸 1.5K",
+   "芯片": "骁龙8 Gen5",
+   "存储": "256GB",
+   "系统": "Flyme AIOS"
+  },
+  "tags": [
+   "小而美",
+   "设计",
+   "安卓"
+  ],
+  "status": "在售",
+  "stock": 43
+ },
+ {
+  "id": "product_016",
+  "name": "努比亚 Z70S Ultra",
+  "category": "手机",
+  "brand": "努比亚",
+  "price": 4599.0,
+  "description": "真全面屏无挖孔，35mm 定制光学",
+  "specs": {
+   "屏幕": "6.85英寸 无孔全面屏",
+   "芯片": "骁龙8 Elite2",
+   "存储": "512GB",
+   "摄像头": "35mm定制镜头"
+  },
+  "tags": [
+   "全面屏",
+   "摄影",
+   "个性"
+  ],
+  "status": "在售",
+  "stock": 80
+ },
+ {
+  "id": "product_017",
+  "name": "红魔 11 Pro+",
+  "category": "手机",
+  "brand": "红魔",
+  "price": 5299.0,
+  "description": "内置风扇游戏手机，肩键原生电竞操控",
+  "specs": {
+   "屏幕": "6.85英寸 144Hz",
+   "芯片": "骁龙8 Elite2",
+   "存储": "512GB",
+   "散热": "内置离心风扇"
+  },
+  "tags": [
+   "游戏",
+   "电竞",
+   "风扇散热"
+  ],
+  "status": "在售",
+  "stock": 3
+ },
+ {
+  "id": "product_018",
+  "name": "MacBook Air M4 13",
+  "category": "笔记本",
+  "brand": "Apple",
+  "price": 7999.0,
+  "description": "无风扇静音办公本，18 小时续航",
+  "specs": {
+   "屏幕": "13.6英寸 Liquid Retina",
+   "芯片": "M4",
+   "内存": "16GB",
+   "存储": "512GB"
+  },
+  "tags": [
+   "轻薄",
+   "办公",
+   "macOS",
+   "学生"
+  ],
+  "status": "在售",
+  "stock": 154
+ },
+ {
+  "id": "product_019",
+  "name": "MacBook Pro M4 Pro 14",
+  "category": "笔记本",
+  "brand": "Apple",
+  "price": 15999.0,
+  "description": "专业创作本，XDR mini-LED 与满血接口",
+  "specs": {
+   "屏幕": "14.2英寸 XDR",
+   "芯片": "M4 Pro",
+   "内存": "24GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "创作",
+   "高性能",
+   "macOS"
+  ],
+  "status": "在售",
+  "stock": 191
+ },
+ {
+  "id": "product_020",
+  "name": "ThinkPad X1 Carbon AI",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 12499.0,
+  "description": "经典商务本，碳纤维机身仅 1.09kg",
+  "specs": {
+   "屏幕": "14英寸 2.8K OLED",
+   "芯片": "酷睿Ultra7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "商务",
+   "轻薄",
+   "键盘手感"
+  ],
+  "status": "在售",
+  "stock": 228
+ },
+ {
+  "id": "product_021",
+  "name": "联想拯救者 Y9000P 至尊版",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 14999.0,
+  "description": "RTX 5080 电竞旗舰，240Hz 高刷屏",
+  "specs": {
+   "屏幕": "16英寸 240Hz",
+   "芯片": "酷睿Ultra9",
+   "显卡": "RTX5080",
+   "内存": "32GB"
+  },
+  "tags": [
+   "游戏本",
+   "电竞",
+   "高性能"
+  ],
+  "status": "在售",
+  "stock": 265
+ },
+ {
+  "id": "product_022",
+  "name": "联想小新 Pro 16 AI元启",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 5999.0,
+  "description": "大屏生产力，标压处理器 32G 大内存",
+  "specs": {
+   "屏幕": "16英寸 2.5K 120Hz",
+   "芯片": "锐龙AI9",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "办公",
+   "大屏",
+   "性价比",
+   "学生"
+  ],
+  "status": "在售",
+  "stock": 31
+ },
+ {
+  "id": "product_023",
+  "name": "华为 MateBook X Pro 微绒典藏",
+  "category": "笔记本",
+  "brand": "华为",
+  "price": 11999.0,
+  "description": "980g 极致轻量，3.1K 原色触控屏",
+  "specs": {
+   "屏幕": "14.2英寸 3.1K触控",
+   "芯片": "酷睿Ultra9",
+   "内存": "32GB",
+   "存储": "2TB"
+  },
+  "tags": [
+   "超轻",
+   "商务",
+   "触控"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_024",
+  "name": "戴尔 XPS 13 Plus",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 10999.0,
+  "description": "无边框全面屏与隐藏式触控条",
+  "specs": {
+   "屏幕": "13.4英寸 3K+",
+   "芯片": "酷睿Ultra7",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "设计",
+   "便携",
+   "Windows"
+  ],
+  "status": "在售",
+  "stock": 105
+ },
+ {
+  "id": "product_025",
+  "name": "华硕天选6 Pro 锐龙版",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 8999.0,
+  "description": "二次元游戏本，R9 处理器 RTX5070Ti",
+  "specs": {
+   "屏幕": "16英寸 165Hz",
+   "芯片": "锐龙9 9955HX",
+   "显卡": "RTX5070Ti",
+   "内存": "16GB"
+  },
+  "tags": [
+   "游戏本",
+   "性价比",
+   "电竞"
+  ],
+  "status": "在售",
+  "stock": 142
+ },
+ {
+  "id": "product_026",
+  "name": "惠普战66 七代",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 4799.0,
+  "description": "企业级耐用商务本，一年上门服务",
+  "specs": {
+   "屏幕": "14英寸 2.5K",
+   "芯片": "酷睿Ultra5",
+   "内存": "16GB",
+   "存储": "512GB"
+  },
+  "tags": [
+   "商务",
+   "耐用",
+   "办公",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 179
+ },
+ {
+  "id": "product_027",
+  "name": "机械革命无界14X",
+  "category": "笔记本",
+  "brand": "机械革命",
+  "price": 3699.0,
+  "description": "高性价比全能本，2.8K 高刷屏",
+  "specs": {
+   "屏幕": "14英寸 2.8K 120Hz",
+   "芯片": "锐龙7 8845HS",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "性价比",
+   "学生",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 216
+ },
+ {
+  "id": "product_028",
+  "name": "雷蛇灵刃14",
+  "category": "笔记本",
+  "brand": "雷蛇",
+  "price": 16999.0,
+  "description": "最薄性能本之一，CNC 铝合金机身",
+  "specs": {
+   "屏幕": "14英寸 240Hz",
+   "芯片": "锐龙AI9",
+   "显卡": "RTX5070",
+   "内存": "32GB"
+  },
+  "tags": [
+   "游戏本",
+   "轻薄",
+   "高端"
+  ],
+  "status": "在售",
+  "stock": 253
+ },
+ {
+  "id": "product_029",
+  "name": "微软 Surface Laptop 7",
+  "category": "笔记本",
+  "brand": "微软",
+  "price": 9299.0,
+  "description": "骁龙 X Elite 长续航 AI PC",
+  "specs": {
+   "屏幕": "13.8英寸 触控",
+   "芯片": "骁龙X Elite",
+   "内存": "16GB",
+   "存储": "512GB"
+  },
+  "tags": [
+   "AI PC",
+   "长续航",
+   "触控"
+  ],
+  "status": "在售",
+  "stock": 290
+ },
+ {
+  "id": "product_030",
+  "name": "iPad Pro M5 11英寸",
+  "category": "平板",
+  "brand": "Apple",
+  "price": 8499.0,
+  "description": "OLED 双层串联屏，妙控键盘生态",
+  "specs": {
+   "屏幕": "11英寸 Ultra Retina",
+   "芯片": "M5",
+   "存储": "256GB",
+   "配件": "支持Apple Pencil Pro"
+  },
+  "tags": [
+   "生产力",
+   "iOS",
+   "画画",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 56
+ },
+ {
+  "id": "product_031",
+  "name": "iPad Air M3",
+  "category": "平板",
+  "brand": "Apple",
+  "price": 4799.0,
+  "description": "轻薄全能 iPad，M3 性能过剩",
+  "specs": {
+   "屏幕": "11英寸 Liquid Retina",
+   "芯片": "M3",
+   "存储": "128GB"
+  },
+  "tags": [
+   "学习",
+   "影音",
+   "iOS"
+  ],
+  "status": "在售",
+  "stock": 93
+ },
+ {
+  "id": "product_032",
+  "name": "华为 MatePad Pro 13.2",
+  "category": "平板",
+  "brand": "华为",
+  "price": 8999.0,
+  "description": "柔性 OLED 巨幕，天生会画生态",
+  "specs": {
+   "屏幕": "13.2英寸 柔性OLED",
+   "芯片": "麒麟9020",
+   "存储": "512GB",
+   "配件": "M-Pencil 3"
+  },
+  "tags": [
+   "创作",
+   "鸿蒙",
+   "大屏"
+  ],
+  "status": "在售",
+  "stock": 130
+ },
+ {
+  "id": "product_033",
+  "name": "小米 Pad 8 Pro",
+  "category": "平板",
+  "brand": "小米",
+  "price": 2999.0,
+  "description": "3.2K 144Hz 大屏，澎湃互联生态",
+  "specs": {
+   "屏幕": "12.4英寸 144Hz",
+   "芯片": "骁龙8 Gen4",
+   "存储": "256GB"
+  },
+  "tags": [
+   "影音",
+   "性价比",
+   "安卓"
+  ],
+  "status": "在售",
+  "stock": 167
+ },
+ {
+  "id": "product_034",
+  "name": "vivo Pad5 Pro",
+  "category": "平板",
+  "brand": "vivo",
+  "price": 2799.0,
+  "description": "天玑旗舰芯，蓝厂办公套件",
+  "specs": {
+   "屏幕": "13英寸 3.1K 144Hz",
+   "芯片": "天玑9400+",
+   "存储": "256GB"
+  },
+  "tags": [
+   "学习",
+   "办公",
+   "安卓"
+  ],
+  "status": "在售",
+  "stock": 5
+ },
+ {
+  "id": "product_035",
+  "name": "三星 Tab S11 Ultra",
+  "category": "平板",
+  "brand": "三星",
+  "price": 9999.0,
+  "description": "AMOLED 2X 巨幕 + S Pen 标配",
+  "specs": {
+   "屏幕": "14.6英寸 AMOLED",
+   "芯片": "天玑9500",
+   "存储": "512GB",
+   "配件": "S Pen"
+  },
+  "tags": [
+   "旗舰",
+   "画画",
+   "S Pen"
+  ],
+  "status": "在售",
+  "stock": 241
+ },
+ {
+  "id": "product_036",
+  "name": "荣耀 MagicPad 3",
+  "category": "平板",
+  "brand": "荣耀",
+  "price": 3499.0,
+  "description": "AI 办公平板，魔法笔记本互联",
+  "specs": {
+   "屏幕": "13.3英寸 3.2K 165Hz",
+   "芯片": "骁龙8 Gen4",
+   "存储": "256GB"
+  },
+  "tags": [
+   "办公",
+   "AI",
+   "安卓"
+  ],
+  "status": "在售",
+  "stock": 278
+ },
+ {
+  "id": "product_037",
+  "name": "联想拯救者 Y700 四代",
+  "category": "平板",
+  "brand": "联想",
+  "price": 2599.0,
+  "description": "8.8 英寸电竞小平板，单手可握",
+  "specs": {
+   "屏幕": "8.8英寸 165Hz",
+   "芯片": "骁龙8 Gen4",
+   "存储": "256GB"
+  },
+  "tags": [
+   "游戏",
+   "小平板",
+   "电竞"
+  ],
+  "status": "在售",
+  "stock": 44
+ },
+ {
+  "id": "product_038",
+  "name": "AirPods Pro 3",
+  "category": "耳机",
+  "brand": "Apple",
+  "price": 1899.0,
+  "description": "H3 芯片自适应降噪，心率传感新交互",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "自适应ANC",
+   "续航": "8小时",
+   "芯片": "H3"
+  },
+  "tags": [
+   "降噪",
+   "iOS",
+   "运动"
+  ],
+  "status": "在售",
+  "stock": 81
+ },
+ {
+  "id": "product_039",
+  "name": "索尼 WH-1000XM6",
+  "category": "耳机",
+  "brand": "Sony",
+  "price": 2899.0,
+  "description": "头戴降噪天花板，LDAC 高解析",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "QN3处理器",
+   "续航": "40小时"
+  },
+  "tags": [
+   "降噪",
+   "HiFi",
+   "头戴",
+   "通勤"
+  ],
+  "status": "在售",
+  "stock": 118
+ },
+ {
+  "id": "product_040",
+  "name": " Bose QC Ultra 二代",
+  "category": "耳机",
+  "brand": "Bose",
+  "price": 2999.0,
+  "description": "消噪鼻祖新作，沉浸空间音频",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "CustomTune+",
+   "续航": "30小时"
+  },
+  "tags": [
+   "降噪",
+   "头戴",
+   "舒适"
+  ],
+  "status": "在售",
+  "stock": 155
+ },
+ {
+  "id": "product_041",
+  "name": "华为 FreeBuds Pro 4",
+  "category": "耳机",
+  "brand": "华为",
+  "price": 1499.0,
+  "description": "智慧动态降噪 4.0，双高清编解码",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "-23dB深度",
+   "续航": "7小时"
+  },
+  "tags": [
+   "降噪",
+   "鸿蒙",
+   "通话"
+  ],
+  "status": "在售",
+  "stock": 192
+ },
+ {
+  "id": "product_042",
+  "name": "小米 Buds 5 Pro",
+  "category": "耳机",
+  "brand": "小米",
+  "price": 1299.0,
+  "description": "56dB 深海降噪，Wi-Fi 音频传输",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "56dB",
+   "续航": "10小时"
+  },
+  "tags": [
+   "降噪",
+   "性价比",
+   "安卓"
+  ],
+  "status": "在售",
+  "stock": 229
+ },
+ {
+  "id": "product_043",
+  "name": "OPPO Enco X3s",
+  "category": "耳机",
+  "brand": "OPPO",
+  "price": 999.0,
+  "description": "丹拿联合调音，同轴双单元",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "50dB",
+   "续航": "12小时"
+  },
+  "tags": [
+   "HiFi",
+   "降噪",
+   "千元内"
+  ],
+  "status": "在售",
+  "stock": 266
+ },
+ {
+  "id": "product_044",
+  "name": "韶音 OpenFit Air",
+  "category": "耳机",
+  "brand": "韶音",
+  "price": 799.0,
+  "description": "开放双耳不入耳，运动出汗无忧",
+  "specs": {
+   "类型": "开放式",
+   "佩戴": "挂耳",
+   "续航": "8小时"
+  },
+  "tags": [
+   "运动",
+   "不入耳",
+   "跑步"
+  ],
+  "status": "在售",
+  "stock": 32
+ },
+ {
+  "id": "product_045",
+  "name": "森海塞尔 IE900",
+  "category": "耳机",
+  "brand": "森海塞尔",
+  "price": 8999.0,
+  "description": "旗舰动圈入耳，德系调音标杆",
+  "specs": {
+   "类型": "入耳式",
+   "单元": "7mm TrueResponse",
+   "阻抗": "16Ω"
+  },
+  "tags": [
+   "HiFi",
+   "发烧",
+   "有线"
+  ],
+  "status": "在售",
+  "stock": 69
+ },
+ {
+  "id": "product_046",
+  "name": "Apple Watch Series 11",
+  "category": "穿戴",
+  "brand": "Apple",
+  "price": 2999.0,
+  "description": "血压趋势与睡眠分数，iOS 最佳拍档",
+  "specs": {
+   "屏幕": "46毫米 LTPO3",
+   "续航": "24小时",
+   "传感器": "血氧/ECG/血压趋势"
+  },
+  "tags": [
+   "智能手表",
+   "iOS",
+   "健康"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_047",
+  "name": "华为 WATCH GT6 Pro",
+  "category": "穿戴",
+  "brand": "华为",
+  "price": 2288.0,
+  "description": "21 天超长续航，玄玑感知系统",
+  "specs": {
+   "屏幕": "1.5英寸 LTPO",
+   "续航": "21天",
+   "定位": "双频五星"
+  },
+  "tags": [
+   "长续航",
+   "户外",
+   "鸿蒙"
+  ],
+  "status": "在售",
+  "stock": 143
+ },
+ {
+  "id": "product_048",
+  "name": "小米 Watch S4 Pro",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 1099.0,
+  "description": "eSIM 独立通话，澎湃手环互联",
+  "specs": {
+   "屏幕": "1.43英寸 AMOLED",
+   "续航": "14天",
+   "通信": "eSIM"
+  },
+  "tags": [
+   "性价比",
+   "独立通话",
+   "安卓"
+  ],
+  "status": "在售",
+  "stock": 180
+ },
+ {
+  "id": "product_049",
+  "name": "Garmin fenix 9",
+  "category": "穿戴",
+  "brand": "Garmin",
+  "price": 6280.0,
+  "description": "专业户外运动表，太阳能全域地图",
+  "specs": {
+   "屏幕": "1.4英寸 MIP",
+   "续航": "28天",
+   "功能": "多频多星/地图"
+  },
+  "tags": [
+   "户外",
+   "专业运动",
+   "越野"
+  ],
+  "status": "在售",
+  "stock": 217
+ },
+ {
+  "id": "product_050",
+  "name": "小米手环 10 Pro",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 499.0,
+  "description": "1.74 英寸大屏手环，150+ 运动模式",
+  "specs": {
+   "屏幕": "1.74英寸 AMOLED",
+   "续航": "21天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "手环",
+   "性价比",
+   "大屏"
+  ],
+  "status": "在售",
+  "stock": 254
+ },
+ {
+  "id": "product_051",
+  "name": "荣耀手表 ES3",
+  "category": "穿戴",
+  "brand": "荣耀",
+  "price": 699.0,
+  "description": "方形大屏轻智能表，八通道心率 AI",
+  "specs": {
+   "屏幕": "1.75英寸 AMOLED",
+   "续航": "14天"
+  },
+  "tags": [
+   "入门",
+   "方形",
+   "日常"
+  ],
+  "status": "在售",
+  "stock": 2
+ },
+ {
+  "id": "product_052",
+  "name": "佳明 Venu 4",
+  "category": "穿戴",
+  "brand": "Garmin",
+  "price": 3680.0,
+  "description": "健康监测全能表，身体电量恢复建议",
+  "specs": {
+   "屏幕": "1.4英寸 AMOLED",
+   "续航": "11天",
+   "健康": "睡眠教练"
+  },
+  "tags": [
+   "健康",
+   "运动",
+   "AMOLED"
+  ],
+  "status": "在售",
+  "stock": 57
+ },
+ {
+  "id": "product_053",
+  "name": "OPPO Watch X3 Pro",
+  "category": "穿戴",
+  "brand": "OPPO",
+  "price": 1999.0,
+  "description": "腕上旗舰，60W 超闪快充手表",
+  "specs": {
+   "屏幕": "1.5英寸 双曲",
+   "续航": "7天",
+   "充电": "60W快充"
+  },
+  "tags": [
+   "快充",
+   "安卓",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 94
+ },
+ {
+  "id": "product_054",
+  "name": "小米 34英寸 带鱼屏显示器",
+  "category": "配件",
+  "brand": "小米",
+  "price": 1999.0,
+  "description": "WQHD 180Hz 曲面带鱼屏，电竞办公两相宜",
+  "specs": {
+   "尺寸": "34英寸 1500R",
+   "刷新率": "180Hz",
+   "面板": "VA"
+  },
+  "tags": [
+   "显示器",
+   "带鱼屏",
+   "电竞"
+  ],
+  "status": "在售",
+  "stock": 131
+ },
+ {
+  "id": "product_055",
+  "name": "戴尔 U2725QE",
+  "category": "配件",
+  "brand": "戴尔",
+  "price": 3899.0,
+  "description": "专业级 4K IPS Black，Type-C 90W 反充",
+  "specs": {
+   "尺寸": "27英寸 4K",
+   "色域": "98% DCI-P3",
+   "接口": "雷电4"
+  },
+  "tags": [
+   "显示器",
+   "专业设计",
+   "4K"
+  ],
+  "status": "在售",
+  "stock": 168
+ },
+ {
+  "id": "product_056",
+  "name": "罗技 MX Master 4S",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 899.0,
+  "description": "旗舰办公鼠标，电磁滚轮跨屏流转",
+  "specs": {
+   "连接": "双模无线",
+   "续航": "70天",
+   "DPI": "8000"
+  },
+  "tags": [
+   "鼠标",
+   "办公",
+   "旗舰外设"
+  ],
+  "status": "在售",
+  "stock": 205
+ },
+ {
+  "id": "product_057",
+  "name": "Keychron K8 Pro 机械键盘",
+  "category": "配件",
+  "brand": "Keychron",
+  "price": 599.0,
+  "description": "Gasket 结构客制化，热插拔轴体",
+  "specs": {
+   "配列": "87键",
+   "连接": "三模",
+   "轴体": "佳达隆Pro热插拔"
+  },
+  "tags": [
+   "键盘",
+   "客制化",
+   "机械"
+  ],
+  "status": "在售",
+  "stock": 242
+ },
+ {
+  "id": "product_058",
+  "name": "Anker 240W 氮化镓桌面充",
+  "category": "配件",
+  "brand": "安克",
+  "price": 549.0,
+  "description": "四口桌面充电站，笔电手机一起喂饱",
+  "specs": {
+   "功率": "240W总输出",
+   "接口": "3C+1A",
+   "协议": "PD3.1"
+  },
+  "tags": [
+   "充电器",
+   "氮化镓",
+   "桌面"
+  ],
+  "status": "在售",
+  "stock": 279
+ },
+ {
+  "id": "product_059",
+  "name": "绿联 12合1 扩展坞",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 499.0,
+  "description": "雷电3扩展坞，双4K输出千兆网口",
+  "specs": {
+   "接口": "12合1",
+   "视频": "双4K60Hz",
+   "网口": "2.5G"
+  },
+  "tags": [
+   "扩展坞",
+   "办公",
+   "雷电"
+  ],
+  "status": "在售",
+  "stock": 45
+ },
+ {
+  "id": "product_060",
+  "name": "SanDisk 1TB NVMe SSD",
+  "category": "配件",
+  "brand": "闪迪",
+  "price": 699.0,
+  "description": "PCIe 4.0 高速固态，装机扩容首选",
+  "specs": {
+   "容量": "1TB",
+   "协议": "PCIe4.0 x4",
+   "顺序读": "7300MB/s"
+  },
+  "tags": [
+   "硬盘",
+   "装机",
+   "高速"
+  ],
+  "status": "在售",
+  "stock": 82
+ },
+ {
+  "id": "product_061",
+  "name": "大疆 Osmo Mobile 7 Pro",
+  "category": "配件",
+  "brand": "大疆",
+  "price": 899.0,
+  "description": "磁吸手机云台，ActiveTrack 智能跟随",
+  "specs": {
+   "续航": "10小时",
+   "重量": "290g",
+   "功能": "智能跟随6.0"
+  },
+  "tags": [
+   "云台",
+   "拍摄",
+   "Vlog"
+  ],
+  "status": "在售",
+  "stock": 119
+ },
+ {
+  "id": "product_062",
+  "name": "小米 Civi 5",
+  "category": "手机",
+  "brand": "小米",
+  "price": 1399.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8 Gen3",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 156
+ },
+ {
+  "id": "product_063",
+  "name": "Redmi Note 14 Pro+",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 2799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 193
+ },
+ {
+  "id": "product_064",
+  "name": "华为 nova 13",
+  "category": "手机",
+  "brand": "华为",
+  "price": 4899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8020",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 230
+ },
+ {
+  "id": "product_065",
+  "name": "OPPO Reno13",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 2499.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 267
+ },
+ {
+  "id": "product_066",
+  "name": "vivo S20",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 4399.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑9300",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 33
+ },
+ {
+  "id": "product_067",
+  "name": "荣耀 X70",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 1699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 70
+ },
+ {
+  "id": "product_068",
+  "name": "三星 Galaxy A56",
+  "category": "手机",
+  "brand": "三星",
+  "price": 3399.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "Exynos 1580",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 4
+ },
+ {
+  "id": "product_069",
+  "name": "真我 Neo7",
+  "category": "手机",
+  "brand": "真我",
+  "price": 1599.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_070",
+  "name": "iQOO Z10 Turbo",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 2999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 181
+ },
+ {
+  "id": "product_071",
+  "name": "小米 15S",
+  "category": "手机",
+  "brand": "小米",
+  "price": 5099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 218
+ },
+ {
+  "id": "product_072",
+  "name": "Redmi Turbo 4",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 2199.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7s Gen3",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 255
+ },
+ {
+  "id": "product_073",
+  "name": "华为 畅享 80 Pro",
+  "category": "手机",
+  "brand": "华为",
+  "price": 4099.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8000",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 292
+ },
+ {
+  "id": "product_074",
+  "name": "OPPO K12s",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 1899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8300",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 58
+ },
+ {
+  "id": "product_075",
+  "name": "vivo Y300 Pro",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 3599.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 95
+ },
+ {
+  "id": "product_076",
+  "name": "荣耀 GT",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 1799.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 132
+ },
+ {
+  "id": "product_077",
+  "name": "三星 Galaxy S25 FE",
+  "category": "手机",
+  "brand": "三星",
+  "price": 2699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 169
+ },
+ {
+  "id": "product_078",
+  "name": "真我 V60 Pro",
+  "category": "手机",
+  "brand": "真我",
+  "price": 4799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 206
+ },
+ {
+  "id": "product_079",
+  "name": "iQOO Neo10 SE",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 2399.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 243
+ },
+ {
+  "id": "product_080",
+  "name": "小米 MIX Flip 2",
+  "category": "手机",
+  "brand": "小米",
+  "price": 4299.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8 Gen3",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 280
+ },
+ {
+  "id": "product_081",
+  "name": "Redmi K80E",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 2099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 46
+ },
+ {
+  "id": "product_082",
+  "name": "华为 Mate 70E",
+  "category": "手机",
+  "brand": "华为",
+  "price": 3299.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8020",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 83
+ },
+ {
+  "id": "product_083",
+  "name": "OPPO A5 Pro",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 1499.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 120
+ },
+ {
+  "id": "product_084",
+  "name": "vivo X200S",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 2899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑9300",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 157
+ },
+ {
+  "id": "product_085",
+  "name": "荣耀 Power",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 4999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 1
+ },
+ {
+  "id": "product_086",
+  "name": "三星 Galaxy C55",
+  "category": "手机",
+  "brand": "三星",
+  "price": 2599.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "Exynos 1580",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 231
+ },
+ {
+  "id": "product_087",
+  "name": "真我 GT7 竞速",
+  "category": "手机",
+  "brand": "真我",
+  "price": 3999.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 268
+ },
+ {
+  "id": "product_088",
+  "name": "iQOO Z10 Turbo（256GB）",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 1799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 34
+ },
+ {
+  "id": "product_089",
+  "name": "小米 Civi 5（512GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 3499.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 71
+ },
+ {
+  "id": "product_090",
+  "name": "Redmi Note 14 Pro+（256GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 1699.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7s Gen3",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 108
+ },
+ {
+  "id": "product_091",
+  "name": "华为 nova 13（512GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 3099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8000",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 145
+ },
+ {
+  "id": "product_092",
+  "name": "OPPO Reno13（256GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 4699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8300",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_093",
+  "name": "vivo S20（512GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 2299.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 219
+ },
+ {
+  "id": "product_094",
+  "name": "荣耀 X70（256GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 4199.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 256
+ },
+ {
+  "id": "product_095",
+  "name": "三星 Galaxy A56（512GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 1999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 293
+ },
+ {
+  "id": "product_096",
+  "name": "真我 Neo7（256GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 3699.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 59
+ },
+ {
+  "id": "product_097",
+  "name": "iQOO Neo10 SE（512GB）",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 1399.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 96
+ },
+ {
+  "id": "product_098",
+  "name": "小米 15S（256GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 2799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8 Gen3",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 133
+ },
+ {
+  "id": "product_099",
+  "name": "Redmi Turbo 4（512GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 4899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 170
+ },
+ {
+  "id": "product_100",
+  "name": "华为 畅享 80 Pro（256GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 2499.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8020",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 207
+ },
+ {
+  "id": "product_101",
+  "name": "OPPO K12s（512GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 4399.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 244
+ },
+ {
+  "id": "product_102",
+  "name": "vivo Y300 Pro（256GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 1699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑9300",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 3
+ },
+ {
+  "id": "product_103",
+  "name": "荣耀 GT（512GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 3399.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 47
+ },
+ {
+  "id": "product_104",
+  "name": "三星 Galaxy S25 FE（256GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 1599.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "Exynos 1580",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 84
+ },
+ {
+  "id": "product_105",
+  "name": "真我 V60 Pro（512GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 2999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 121
+ },
+ {
+  "id": "product_106",
+  "name": "iQOO Z10 Turbo（256GB）（512GB）",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 5099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 158
+ },
+ {
+  "id": "product_107",
+  "name": "小米 MIX Flip 2（512GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 2199.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 195
+ },
+ {
+  "id": "product_108",
+  "name": "Redmi K80E（256GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 4099.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7s Gen3",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 232
+ },
+ {
+  "id": "product_109",
+  "name": "华为 Mate 70E（512GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 1899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8000",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 269
+ },
+ {
+  "id": "product_110",
+  "name": "OPPO A5 Pro（256GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 3599.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8300",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 35
+ },
+ {
+  "id": "product_111",
+  "name": "vivo X200S（512GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 1799.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 72
+ },
+ {
+  "id": "product_112",
+  "name": "荣耀 Power（256GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 2699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 109
+ },
+ {
+  "id": "product_113",
+  "name": "三星 Galaxy C55（512GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 4799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 146
+ },
+ {
+  "id": "product_114",
+  "name": "真我 GT7 竞速（256GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 2399.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 183
+ },
+ {
+  "id": "product_115",
+  "name": "iQOO Neo10 SE（512GB）（512GB）",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 4299.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_116",
+  "name": "小米 Civi 5（256GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 2099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8 Gen3",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 257
+ },
+ {
+  "id": "product_117",
+  "name": "Redmi Note 14 Pro+（512GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 3299.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 294
+ },
+ {
+  "id": "product_118",
+  "name": "华为 nova 13（256GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 1499.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8020",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 60
+ },
+ {
+  "id": "product_119",
+  "name": "OPPO Reno13（512GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 2899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 5
+ },
+ {
+  "id": "product_120",
+  "name": "vivo S20（256GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 4999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑9300",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 134
+ },
+ {
+  "id": "product_121",
+  "name": "荣耀 X70（512GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 2599.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 171
+ },
+ {
+  "id": "product_122",
+  "name": "三星 Galaxy A56（256GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 3999.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "Exynos 1580",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 208
+ },
+ {
+  "id": "product_123",
+  "name": "真我 Neo7（512GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 1799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 245
+ },
+ {
+  "id": "product_124",
+  "name": "iQOO Z10 Turbo（256GB）（1TB）",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 3499.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 282
+ },
+ {
+  "id": "product_125",
+  "name": "小米 15S（512GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 1699.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 48
+ },
+ {
+  "id": "product_126",
+  "name": "Redmi Turbo 4（256GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 3099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7s Gen3",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 85
+ },
+ {
+  "id": "product_127",
+  "name": "华为 畅享 80 Pro（512GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 4699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8000",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 122
+ },
+ {
+  "id": "product_128",
+  "name": "OPPO K12s（256GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 2299.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8300",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 159
+ },
+ {
+  "id": "product_129",
+  "name": "vivo Y300 Pro（512GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 4199.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 196
+ },
+ {
+  "id": "product_130",
+  "name": "荣耀 GT（256GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 1999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 233
+ },
+ {
+  "id": "product_131",
+  "name": "三星 Galaxy S25 FE（512GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 3699.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 270
+ },
+ {
+  "id": "product_132",
+  "name": "真我 V60 Pro（256GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 1399.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 36
+ },
+ {
+  "id": "product_133",
+  "name": "iQOO Neo10 SE（512GB）（1TB）",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 2799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 73
+ },
+ {
+  "id": "product_134",
+  "name": "小米 MIX Flip 2（256GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 4899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8 Gen3",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 110
+ },
+ {
+  "id": "product_135",
+  "name": "Redmi K80E（512GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 2499.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 147
+ },
+ {
+  "id": "product_136",
+  "name": "华为 Mate 70E（256GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 4399.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8020",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 2
+ },
+ {
+  "id": "product_137",
+  "name": "OPPO A5 Pro（512GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 1699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 221
+ },
+ {
+  "id": "product_138",
+  "name": "vivo X200S（256GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 3399.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑9300",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_139",
+  "name": "荣耀 Power（512GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 1599.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 295
+ },
+ {
+  "id": "product_140",
+  "name": "三星 Galaxy C55（256GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 2999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "Exynos 1580",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 61
+ },
+ {
+  "id": "product_141",
+  "name": "真我 GT7 竞速（512GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 5099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 98
+ },
+ {
+  "id": "product_142",
+  "name": "iQOO Z10 Turbo（256GB）（16GB）",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 2199.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 135
+ },
+ {
+  "id": "product_143",
+  "name": "小米 Civi 5（512GB）（512GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 4099.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 172
+ },
+ {
+  "id": "product_144",
+  "name": "Redmi Note 14 Pro+（256GB）（512GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 1899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7s Gen3",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 209
+ },
+ {
+  "id": "product_145",
+  "name": "华为 nova 13（512GB）（512GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 3599.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8000",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 246
+ },
+ {
+  "id": "product_146",
+  "name": "OPPO Reno13（256GB）（512GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 1799.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8300",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 283
+ },
+ {
+  "id": "product_147",
+  "name": "vivo S20（512GB）（512GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 2699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 49
+ },
+ {
+  "id": "product_148",
+  "name": "荣耀 X70（256GB）（512GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 4799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 86
+ },
+ {
+  "id": "product_149",
+  "name": "三星 Galaxy A56（512GB）（512GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 2399.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 123
+ },
+ {
+  "id": "product_150",
+  "name": "真我 Neo7（256GB）（512GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 4299.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 160
+ },
+ {
+  "id": "product_151",
+  "name": "iQOO Neo10 SE（512GB）（16GB）",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 2099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 197
+ },
+ {
+  "id": "product_152",
+  "name": "小米 15S（256GB）（512GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 3299.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8 Gen3",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 234
+ },
+ {
+  "id": "product_153",
+  "name": "Redmi Turbo 4（512GB）（512GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 1499.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 4
+ },
+ {
+  "id": "product_154",
+  "name": "华为 畅享 80 Pro（256GB）（512GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 2899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8020",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 37
+ },
+ {
+  "id": "product_155",
+  "name": "OPPO K12s（512GB）（512GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 4999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 74
+ },
+ {
+  "id": "product_156",
+  "name": "vivo Y300 Pro（256GB）（512GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 2599.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑9300",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 111
+ },
+ {
+  "id": "product_157",
+  "name": "荣耀 GT（512GB）（512GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 3999.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 148
+ },
+ {
+  "id": "product_158",
+  "name": "三星 Galaxy S25 FE（256GB）（512GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 1799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "Exynos 1580",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 185
+ },
+ {
+  "id": "product_159",
+  "name": "真我 V60 Pro（512GB）（512GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 3499.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 222
+ },
+ {
+  "id": "product_160",
+  "name": "iQOO Z10 Turbo（256GB） Pro",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 1699.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 259
+ },
+ {
+  "id": "product_161",
+  "name": "小米 MIX Flip 2（512GB）（512GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 3099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_162",
+  "name": "Redmi K80E（256GB）（512GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 4699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7s Gen3",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 62
+ },
+ {
+  "id": "product_163",
+  "name": "华为 Mate 70E（512GB）（512GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 2299.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8000",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 99
+ },
+ {
+  "id": "product_164",
+  "name": "OPPO A5 Pro（256GB）（512GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 4199.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8300",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 136
+ },
+ {
+  "id": "product_165",
+  "name": "vivo X200S（512GB）（512GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 1999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 173
+ },
+ {
+  "id": "product_166",
+  "name": "荣耀 Power（256GB）（512GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 3699.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 210
+ },
+ {
+  "id": "product_167",
+  "name": "三星 Galaxy C55（512GB）（512GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 1399.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7 Gen3",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 247
+ },
+ {
+  "id": "product_168",
+  "name": "真我 GT7 竞速（256GB）（512GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 2799.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 284
+ },
+ {
+  "id": "product_169",
+  "name": "iQOO Neo10 SE（512GB） Pro",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 4899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰"
+  ],
+  "status": "在售",
+  "stock": 50
+ },
+ {
+  "id": "product_170",
+  "name": "小米 Civi 5（256GB）（512GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 2499.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8 Gen3",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 1
+ },
+ {
+  "id": "product_171",
+  "name": "Redmi Note 14 Pro+（512GB）（512GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 4399.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 124
+ },
+ {
+  "id": "product_172",
+  "name": "华为 nova 13（256GB）（512GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 1699.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8020",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 161
+ },
+ {
+  "id": "product_173",
+  "name": "OPPO Reno13（512GB）（512GB）",
+  "category": "手机",
+  "brand": "OPPO",
+  "price": 3399.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙6 Gen1",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 198
+ },
+ {
+  "id": "product_174",
+  "name": "vivo S20（256GB）（512GB）",
+  "category": "手机",
+  "brand": "vivo",
+  "price": 1599.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑9300",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 235
+ },
+ {
+  "id": "product_175",
+  "name": "荣耀 X70（512GB）（512GB）",
+  "category": "手机",
+  "brand": "荣耀",
+  "price": 2999.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 272
+ },
+ {
+  "id": "product_176",
+  "name": "三星 Galaxy A56（256GB）（512GB）",
+  "category": "手机",
+  "brand": "三星",
+  "price": 5099.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "Exynos 1580",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 38
+ },
+ {
+  "id": "product_177",
+  "name": "真我 Neo7（512GB）（512GB）",
+  "category": "手机",
+  "brand": "真我",
+  "price": 2199.0,
+  "description": "高刷护眼屏观感细腻，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡"
+  ],
+  "status": "在售",
+  "stock": 75
+ },
+ {
+  "id": "product_178",
+  "name": "iQOO Z10 Turbo（256GB） 经典款",
+  "category": "手机",
+  "brand": "iQOO",
+  "price": 4099.0,
+  "description": "大电池续航扎实，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "天玑8400",
+   "存储": "256GB",
+   "电池": "5000mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能",
+   "拍照"
+  ],
+  "status": "在售",
+  "stock": 112
+ },
+ {
+  "id": "product_179",
+  "name": "小米 15S（512GB）（512GB）",
+  "category": "手机",
+  "brand": "小米",
+  "price": 1899.0,
+  "description": "影像算法全面升级，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙8s Gen4",
+   "存储": "512GB",
+   "电池": "5200mAh"
+  },
+  "tags": [
+   "新品",
+   "中端",
+   "均衡",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 149
+ },
+ {
+  "id": "product_180",
+  "name": "Redmi Turbo 4（256GB）（512GB）",
+  "category": "手机",
+  "brand": "Redmi",
+  "price": 3599.0,
+  "description": "轻薄手感出众，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "骁龙7s Gen3",
+   "存储": "256GB",
+   "电池": "5400mAh"
+  },
+  "tags": [
+   "新品",
+   "次旗舰",
+   "性能"
+  ],
+  "status": "在售",
+  "stock": 186
+ },
+ {
+  "id": "product_181",
+  "name": "华为 畅享 80 Pro（512GB）（512GB）",
+  "category": "手机",
+  "brand": "华为",
+  "price": 1799.0,
+  "description": "百瓦快充体验领先，同档位竞争力突出",
+  "specs": {
+   "屏幕": "AMOLED 高刷",
+   "芯片": "麒麟8000",
+   "存储": "512GB",
+   "电池": "5600mAh"
+  },
+  "tags": [
+   "新品",
+   "入门",
+   "性价比"
+  ],
+  "status": "在售",
+  "stock": 223
+ },
+ {
+  "id": "product_182",
+  "name": "联想 小新 Pro 16 2025",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 260
+ },
+ {
+  "id": "product_183",
+  "name": "华硕 无畏 Pro 15",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 297
+ },
+ {
+  "id": "product_184",
+  "name": "惠普 星 Book Pro 14",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_185",
+  "name": "宏碁 非凡 Go Fun",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-14650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 100
+ },
+ {
+  "id": "product_186",
+  "name": "戴尔 灵越 16 Plus",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 137
+ },
+ {
+  "id": "product_187",
+  "name": "联想 Y7000P 2025",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7 8845H",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 3
+ },
+ {
+  "id": "product_188",
+  "name": "华硕 天选 Air",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 AI9",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 211
+ },
+ {
+  "id": "product_189",
+  "name": "惠普 暗影精灵 乐享版",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 248
+ },
+ {
+  "id": "product_190",
+  "name": "宏碁 掠夺者 擎Neo",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 i5-13500H",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 285
+ },
+ {
+  "id": "product_191",
+  "name": "戴尔 游匣 G15",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-13650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 51
+ },
+ {
+  "id": "product_192",
+  "name": "联想 小新 Pro 16 2025（16GB）",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 88
+ },
+ {
+  "id": "product_193",
+  "name": "华硕 无畏 Pro 15（32GB）",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 125
+ },
+ {
+  "id": "product_194",
+  "name": "惠普 星 Book Pro 14（16GB）",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 162
+ },
+ {
+  "id": "product_195",
+  "name": "宏碁 非凡 Go Fun（32GB）",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-14650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 199
+ },
+ {
+  "id": "product_196",
+  "name": "戴尔 灵越 16 Plus（16GB）",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 236
+ },
+ {
+  "id": "product_197",
+  "name": "联想 Y7000P 2025（32GB）",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7 8845H",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 273
+ },
+ {
+  "id": "product_198",
+  "name": "华硕 天选 Air（16GB）",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 AI9",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 39
+ },
+ {
+  "id": "product_199",
+  "name": "惠普 暗影精灵 乐享版（32GB）",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 76
+ },
+ {
+  "id": "product_200",
+  "name": "宏碁 掠夺者 擎Neo（16GB）",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 i5-13500H",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 113
+ },
+ {
+  "id": "product_201",
+  "name": "戴尔 游匣 G15（32GB）",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-13650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 150
+ },
+ {
+  "id": "product_202",
+  "name": "联想 小新 Pro 16 2025（16GB）（512GB）",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 187
+ },
+ {
+  "id": "product_203",
+  "name": "华硕 无畏 Pro 15（32GB）（512GB）",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 224
+ },
+ {
+  "id": "product_204",
+  "name": "惠普 星 Book Pro 14（16GB）（512GB）",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 5
+ },
+ {
+  "id": "product_205",
+  "name": "宏碁 非凡 Go Fun（32GB）（512GB）",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-14650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 298
+ },
+ {
+  "id": "product_206",
+  "name": "戴尔 灵越 16 Plus（16GB）（512GB）",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 64
+ },
+ {
+  "id": "product_207",
+  "name": "联想 Y7000P 2025（32GB）（512GB）",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7 8845H",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_208",
+  "name": "华硕 天选 Air（16GB）（512GB）",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 AI9",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 138
+ },
+ {
+  "id": "product_209",
+  "name": "惠普 暗影精灵 乐享版（32GB）（512GB）",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 175
+ },
+ {
+  "id": "product_210",
+  "name": "宏碁 掠夺者 擎Neo（16GB）（512GB）",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 i5-13500H",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 212
+ },
+ {
+  "id": "product_211",
+  "name": "戴尔 游匣 G15（32GB）（512GB）",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-13650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 249
+ },
+ {
+  "id": "product_212",
+  "name": "联想 小新 Pro 16 2025（16GB）（1TB）",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 286
+ },
+ {
+  "id": "product_213",
+  "name": "华硕 无畏 Pro 15（32GB）（1TB）",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 52
+ },
+ {
+  "id": "product_214",
+  "name": "惠普 星 Book Pro 14（16GB）（1TB）",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 89
+ },
+ {
+  "id": "product_215",
+  "name": "宏碁 非凡 Go Fun（32GB）（1TB）",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-14650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 126
+ },
+ {
+  "id": "product_216",
+  "name": "戴尔 灵越 16 Plus（16GB）（1TB）",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 163
+ },
+ {
+  "id": "product_217",
+  "name": "联想 Y7000P 2025（32GB）（1TB）",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7 8845H",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 200
+ },
+ {
+  "id": "product_218",
+  "name": "华硕 天选 Air（16GB）（1TB）",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 AI9",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 237
+ },
+ {
+  "id": "product_219",
+  "name": "惠普 暗影精灵 乐享版（32GB）（1TB）",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 274
+ },
+ {
+  "id": "product_220",
+  "name": "宏碁 掠夺者 擎Neo（16GB）（1TB）",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 i5-13500H",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 40
+ },
+ {
+  "id": "product_221",
+  "name": "戴尔 游匣 G15（32GB）（1TB）",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-13650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 2
+ },
+ {
+  "id": "product_222",
+  "name": "联想 小新 Pro 16 2025（16GB）（16GB）",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 114
+ },
+ {
+  "id": "product_223",
+  "name": "华硕 无畏 Pro 15（32GB）（16GB）",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 151
+ },
+ {
+  "id": "product_224",
+  "name": "惠普 星 Book Pro 14（16GB）（16GB）",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 188
+ },
+ {
+  "id": "product_225",
+  "name": "宏碁 非凡 Go Fun（32GB）（16GB）",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-14650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 225
+ },
+ {
+  "id": "product_226",
+  "name": "戴尔 灵越 16 Plus（16GB）（16GB）",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 262
+ },
+ {
+  "id": "product_227",
+  "name": "联想 Y7000P 2025（32GB）（16GB）",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7 8845H",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 299
+ },
+ {
+  "id": "product_228",
+  "name": "华硕 天选 Air（16GB）（16GB）",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 AI9",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 65
+ },
+ {
+  "id": "product_229",
+  "name": "惠普 暗影精灵 乐享版（32GB）（16GB）",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "锐龙 R7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 102
+ },
+ {
+  "id": "product_230",
+  "name": "宏碁 掠夺者 擎Neo（16GB）（16GB）",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 i5-13500H",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_231",
+  "name": "戴尔 游匣 G15（32GB）（16GB）",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-13650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "游戏"
+  ],
+  "status": "在售",
+  "stock": 176
+ },
+ {
+  "id": "product_232",
+  "name": "联想 小新 Pro 16 2025（16GB） Pro",
+  "category": "笔记本",
+  "brand": "联想",
+  "price": 4799.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 213
+ },
+ {
+  "id": "product_233",
+  "name": "华硕 无畏 Pro 15（32GB） Pro",
+  "category": "笔记本",
+  "brand": "华硕",
+  "price": 6399.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 250
+ },
+ {
+  "id": "product_234",
+  "name": "惠普 星 Book Pro 14（16GB） Pro",
+  "category": "笔记本",
+  "brand": "惠普",
+  "price": 8299.0,
+  "description": "高色域屏观感舒适",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 5",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 287
+ },
+ {
+  "id": "product_235",
+  "name": "宏碁 非凡 Go Fun（32GB） Pro",
+  "category": "笔记本",
+  "brand": "宏碁",
+  "price": 5599.0,
+  "description": "散热升级性能释放稳定",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "i7-14650HX",
+   "内存": "32GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 53
+ },
+ {
+  "id": "product_236",
+  "name": "戴尔 灵越 16 Plus（16GB） Pro",
+  "category": "笔记本",
+  "brand": "戴尔",
+  "price": 7199.0,
+  "description": "大内存多任务从容",
+  "specs": {
+   "屏幕": "15.6英寸 2.5K",
+   "芯片": "酷睿 Ultra 7",
+   "内存": "16GB",
+   "存储": "1TB"
+  },
+  "tags": [
+   "高端",
+   "旗舰",
+   "办公"
+  ],
+  "status": "在售",
+  "stock": 90
+ },
+ {
+  "id": "product_237",
+  "name": "Redmi Pad Pro",
+  "category": "平板",
+  "brand": "Redmi",
+  "price": 1599.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "中端",
+   "均衡",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 127
+ },
+ {
+  "id": "product_238",
+  "name": "OPPO Pad 3 Pro（256GB）",
+  "category": "平板",
+  "brand": "OPPO",
+  "price": 3399.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 4
+ },
+ {
+  "id": "product_239",
+  "name": "vivo Pad4 Pro",
+  "category": "平板",
+  "brand": "vivo",
+  "price": 3199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 201
+ },
+ {
+  "id": "product_240",
+  "name": "荣耀 MagicPad 2（256GB）",
+  "category": "平板",
+  "brand": "荣耀",
+  "price": 3199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 238
+ },
+ {
+  "id": "product_241",
+  "name": "酷比魔方 iPlay60 Pro",
+  "category": "平板",
+  "brand": "酷比魔方",
+  "price": 999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "入门",
+   "性价比",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 275
+ },
+ {
+  "id": "product_242",
+  "name": "三星 Galaxy Tab S10 FE（256GB）",
+  "category": "平板",
+  "brand": "三星",
+  "price": 3799.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 41
+ },
+ {
+  "id": "product_243",
+  "name": "Redmi Pad Pro（512GB）",
+  "category": "平板",
+  "brand": "Redmi",
+  "price": 1799.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "中端",
+   "均衡",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 78
+ },
+ {
+  "id": "product_244",
+  "name": "OPPO Pad 3 Pro（256GB）（512GB）",
+  "category": "平板",
+  "brand": "OPPO",
+  "price": 3599.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 115
+ },
+ {
+  "id": "product_245",
+  "name": "vivo Pad4 Pro（512GB）",
+  "category": "平板",
+  "brand": "vivo",
+  "price": 2999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 152
+ },
+ {
+  "id": "product_246",
+  "name": "荣耀 MagicPad 2（256GB）（512GB）",
+  "category": "平板",
+  "brand": "荣耀",
+  "price": 2999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 189
+ },
+ {
+  "id": "product_247",
+  "name": "酷比魔方 iPlay60 Pro（512GB）",
+  "category": "平板",
+  "brand": "酷比魔方",
+  "price": 1199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "入门",
+   "性价比",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 226
+ },
+ {
+  "id": "product_248",
+  "name": "三星 Galaxy Tab S10 FE（256GB）（512GB）",
+  "category": "平板",
+  "brand": "三星",
+  "price": 3999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 263
+ },
+ {
+  "id": "product_249",
+  "name": "Redmi Pad Pro（1TB）",
+  "category": "平板",
+  "brand": "Redmi",
+  "price": 1599.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "中端",
+   "均衡",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 300
+ },
+ {
+  "id": "product_250",
+  "name": "OPPO Pad 3 Pro（256GB）（1TB）",
+  "category": "平板",
+  "brand": "OPPO",
+  "price": 3399.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 66
+ },
+ {
+  "id": "product_251",
+  "name": "vivo Pad4 Pro（1TB）",
+  "category": "平板",
+  "brand": "vivo",
+  "price": 3199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 103
+ },
+ {
+  "id": "product_252",
+  "name": "荣耀 MagicPad 2（256GB）（1TB）",
+  "category": "平板",
+  "brand": "荣耀",
+  "price": 3199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 140
+ },
+ {
+  "id": "product_253",
+  "name": "酷比魔方 iPlay60 Pro（1TB）",
+  "category": "平板",
+  "brand": "酷比魔方",
+  "price": 999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "入门",
+   "性价比",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_254",
+  "name": "三星 Galaxy Tab S10 FE（256GB）（1TB）",
+  "category": "平板",
+  "brand": "三星",
+  "price": 3799.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 214
+ },
+ {
+  "id": "product_255",
+  "name": "Redmi Pad Pro（16GB）",
+  "category": "平板",
+  "brand": "Redmi",
+  "price": 1799.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "中端",
+   "均衡",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 1
+ },
+ {
+  "id": "product_256",
+  "name": "OPPO Pad 3 Pro（256GB）（16GB）",
+  "category": "平板",
+  "brand": "OPPO",
+  "price": 3599.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 288
+ },
+ {
+  "id": "product_257",
+  "name": "vivo Pad4 Pro（16GB）",
+  "category": "平板",
+  "brand": "vivo",
+  "price": 2999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 54
+ },
+ {
+  "id": "product_258",
+  "name": "荣耀 MagicPad 2（256GB）（16GB）",
+  "category": "平板",
+  "brand": "荣耀",
+  "price": 2999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 91
+ },
+ {
+  "id": "product_259",
+  "name": "酷比魔方 iPlay60 Pro（16GB）",
+  "category": "平板",
+  "brand": "酷比魔方",
+  "price": 1199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "入门",
+   "性价比",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 128
+ },
+ {
+  "id": "product_260",
+  "name": "三星 Galaxy Tab S10 FE（256GB）（16GB）",
+  "category": "平板",
+  "brand": "三星",
+  "price": 3999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 165
+ },
+ {
+  "id": "product_261",
+  "name": "Redmi Pad Pro Pro",
+  "category": "平板",
+  "brand": "Redmi",
+  "price": 1599.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "中端",
+   "均衡",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 202
+ },
+ {
+  "id": "product_262",
+  "name": "OPPO Pad 3 Pro（256GB） Pro",
+  "category": "平板",
+  "brand": "OPPO",
+  "price": 3399.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 239
+ },
+ {
+  "id": "product_263",
+  "name": "vivo Pad4 Pro Pro",
+  "category": "平板",
+  "brand": "vivo",
+  "price": 3199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 276
+ },
+ {
+  "id": "product_264",
+  "name": "荣耀 MagicPad 2（256GB） Pro",
+  "category": "平板",
+  "brand": "荣耀",
+  "price": 3199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 42
+ },
+ {
+  "id": "product_265",
+  "name": "酷比魔方 iPlay60 Pro Pro",
+  "category": "平板",
+  "brand": "酷比魔方",
+  "price": 999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "入门",
+   "性价比",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 79
+ },
+ {
+  "id": "product_266",
+  "name": "三星 Galaxy Tab S10 FE（256GB） Pro",
+  "category": "平板",
+  "brand": "三星",
+  "price": 3799.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 116
+ },
+ {
+  "id": "product_267",
+  "name": "Redmi Pad Pro 经典款",
+  "category": "平板",
+  "brand": "Redmi",
+  "price": 1799.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "中端",
+   "均衡",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 153
+ },
+ {
+  "id": "product_268",
+  "name": "OPPO Pad 3 Pro（256GB） 经典款",
+  "category": "平板",
+  "brand": "OPPO",
+  "price": 3599.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 190
+ },
+ {
+  "id": "product_269",
+  "name": "vivo Pad4 Pro 经典款",
+  "category": "平板",
+  "brand": "vivo",
+  "price": 2999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 227
+ },
+ {
+  "id": "product_270",
+  "name": "荣耀 MagicPad 2（256GB） 经典款",
+  "category": "平板",
+  "brand": "荣耀",
+  "price": 2999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 264
+ },
+ {
+  "id": "product_271",
+  "name": "酷比魔方 iPlay60 Pro 经典款",
+  "category": "平板",
+  "brand": "酷比魔方",
+  "price": 1199.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "入门",
+   "性价比",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 30
+ },
+ {
+  "id": "product_272",
+  "name": "三星 Galaxy Tab S10 FE（256GB） 经典款",
+  "category": "平板",
+  "brand": "三星",
+  "price": 3999.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "13.2英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 3
+ },
+ {
+  "id": "product_273",
+  "name": "Redmi Pad Pro 2025款",
+  "category": "平板",
+  "brand": "Redmi",
+  "price": 1599.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "11英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "中端",
+   "均衡",
+   "影音"
+  ],
+  "status": "在售",
+  "stock": 104
+ },
+ {
+  "id": "product_274",
+  "name": "OPPO Pad 3 Pro（256GB） 2025款",
+  "category": "平板",
+  "brand": "OPPO",
+  "price": 3399.0,
+  "description": "高刷大屏影音学习两相宜",
+  "specs": {
+   "屏幕": "12.1英寸 LCD/OLED",
+   "芯片": "天玑8300",
+   "存储": "128GB"
+  },
+  "tags": [
+   "次旗舰",
+   "性能",
+   "学习"
+  ],
+  "status": "在售",
+  "stock": 141
+ },
+ {
+  "id": "product_275",
+  "name": "QCY Melobuds Pro",
+  "category": "耳机",
+  "brand": "QCY",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "被动隔噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 178
+ },
+ {
+  "id": "product_276",
+  "name": "漫步者 W820NB 双金标",
+  "category": "耳机",
+  "brand": "漫步者",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_277",
+  "name": "万魔 Comfort Buds",
+  "category": "耳机",
+  "brand": "万魔",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 252
+ },
+ {
+  "id": "product_278",
+  "name": "FIIL Key Pro",
+  "category": "耳机",
+  "brand": "FIIL",
+  "price": 299.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "主动降噪",
+   "续航": "38小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 289
+ },
+ {
+  "id": "product_279",
+  "name": "JBL Tune 770NC",
+  "category": "耳机",
+  "brand": "JBL",
+  "price": 599.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "44小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 55
+ },
+ {
+  "id": "product_280",
+  "name": "Beats Studio Buds+",
+  "category": "耳机",
+  "brand": "Beats",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 92
+ },
+ {
+  "id": "product_281",
+  "name": "QCY HT08",
+  "category": "耳机",
+  "brand": "QCY",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "被动隔噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 129
+ },
+ {
+  "id": "product_282",
+  "name": "漫步者 NeoBuds Pro 3",
+  "category": "耳机",
+  "brand": "漫步者",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 166
+ },
+ {
+  "id": "product_283",
+  "name": "万魔 PistonBuds Pro",
+  "category": "耳机",
+  "brand": "万魔",
+  "price": 299.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "38小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 203
+ },
+ {
+  "id": "product_284",
+  "name": "FIIL GS Nano",
+  "category": "耳机",
+  "brand": "FIIL",
+  "price": 599.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "主动降噪",
+   "续航": "44小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 240
+ },
+ {
+  "id": "product_285",
+  "name": "JBL Live Pro 2",
+  "category": "耳机",
+  "brand": "JBL",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 277
+ },
+ {
+  "id": "product_286",
+  "name": "Beats Studio Buds+（512GB）",
+  "category": "耳机",
+  "brand": "Beats",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 43
+ },
+ {
+  "id": "product_287",
+  "name": "QCY Melobuds Pro（512GB）",
+  "category": "耳机",
+  "brand": "QCY",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "被动隔噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 80
+ },
+ {
+  "id": "product_288",
+  "name": "漫步者 W820NB 双金标（512GB）",
+  "category": "耳机",
+  "brand": "漫步者",
+  "price": 299.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "38小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 117
+ },
+ {
+  "id": "product_289",
+  "name": "万魔 Comfort Buds（512GB）",
+  "category": "耳机",
+  "brand": "万魔",
+  "price": 599.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "44小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 5
+ },
+ {
+  "id": "product_290",
+  "name": "FIIL Key Pro（512GB）",
+  "category": "耳机",
+  "brand": "FIIL",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "主动降噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 191
+ },
+ {
+  "id": "product_291",
+  "name": "JBL Tune 770NC（512GB）",
+  "category": "耳机",
+  "brand": "JBL",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 228
+ },
+ {
+  "id": "product_292",
+  "name": "Beats Studio Buds+（1TB）",
+  "category": "耳机",
+  "brand": "Beats",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 265
+ },
+ {
+  "id": "product_293",
+  "name": "QCY HT08（512GB）",
+  "category": "耳机",
+  "brand": "QCY",
+  "price": 299.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "被动隔噪",
+   "续航": "38小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 31
+ },
+ {
+  "id": "product_294",
+  "name": "漫步者 NeoBuds Pro 3（512GB）",
+  "category": "耳机",
+  "brand": "漫步者",
+  "price": 599.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "44小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 68
+ },
+ {
+  "id": "product_295",
+  "name": "万魔 PistonBuds Pro（512GB）",
+  "category": "耳机",
+  "brand": "万魔",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 105
+ },
+ {
+  "id": "product_296",
+  "name": "FIIL GS Nano（512GB）",
+  "category": "耳机",
+  "brand": "FIIL",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "主动降噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 142
+ },
+ {
+  "id": "product_297",
+  "name": "JBL Live Pro 2（512GB）",
+  "category": "耳机",
+  "brand": "JBL",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 179
+ },
+ {
+  "id": "product_298",
+  "name": "Beats Studio Buds+（16GB）",
+  "category": "耳机",
+  "brand": "Beats",
+  "price": 299.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "38小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 216
+ },
+ {
+  "id": "product_299",
+  "name": "QCY Melobuds Pro（1TB）",
+  "category": "耳机",
+  "brand": "QCY",
+  "price": 599.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "被动隔噪",
+   "续航": "44小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_300",
+  "name": "漫步者 W820NB 双金标（1TB）",
+  "category": "耳机",
+  "brand": "漫步者",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 290
+ },
+ {
+  "id": "product_301",
+  "name": "万魔 Comfort Buds（1TB）",
+  "category": "耳机",
+  "brand": "万魔",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 56
+ },
+ {
+  "id": "product_302",
+  "name": "FIIL Key Pro（1TB）",
+  "category": "耳机",
+  "brand": "FIIL",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "主动降噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 93
+ },
+ {
+  "id": "product_303",
+  "name": "JBL Tune 770NC（1TB）",
+  "category": "耳机",
+  "brand": "JBL",
+  "price": 299.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "38小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 130
+ },
+ {
+  "id": "product_304",
+  "name": "Beats Studio Buds+ Pro",
+  "category": "耳机",
+  "brand": "Beats",
+  "price": 599.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "44小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 167
+ },
+ {
+  "id": "product_305",
+  "name": "QCY HT08（1TB）",
+  "category": "耳机",
+  "brand": "QCY",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "被动隔噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 204
+ },
+ {
+  "id": "product_306",
+  "name": "漫步者 NeoBuds Pro 3（1TB）",
+  "category": "耳机",
+  "brand": "漫步者",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 2
+ },
+ {
+  "id": "product_307",
+  "name": "万魔 PistonBuds Pro（1TB）",
+  "category": "耳机",
+  "brand": "万魔",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 278
+ },
+ {
+  "id": "product_308",
+  "name": "FIIL GS Nano（1TB）",
+  "category": "耳机",
+  "brand": "FIIL",
+  "price": 299.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "主动降噪",
+   "续航": "38小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 44
+ },
+ {
+  "id": "product_309",
+  "name": "JBL Live Pro 2（1TB）",
+  "category": "耳机",
+  "brand": "JBL",
+  "price": 599.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "44小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 81
+ },
+ {
+  "id": "product_310",
+  "name": "Beats Studio Buds+ 经典款",
+  "category": "耳机",
+  "brand": "Beats",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 118
+ },
+ {
+  "id": "product_311",
+  "name": "QCY Melobuds Pro（16GB）",
+  "category": "耳机",
+  "brand": "QCY",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "被动隔噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 155
+ },
+ {
+  "id": "product_312",
+  "name": "漫步者 W820NB 双金标（16GB）",
+  "category": "耳机",
+  "brand": "漫步者",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 192
+ },
+ {
+  "id": "product_313",
+  "name": "万魔 Comfort Buds（16GB）",
+  "category": "耳机",
+  "brand": "万魔",
+  "price": 299.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "38小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 229
+ },
+ {
+  "id": "product_314",
+  "name": "FIIL Key Pro（16GB）",
+  "category": "耳机",
+  "brand": "FIIL",
+  "price": 599.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "主动降噪",
+   "续航": "44小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 266
+ },
+ {
+  "id": "product_315",
+  "name": "JBL Tune 770NC（16GB）",
+  "category": "耳机",
+  "brand": "JBL",
+  "price": 199.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "被动隔噪",
+   "续航": "20小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 32
+ },
+ {
+  "id": "product_316",
+  "name": "Beats Studio Buds+ 2025款",
+  "category": "耳机",
+  "brand": "Beats",
+  "price": 399.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "入耳式",
+   "降噪": "主动降噪",
+   "续航": "26小时"
+  },
+  "tags": [
+   "入门",
+   "降噪"
+  ],
+  "status": "在售",
+  "stock": 69
+ },
+ {
+  "id": "product_317",
+  "name": "QCY HT08（16GB）",
+  "category": "耳机",
+  "brand": "QCY",
+  "price": 799.0,
+  "description": "佩戴舒适，音质与续航均衡之选",
+  "specs": {
+   "类型": "头戴式",
+   "降噪": "被动隔噪",
+   "续航": "32小时"
+  },
+  "tags": [
+   "入门",
+   "长续航"
+  ],
+  "status": "在售",
+  "stock": 106
+ },
+ {
+  "id": "product_318",
+  "name": "小米 手环9 Pro",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 399.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 143
+ },
+ {
+  "id": "product_319",
+  "name": "荣耀 手环9 NFC版",
+  "category": "穿戴",
+  "brand": "荣耀",
+  "price": 299.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 180
+ },
+ {
+  "id": "product_320",
+  "name": "华为 手环9",
+  "category": "穿戴",
+  "brand": "华为",
+  "price": 369.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 217
+ },
+ {
+  "id": "product_321",
+  "name": "OPPO Watch 4S NFC版",
+  "category": "穿戴",
+  "brand": "OPPO",
+  "price": 1499.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 254
+ },
+ {
+  "id": "product_322",
+  "name": "vivo WATCH GT",
+  "category": "穿戴",
+  "brand": "vivo",
+  "price": 1149.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_323",
+  "name": "佳明 Forerunner 265 NFC版",
+  "category": "穿戴",
+  "brand": "佳明",
+  "price": 3780.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 4
+ },
+ {
+  "id": "product_324",
+  "name": "小米 手环9 Pro（512GB）",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 399.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 94
+ },
+ {
+  "id": "product_325",
+  "name": "荣耀 手环9 NFC版（512GB）",
+  "category": "穿戴",
+  "brand": "荣耀",
+  "price": 299.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 131
+ },
+ {
+  "id": "product_326",
+  "name": "华为 手环9（512GB）",
+  "category": "穿戴",
+  "brand": "华为",
+  "price": 369.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 168
+ },
+ {
+  "id": "product_327",
+  "name": "OPPO Watch 4S NFC版（512GB）",
+  "category": "穿戴",
+  "brand": "OPPO",
+  "price": 1499.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 205
+ },
+ {
+  "id": "product_328",
+  "name": "vivo WATCH GT（512GB）",
+  "category": "穿戴",
+  "brand": "vivo",
+  "price": 1149.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 242
+ },
+ {
+  "id": "product_329",
+  "name": "佳明 Forerunner 265 NFC版（512GB）",
+  "category": "穿戴",
+  "brand": "佳明",
+  "price": 3780.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 279
+ },
+ {
+  "id": "product_330",
+  "name": "小米 手环9 Pro（1TB）",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 399.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 45
+ },
+ {
+  "id": "product_331",
+  "name": "荣耀 手环9 NFC版（1TB）",
+  "category": "穿戴",
+  "brand": "荣耀",
+  "price": 299.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 82
+ },
+ {
+  "id": "product_332",
+  "name": "华为 手环9（1TB）",
+  "category": "穿戴",
+  "brand": "华为",
+  "price": 369.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 119
+ },
+ {
+  "id": "product_333",
+  "name": "OPPO Watch 4S NFC版（1TB）",
+  "category": "穿戴",
+  "brand": "OPPO",
+  "price": 1499.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 156
+ },
+ {
+  "id": "product_334",
+  "name": "vivo WATCH GT（1TB）",
+  "category": "穿戴",
+  "brand": "vivo",
+  "price": 1149.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 193
+ },
+ {
+  "id": "product_335",
+  "name": "佳明 Forerunner 265 NFC版（1TB）",
+  "category": "穿戴",
+  "brand": "佳明",
+  "price": 3780.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 230
+ },
+ {
+  "id": "product_336",
+  "name": "小米 手环9 Pro（16GB）",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 399.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 267
+ },
+ {
+  "id": "product_337",
+  "name": "荣耀 手环9 NFC版（16GB）",
+  "category": "穿戴",
+  "brand": "荣耀",
+  "price": 299.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 33
+ },
+ {
+  "id": "product_338",
+  "name": "华为 手环9（16GB）",
+  "category": "穿戴",
+  "brand": "华为",
+  "price": 369.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 70
+ },
+ {
+  "id": "product_339",
+  "name": "OPPO Watch 4S NFC版（16GB）",
+  "category": "穿戴",
+  "brand": "OPPO",
+  "price": 1499.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 107
+ },
+ {
+  "id": "product_340",
+  "name": "vivo WATCH GT（16GB）",
+  "category": "穿戴",
+  "brand": "vivo",
+  "price": 1149.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 1
+ },
+ {
+  "id": "product_341",
+  "name": "佳明 Forerunner 265 NFC版（16GB）",
+  "category": "穿戴",
+  "brand": "佳明",
+  "price": 3780.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 181
+ },
+ {
+  "id": "product_342",
+  "name": "小米 手环9 Pro Pro",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 399.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 218
+ },
+ {
+  "id": "product_343",
+  "name": "荣耀 手环9 NFC版 Pro",
+  "category": "穿戴",
+  "brand": "荣耀",
+  "price": 299.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 255
+ },
+ {
+  "id": "product_344",
+  "name": "华为 手环9 Pro",
+  "category": "穿戴",
+  "brand": "华为",
+  "price": 369.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 292
+ },
+ {
+  "id": "product_345",
+  "name": "OPPO Watch 4S NFC版 Pro",
+  "category": "穿戴",
+  "brand": "OPPO",
+  "price": 1499.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_346",
+  "name": "vivo WATCH GT Pro",
+  "category": "穿戴",
+  "brand": "vivo",
+  "price": 1149.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 95
+ },
+ {
+  "id": "product_347",
+  "name": "佳明 Forerunner 265 NFC版 Pro",
+  "category": "穿戴",
+  "brand": "佳明",
+  "price": 3780.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 132
+ },
+ {
+  "id": "product_348",
+  "name": "小米 手环9 Pro 经典款",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 399.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 169
+ },
+ {
+  "id": "product_349",
+  "name": "荣耀 手环9 NFC版 经典款",
+  "category": "穿戴",
+  "brand": "荣耀",
+  "price": 299.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 206
+ },
+ {
+  "id": "product_350",
+  "name": "华为 手环9 经典款",
+  "category": "穿戴",
+  "brand": "华为",
+  "price": 369.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 243
+ },
+ {
+  "id": "product_351",
+  "name": "OPPO Watch 4S NFC版 经典款",
+  "category": "穿戴",
+  "brand": "OPPO",
+  "price": 1499.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "13天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 280
+ },
+ {
+  "id": "product_352",
+  "name": "vivo WATCH GT 经典款",
+  "category": "穿戴",
+  "brand": "vivo",
+  "price": 1149.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "16天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 46
+ },
+ {
+  "id": "product_353",
+  "name": "佳明 Forerunner 265 NFC版 经典款",
+  "category": "穿戴",
+  "brand": "佳明",
+  "price": 3780.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "19天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 83
+ },
+ {
+  "id": "product_354",
+  "name": "小米 手环9 Pro 2025款",
+  "category": "穿戴",
+  "brand": "小米",
+  "price": 399.0,
+  "description": "全天候健康监测，运动模式丰富",
+  "specs": {
+   "屏幕": "AMOLED",
+   "续航": "10天",
+   "防水": "5ATM"
+  },
+  "tags": [
+   "入门",
+   "健康监测"
+  ],
+  "status": "在售",
+  "stock": 120
+ },
+ {
+  "id": "product_355",
+  "name": "倍思 氮化镓充电器 Pro 2025",
+  "category": "配件",
+  "brand": "倍思",
+  "price": 65.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 157
+ },
+ {
+  "id": "product_356",
+  "name": "绿联 数据线 标准版 2026",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 19.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 194
+ },
+ {
+  "id": "product_357",
+  "name": "雷柏 机械键盘 标准版 2025",
+  "category": "配件",
+  "brand": "雷柏",
+  "price": 199.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 3
+ },
+ {
+  "id": "product_358",
+  "name": "罗技 无线鼠标 Pro 2026",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 129.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 268
+ },
+ {
+  "id": "product_359",
+  "name": "绿联 扩展坞 标准版 2025",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 149.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 34
+ },
+ {
+  "id": "product_360",
+  "name": "安克 移动电源 标准版 2026",
+  "category": "配件",
+  "brand": "安克",
+  "price": 99.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 71
+ },
+ {
+  "id": "product_361",
+  "name": "漫步者 桌面音箱 Pro 2025",
+  "category": "配件",
+  "brand": "漫步者",
+  "price": 199.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 108
+ },
+ {
+  "id": "product_362",
+  "name": "小米 路由器 标准版 2026",
+  "category": "配件",
+  "brand": "小米",
+  "price": 229.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 145
+ },
+ {
+  "id": "product_363",
+  "name": "乐歌 显示器支架 标准版 2025",
+  "category": "配件",
+  "brand": "乐歌",
+  "price": 99.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 182
+ },
+ {
+  "id": "product_364",
+  "name": "罗技 直播摄像头 Pro 2026",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 299.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 219
+ },
+ {
+  "id": "product_365",
+  "name": "倍思 氮化镓充电器 标准版 2025",
+  "category": "配件",
+  "brand": "倍思",
+  "price": 99.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 256
+ },
+ {
+  "id": "product_366",
+  "name": "绿联 数据线 标准版 2026（512GB）",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 39.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 293
+ },
+ {
+  "id": "product_367",
+  "name": "雷柏 机械键盘 Pro 2025",
+  "category": "配件",
+  "brand": "雷柏",
+  "price": 299.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 59
+ },
+ {
+  "id": "product_368",
+  "name": "罗技 无线鼠标 标准版 2026",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 229.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_369",
+  "name": "绿联 扩展坞 标准版 2025（512GB）",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 249.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 133
+ },
+ {
+  "id": "product_370",
+  "name": "安克 移动电源 Pro 2026",
+  "category": "配件",
+  "brand": "安克",
+  "price": 159.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 170
+ },
+ {
+  "id": "product_371",
+  "name": "漫步者 桌面音箱 标准版 2025",
+  "category": "配件",
+  "brand": "漫步者",
+  "price": 399.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 207
+ },
+ {
+  "id": "product_372",
+  "name": "小米 路由器 标准版 2026（512GB）",
+  "category": "配件",
+  "brand": "小米",
+  "price": 399.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 244
+ },
+ {
+  "id": "product_373",
+  "name": "乐歌 显示器支架 Pro 2025",
+  "category": "配件",
+  "brand": "乐歌",
+  "price": 199.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 281
+ },
+ {
+  "id": "product_374",
+  "name": "罗技 直播摄像头 标准版 2026",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 499.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 5
+ },
+ {
+  "id": "product_375",
+  "name": "倍思 氮化镓充电器 标准版 2025（512GB）",
+  "category": "配件",
+  "brand": "倍思",
+  "price": 149.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 84
+ },
+ {
+  "id": "product_376",
+  "name": "绿联 数据线 Pro 2026",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 59.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 121
+ },
+ {
+  "id": "product_377",
+  "name": "雷柏 机械键盘 标准版 2025（512GB）",
+  "category": "配件",
+  "brand": "雷柏",
+  "price": 499.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 158
+ },
+ {
+  "id": "product_378",
+  "name": "罗技 无线鼠标 标准版 2026（512GB）",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 449.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 195
+ },
+ {
+  "id": "product_379",
+  "name": "绿联 扩展坞 Pro 2025",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 399.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 232
+ },
+ {
+  "id": "product_380",
+  "name": "安克 移动电源 标准版 2026（512GB）",
+  "category": "配件",
+  "brand": "安克",
+  "price": 249.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 269
+ },
+ {
+  "id": "product_381",
+  "name": "漫步者 桌面音箱 标准版 2025（512GB）",
+  "category": "配件",
+  "brand": "漫步者",
+  "price": 799.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 35
+ },
+ {
+  "id": "product_382",
+  "name": "小米 路由器 Pro 2026",
+  "category": "配件",
+  "brand": "小米",
+  "price": 599.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 72
+ },
+ {
+  "id": "product_383",
+  "name": "乐歌 显示器支架 标准版 2025（512GB）",
+  "category": "配件",
+  "brand": "乐歌",
+  "price": 299.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 109
+ },
+ {
+  "id": "product_384",
+  "name": "罗技 直播摄像头 标准版 2026（512GB）",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 699.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 146
+ },
+ {
+  "id": "product_385",
+  "name": "倍思 氮化镓充电器 Pro 2025（512GB）",
+  "category": "配件",
+  "brand": "倍思",
+  "price": 65.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 183
+ },
+ {
+  "id": "product_386",
+  "name": "绿联 数据线 标准版 2026（1TB）",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 19.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 220
+ },
+ {
+  "id": "product_387",
+  "name": "雷柏 机械键盘 标准版 2025（1TB）",
+  "category": "配件",
+  "brand": "雷柏",
+  "price": 199.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 257
+ },
+ {
+  "id": "product_388",
+  "name": "罗技 无线鼠标 Pro 2026（512GB）",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 129.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 294
+ },
+ {
+  "id": "product_389",
+  "name": "绿联 扩展坞 标准版 2025（1TB）",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 149.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 60
+ },
+ {
+  "id": "product_390",
+  "name": "安克 移动电源 标准版 2026（1TB）",
+  "category": "配件",
+  "brand": "安克",
+  "price": 99.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 97
+ },
+ {
+  "id": "product_391",
+  "name": "漫步者 桌面音箱 Pro 2025（512GB）",
+  "category": "配件",
+  "brand": "漫步者",
+  "price": 199.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 0
+ },
+ {
+  "id": "product_392",
+  "name": "小米 路由器 标准版 2026（1TB）",
+  "category": "配件",
+  "brand": "小米",
+  "price": 229.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 171
+ },
+ {
+  "id": "product_393",
+  "name": "乐歌 显示器支架 标准版 2025（1TB）",
+  "category": "配件",
+  "brand": "乐歌",
+  "price": 99.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 208
+ },
+ {
+  "id": "product_394",
+  "name": "罗技 直播摄像头 Pro 2026（512GB）",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 299.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 245
+ },
+ {
+  "id": "product_395",
+  "name": "倍思 氮化镓充电器 标准版 2025（1TB）",
+  "category": "配件",
+  "brand": "倍思",
+  "price": 99.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 282
+ },
+ {
+  "id": "product_396",
+  "name": "绿联 数据线 标准版 2026（16GB）",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 39.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 48
+ },
+ {
+  "id": "product_397",
+  "name": "雷柏 机械键盘 Pro 2025（512GB）",
+  "category": "配件",
+  "brand": "雷柏",
+  "price": 299.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 85
+ },
+ {
+  "id": "product_398",
+  "name": "罗技 无线鼠标 标准版 2026（1TB）",
+  "category": "配件",
+  "brand": "罗技",
+  "price": 229.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 122
+ },
+ {
+  "id": "product_399",
+  "name": "绿联 扩展坞 标准版 2025（16GB）",
+  "category": "配件",
+  "brand": "绿联",
+  "price": 249.0,
+  "description": "做工扎实，兼容性经过量产验证",
+  "specs": {
+   "质保": "18个月"
+  },
+  "tags": [
+   "实用",
+   "口碑单品"
+  ],
+  "status": "在售",
+  "stock": 159
+ }
+]

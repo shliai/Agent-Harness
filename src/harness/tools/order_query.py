@@ -7,464 +7,10 @@ from harness.tools.base import BaseTool, ToolSpec
 
 logger = logging.getLogger("harness.tools.order_query")
 
-MOCK_ORDERS = {
-    "20240601001": {
-        "order_id": "20240601001",
-        "product": "iPhone 15 Pro Max 256GB",
-        "price": 8999.00,
-        "status": "已发货",
-        "logistics_no": "SF1234567890",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-01 10:30:00",
-    },
-    "20240601002": {
-        "order_id": "20240601002",
-        "product": "AirPods Pro 2",
-        "price": 1899.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-02 14:20:00",
-    },
-    "20240601003": {
-        "order_id": "20240601003",
-        "product": "MacBook Air M3",
-        "price": 10999.00,
-        "status": "已完成",
-        "logistics_no": "SF9876543210",
-        "courier": "顺丰快递",
-        "create_time": "2024-05-28 09:15:00",
-    },
-    "20240601004": {
-        "order_id": "20240601004",
-        "product": "iPad Air 5",
-        "price": 4799.00,
-        "status": "已发货",
-        "logistics_no": "YT4567890123",
-        "courier": "圆通快递",
-        "create_time": "2024-06-03 16:45:00",
-    },
-    "20240601005": {
-        "order_id": "20240601005",
-        "product": "Apple Watch Series 9",
-        "price": 3199.00,
-        "status": "配送中",
-        "logistics_no": "SF7890123456",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-04 08:20:00",
-    },
-    "20240601006": {
-        "order_id": "20240601006",
-        "product": "小米14 Pro",
-        "price": 4999.00,
-        "status": "已发货",
-        "logistics_no": "STO345678901",
-        "courier": "申通快递",
-        "create_time": "2024-06-01 20:15:00",
-    },
-    "20240601007": {
-        "order_id": "20240601007",
-        "product": "华为Mate 60",
-        "price": 6999.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-05 11:30:00",
-    },
-    "20240601008": {
-        "order_id": "20240601008",
-        "product": "戴尔XPS 13",
-        "price": 8999.00,
-        "status": "已完成",
-        "logistics_no": "YT901234567",
-        "courier": "圆通快递",
-        "create_time": "2024-05-30 15:40:00",
-    },
-    "20240601009": {
-        "order_id": "20240601009",
-        "product": "索尼WH-1000XM5",
-        "price": 2399.00,
-        "status": "已发货",
-        "logistics_no": "ZTO234567890",
-        "courier": "中通快递",
-        "create_time": "2024-06-04 19:25:00",
-    },
-    "20240601010": {
-        "order_id": "20240601010",
-        "product": "Nintendo Switch OLED",
-        "price": 2599.00,
-        "status": "配送中",
-        "logistics_no": "SF5678901234",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-05 14:10:00",
-    },
-    "20240601011": {
-        "order_id": "20240601011",
-        "product": "Kindle Oasis",
-        "price": 2399.00,
-        "status": "已发货",
-        "logistics_no": "YT678901234",
-        "courier": "圆通快递",
-        "create_time": "2024-06-02 10:05:00",
-    },
-    "20240601012": {
-        "order_id": "20240601012",
-        "product": "小米电视65英寸",
-        "price": 3499.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-06 09:45:00",
-    },
-    "20240601013": {
-        "order_id": "20240601013",
-        "product": "华为MatePad Pro",
-        "price": 4999.00,
-        "status": "已完成",
-        "logistics_no": "STO789012345",
-        "courier": "申通快递",
-        "create_time": "2024-05-29 13:20:00",
-    },
-    "20240601014": {
-        "order_id": "20240601014",
-        "product": "罗技MX Master 3S",
-        "price": 699.00,
-        "status": "已发货",
-        "logistics_no": "SF9012345678",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-05 17:30:00",
-    },
-    "20240601015": {
-        "order_id": "20240601015",
-        "product": "机械键盘RGB",
-        "price": 899.00,
-        "status": "配送中",
-        "logistics_no": "ZTO345678901",
-        "courier": "中通快递",
-        "create_time": "2024-06-06 12:15:00",
-    },
-    "20240601016": {
-        "order_id": "20240601016",
-        "product": "JBL Charge 5",
-        "price": 1299.00,
-        "status": "已发货",
-        "logistics_no": "YT012345678",
-        "courier": "圆通快递",
-        "create_time": "2024-06-03 08:40:00",
-    },
-    "20240601017": {
-        "order_id": "20240601017",
-        "product": "大疆Air 3",
-        "price": 6499.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-06 16:20:00",
-    },
-    "20240601018": {
-        "order_id": "20240601018",
-        "product": "小米扫地机器人",
-        "price": 1999.00,
-        "status": "已完成",
-        "logistics_no": "SF1234567899",
-        "courier": "顺丰快递",
-        "create_time": "2024-05-28 20:10:00",
-    },
-    "20240601019": {
-        "order_id": "20240601019",
-        "product": "华为FreeBuds Pro 3",
-        "price": 1099.00,
-        "status": "已发货",
-        "logistics_no": "STO456789012",
-        "courier": "申通快递",
-        "create_time": "2024-06-04 21:55:00",
-    },
-    "20240601020": {
-        "order_id": "20240601020",
-        "product": "联想小新Pro",
-        "price": 5499.00,
-        "status": "配送中",
-        "logistics_no": "ZTO567890123",
-        "courier": "中通快递",
-        "create_time": "2024-06-06 10:30:00",
-    },
-    "20240601021": {
-        "order_id": "20240601021",
-        "product": "Samsung Galaxy S24 Ultra",
-        "price": 9999.00,
-        "status": "已发货",
-        "logistics_no": "SF1111111111",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-10 08:30:00",
-    },
-    "20240601022": {
-        "order_id": "20240601022",
-        "product": "OnePlus 12",
-        "price": 4299.00,
-        "status": "已完成",
-        "logistics_no": "YT1111111111",
-        "courier": "圆通快递",
-        "create_time": "2024-06-08 14:20:00",
-    },
-    "20240601023": {
-        "order_id": "20240601023",
-        "product": "荣耀 Magic6 Pro",
-        "price": 5699.00,
-        "status": "配送中",
-        "logistics_no": "SF2222222222",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-11 10:15:00",
-    },
-    "20240601024": {
-        "order_id": "20240601024",
-        "product": "Redmi K70 Pro",
-        "price": 3299.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-12 16:40:00",
-    },
-    "20240601025": {
-        "order_id": "20240601025",
-        "product": "Google Pixel 8 Pro",
-        "price": 7499.00,
-        "status": "已发货",
-        "logistics_no": "STO1111111111",
-        "courier": "申通快递",
-        "create_time": "2024-06-10 09:50:00",
-    },
-    "20240601026": {
-        "order_id": "20240601026",
-        "product": "ROG 游戏手机 8",
-        "price": 5999.00,
-        "status": "配送中",
-        "logistics_no": "ZTO1111111111",
-        "courier": "中通快递",
-        "create_time": "2024-06-11 15:30:00",
-    },
-    "20240601027": {
-        "order_id": "20240601027",
-        "product": "小米14",
-        "price": 3999.00,
-        "status": "已完成",
-        "logistics_no": "YT2222222222",
-        "courier": "圆通快递",
-        "create_time": "2024-06-07 11:00:00",
-    },
-    "20240601028": {
-        "order_id": "20240601028",
-        "product": "iQOO 12 Pro",
-        "price": 4999.00,
-        "status": "已发货",
-        "logistics_no": "SF3333333333",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-11 18:20:00",
-    },
-    "20240601029": {
-        "order_id": "20240601029",
-        "product": "ASUS ROG Zephyrus G14",
-        "price": 12999.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-13 09:30:00",
-    },
-    "20240601030": {
-        "order_id": "20240601030",
-        "product": "Dell XPS 15",
-        "price": 13999.00,
-        "status": "已发货",
-        "logistics_no": "STO2222222222",
-        "courier": "申通快递",
-        "create_time": "2024-06-10 13:45:00",
-    },
-    "20240601031": {
-        "order_id": "20240601031",
-        "product": "HP Spectre x360",
-        "price": 11999.00,
-        "status": "配送中",
-        "logistics_no": "SF4444444444",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-12 08:10:00",
-    },
-    "20240601032": {
-        "order_id": "20240601032",
-        "product": "联想拯救者Y9000P",
-        "price": 10999.00,
-        "status": "已完成",
-        "logistics_no": "ZTO2222222222",
-        "courier": "中通快递",
-        "create_time": "2024-06-06 16:55:00",
-    },
-    "20240601033": {
-        "order_id": "20240601033",
-        "product": "小米 RedmiBook 16",
-        "price": 4999.00,
-        "status": "已发货",
-        "logistics_no": "YT3333333333",
-        "courier": "圆通快递",
-        "create_time": "2024-06-11 20:30:00",
-    },
-    "20240601034": {
-        "order_id": "20240601034",
-        "product": "Bose QuietComfort Ultra",
-        "price": 2999.00,
-        "status": "配送中",
-        "logistics_no": "SF5555555555",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-12 14:00:00",
-    },
-    "20240601035": {
-        "order_id": "20240601035",
-        "product": "Samsung Galaxy Buds3 Pro",
-        "price": 1599.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-13 17:15:00",
-    },
-    "20240601036": {
-        "order_id": "20240601036",
-        "product": "小米 Buds 4 Pro",
-        "price": 999.00,
-        "status": "已发货",
-        "logistics_no": "STO3333333333",
-        "courier": "申通快递",
-        "create_time": "2024-06-12 11:40:00",
-    },
-    "20240601037": {
-        "order_id": "20240601037",
-        "product": "Samsung Galaxy Tab S9 Ultra",
-        "price": 8999.00,
-        "status": "已完成",
-        "logistics_no": "SF6666666666",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-08 10:25:00",
-    },
-    "20240601038": {
-        "order_id": "20240601038",
-        "product": "联想小新Pad Pro",
-        "price": 2499.00,
-        "status": "配送中",
-        "logistics_no": "YT4444444444",
-        "courier": "圆通快递",
-        "create_time": "2024-06-13 07:50:00",
-    },
-    "20240601039": {
-        "order_id": "20240601039",
-        "product": "Apple Watch Ultra 2",
-        "price": 5999.00,
-        "status": "已发货",
-        "logistics_no": "ZTO3333333333",
-        "courier": "中通快递",
-        "create_time": "2024-06-11 16:35:00",
-    },
-    "20240601040": {
-        "order_id": "20240601040",
-        "product": "Samsung Galaxy Watch 6 Classic",
-        "price": 2999.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-14 09:20:00",
-    },
-    "20240601041": {
-        "order_id": "20240601041",
-        "product": "小米手环 8 Pro",
-        "price": 399.00,
-        "status": "已发货",
-        "logistics_no": "SF7777777777",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-13 15:00:00",
-    },
-    "20240601042": {
-        "order_id": "20240601042",
-        "product": "华为 Watch GT 4",
-        "price": 1488.00,
-        "status": "配送中",
-        "logistics_no": "YT5555555555",
-        "courier": "圆通快递",
-        "create_time": "2024-06-13 12:10:00",
-    },
-    "20240601043": {
-        "order_id": "20240601043",
-        "product": "索尼 PlayStation 5 Slim",
-        "price": 3599.00,
-        "status": "已完成",
-        "logistics_no": "STO4444444444",
-        "courier": "申通快递",
-        "create_time": "2024-06-09 18:40:00",
-    },
-    "20240601044": {
-        "order_id": "20240601044",
-        "product": "Xbox Series X",
-        "price": 3899.00,
-        "status": "已发货",
-        "logistics_no": "SF8888888888",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-12 20:15:00",
-    },
-    "20240601045": {
-        "order_id": "20240601045",
-        "product": "Nintendo Switch OLED",
-        "price": 2599.00,
-        "status": "配送中",
-        "logistics_no": "ZTO4444444444",
-        "courier": "中通快递",
-        "create_time": "2024-06-13 10:30:00",
-    },
-    "20240601046": {
-        "order_id": "20240601046",
-        "product": "戴尔 U2723QE 显示器",
-        "price": 4599.00,
-        "status": "待发货",
-        "logistics_no": "",
-        "courier": "",
-        "create_time": "2024-06-14 14:50:00",
-    },
-    "20240601047": {
-        "order_id": "20240601047",
-        "product": "小米 27英寸 4K 显示器",
-        "price": 1999.00,
-        "status": "已发货",
-        "logistics_no": "YT6666666666",
-        "courier": "圆通快递",
-        "create_time": "2024-06-13 19:25:00",
-    },
-    "20240601048": {
-        "order_id": "20240601048",
-        "product": "华硕 TUF Gaming VG27AQ3A",
-        "price": 2299.00,
-        "status": "配送中",
-        "logistics_no": "SF9999999999",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-14 11:05:00",
-    },
-    "20240601049": {
-        "order_id": "20240601049",
-        "product": "小米 AX9000 路由器",
-        "price": 799.00,
-        "status": "已完成",
-        "logistics_no": "STO5555555555",
-        "courier": "申通快递",
-        "create_time": "2024-06-10 21:30:00",
-    },
-    "20240601050": {
-        "order_id": "20240601050",
-        "product": "华为路由 BE3 Pro",
-        "price": 399.00,
-        "status": "已发货",
-        "logistics_no": "SF1010101010",
-        "courier": "顺丰快递",
-        "create_time": "2024-06-14 08:45:00",
-    },
-}
-
-
 class OrderQueryTool(BaseTool):
     spec = ToolSpec(
         name="order_query",
-        description="根据订单号查询订单详情，包括商品名称、价格、状态、物流信息等",
+        description="根据订单号查询当前用户的订单详情，包括商品名称、价格、状态、物流信息等。只能查询本人订单",
         parameters={
             "type": "object",
             "properties": {
@@ -477,25 +23,101 @@ class OrderQueryTool(BaseTool):
         },
     )
 
+    def __init__(self) -> None:
+        from harness.tools.context import EnumerationGuard
+
+        self._guard = EnumerationGuard(max_misses=8, window_seconds=900, cooldown_seconds=1800)
+
     async def run(self, **kwargs: Any) -> str:
-        order_id = kwargs.get("order_id", "").strip()
+        from harness.tools.context import current_session_id, current_user_id
+
+        import re as _re
+
+        order_id = str(kwargs.get("order_id", "")).strip()
         if not order_id:
             return "请输入订单号"
+        key = f"order_query:{current_session_id.get() or 'anonymous'}"
+        blocked = self._guard.check(key)
+        if blocked:
+            logger.warning("订单查询熔断中: %s", key)
+            return blocked
 
-        order = MOCK_ORDERS.get(order_id)
+        # LLM 抽参白名单校验：阻断畸形参数直达查询层
+        if not _re.fullmatch(r"[0-9]{11,15}", order_id):
+            self._guard.record_miss(f"order_query:{current_session_id.get() or 'a'}")
+            return f"订单号 {order_id} 格式不正确，应为下单日期开头的数字编号，请核对后重试"
+
+        import asyncio
+
+        from harness.storage import db as store
+
+        order = await asyncio.to_thread(store.get_order, order_id)
         if not order:
+            self._guard.record_miss(key)
             return f"未找到订单 {order_id}，请核对订单号后重试"
+
+        # 归属校验：只能查询本人的订单
+        owner = order["user_id"]
+        me = current_user_id.get()
+        if owner != me:
+            logger.warning("越权查询被拒绝: user=%s 订单=%s 归属=%s", me, order_id, owner)
+            return (
+                f"订单 {order_id} 不属于当前账户，无法查询。"
+                "请确认订单号是否输入正确；如确为您的订单但无法查看，请联系人工客服核实身份。"
+            )
+
+        self._guard.record_hit(key)
 
         lines = [
             f"订单号：{order['order_id']}",
-            f"商品：{order['product']}",
+            f"商品：{order['product_name']}",
             f"金额：¥{order['price']}",
             f"状态：{order['status']}",
-            f"下单时间：{order['create_time']}",
+            f"下单时间：{order['created_at']}",
         ]
         if order["logistics_no"]:
             lines.append(f"物流单号：{order['logistics_no']}")
             lines.append(f"快递公司：{order['courier']}")
 
         logger.info("订单查询: %s -> %s", order_id, order["status"])
+        return "\n".join(lines)
+
+
+class MyOrdersTool(BaseTool):
+    """按当前用户列出订单（用户不记得单号时的入口）"""
+
+    spec = ToolSpec(
+        name="order_list",
+        description="查询当前用户的订单列表（最近下单优先），用于用户不记得订单号时先列出订单再选择",
+        parameters={
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "description": "可选，按状态筛选：待发货/已发货/配送中/已完成",
+                }
+            },
+            "required": [],
+        },
+    )
+
+    async def run(self, **kwargs: Any) -> str:
+        import asyncio
+
+        from harness.storage import db as store
+        from harness.tools.context import current_user_id
+
+        me = current_user_id.get()
+        status_filter = str(kwargs.get("status", "")).strip() or None
+
+        rows = await asyncio.to_thread(store.list_orders, me, status_filter, 10)
+        if not rows:
+            return "当前账户名下没有符合条件的订单"
+
+        lines = [f"您的订单（最近优先，最多显示 10 单）:"]
+        for o in rows:
+            lines.append(
+                f"- {o['order_id']} | {o['product_name']} | ¥{o['price']} | "
+                f"{o['status']} | 下单于 {o['created_at']}"
+            )
         return "\n".join(lines)

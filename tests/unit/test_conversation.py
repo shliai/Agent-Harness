@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from harness.domain.models import AgentMessage, ChatRole
 from harness.memory.short_term import ShortTermMemory
-from harness.memory.conversation_history import ConversationHistory
 
 
 class TestShortTermMemory:

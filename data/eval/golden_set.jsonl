@@ -1,0 +1,36 @@
+{"id": "R01", "layer": "retrieval", "query": "5000元以下的拍照手机", "price_max": 5000, "category": "手机", "keywords": ["拍照"]}
+{"id": "R02", "layer": "retrieval", "query": "3000元以内的手机有什么推荐", "price_max": 3000, "category": "手机"}
+{"id": "R03", "layer": "retrieval", "query": "预算1500以内性价比高的手机", "price_max": 1500, "category": "手机", "keywords": ["性价比"]}
+{"id": "R04", "layer": "retrieval", "query": "2000元以内的降噪耳机", "price_max": 2000, "category": "耳机", "keywords": ["降噪"]}
+{"id": "R05", "layer": "retrieval", "query": "8000元以上的轻薄笔记本", "price_min": 8000, "category": "笔记本", "keywords": ["轻薄"]}
+{"id": "R06", "layer": "retrieval", "query": "游戏笔记本哪款值得买", "category": "笔记本", "keywords": ["游戏"]}
+{"id": "R07", "layer": "retrieval", "query": "3000块以内的平板", "price_max": 3000, "category": "平板"}
+{"id": "R08", "layer": "retrieval", "query": "5000元的旗舰手机", "price_max": 5000, "category": "手机"}
+{"id": "B01", "layer": "budget", "query": "预算3000以内帮我推荐一款拍照好的手机", "budget": 3000, "category": "手机"}
+{"id": "B02", "layer": "budget", "query": "我只有2000预算，买个耳机", "budget": 2000, "category": "耳机"}
+{"id": "B03", "layer": "budget", "query": "预算5000买笔记本", "budget": 5000, "category": "笔记本"}
+{"id": "T01", "layer": "routing", "query": "查询订单20240601001现在什么状态", "expect_tools": ["order_query"]}
+{"id": "T02", "layer": "routing", "query": "SF1234567890这个快递到哪了", "expect_tools": ["logistics_query"]}
+{"id": "T03", "layer": "routing", "query": "(2999+499)*0.85等于多少", "expect_tools": ["calculator"]}
+{"id": "T04", "layer": "routing", "query": "预算3000以内有什么值得买的手机", "expect_tools": ["knowledge_retrieval"]}
+{"id": "T05", "layer": "routing", "query": "帮我查一下订单20240601002和订单20240601007的状态", "expect_tools": ["subtask_dispatch", "order_query"], "optional_tools": ["order_query"]}
+{"id": "N01", "layer": "routing", "query": "你好呀", "expect_none": true}
+{"id": "X01", "layer": "robustness", "kind": "calc_pow_bomb"}
+{"id": "X02", "layer": "robustness", "kind": "calc_code_injection"}
+{"id": "X03", "layer": "robustness", "kind": "action_malformed_json"}
+{"id": "X04", "layer": "robustness", "kind": "pii_phone_masked"}
+{"id": "X05", "layer": "robustness", "kind": "pii_idcard_x_masked"}
+{"id": "X06", "layer": "robustness", "kind": "input_control_chars_blocked"}
+{"id": "X07", "layer": "robustness", "kind": "rate_limit_per_key_isolated"}
+{"id": "X08", "layer": "robustness", "kind": "session_traversal_rejected"}
+{"id": "R09", "layer": "retrieval", "query": "3500元以内的游戏手机", "price_max": 3500, "category": "手机", "keywords": ["游戏"]}
+{"id": "R10", "layer": "retrieval", "query": "预算4000左右的平板推荐", "price_max": 4000, "category": "平板"}
+{"id": "R11", "layer": "retrieval", "query": "5k以内拍照好的小屏手机", "price_max": 5000, "category": "手机", "keywords": ["小屏"]}
+{"id": "R12", "layer": "retrieval", "query": "1000元以内的运动耳机", "price_max": 1000, "category": "耳机", "keywords": ["运动"]}
+{"id": "R13", "layer": "retrieval", "query": "万元以上的专业创作笔记本", "price_min": 10000, "category": "笔记本"}
+{"id": "T06", "layer": "routing", "query": "激活过的手机能不能退啊", "expect_tools": ["policy_query"]}
+{"id": "T07", "layer": "routing", "query": "我不记得订单号了，帮我看下我买过什么", "expect_tools": ["order_list"]}
+{"id": "T08", "layer": "routing", "query": "我的订单20240601003有问题，这个要退掉", "expect_tools": ["order_query"], "optional_tools": ["after_sale_apply"]}
+{"id": "T09", "layer": "routing", "query": "你们这服务太差了，我要投诉，叫人来", "expect_tools": ["transfer_human"]}
+{"id": "T10", "layer": "routing", "query": "256GB的iPhone 17现在多少钱", "expect_tools": ["knowledge_retrieval"]}
+{"id": "B04", "layer": "budget", "query": "预算1500，买个能打游戏的手机", "budget": 1500, "category": "手机"}

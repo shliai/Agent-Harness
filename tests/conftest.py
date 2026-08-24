@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator, Generator
-from unittest.mock import MagicMock, patch
+from collections.abc import AsyncGenerator
+from unittest.mock import patch
 
 import pytest
 
 from harness.core.registry import Registry
 from harness.domain.models import AgentMessage
-from harness.llm.base import AbstractLLMClient
+from harness.llm.base import AbstractLLMClient, LLMReply
 from harness.observability.tracer import Tracer
 from harness.tools.base import BaseTool, ToolSpec
 
@@ -16,22 +16,17 @@ class MockLLMClient(AbstractLLMClient):
     def __init__(self, response: str = "测试回复") -> None:
         self.response = response
         self.last_messages: list[AgentMessage] = []
-        self.last_token_usage: int = 0
 
-    def chat(self, messages: list[AgentMessage], temperature: float | None = None) -> str:
+    async def chat_async(
+        self, messages: list[AgentMessage], temperature: float | None = None
+    ) -> LLMReply:
         self.last_messages = messages
-        self.last_token_usage = len(self.response) // 4
-        return self.response
+        return LLMReply(content=self.response, total_tokens=len(self.response) // 4)
 
-    async def chat_async(self, messages: list[AgentMessage], temperature: float | None = None) -> str:
+    async def stream_chat_async(
+        self, messages: list[AgentMessage], temperature: float | None = None
+    ) -> AsyncGenerator[str, None]:
         self.last_messages = messages
-        self.last_token_usage = len(self.response) // 4
-        return self.response
-
-    def stream_chat(self, messages: list[AgentMessage], temperature: float | None = None) -> Generator[str, None, None]:
-        yield self.response
-
-    async def stream_chat_async(self, messages: list[AgentMessage], temperature: float | None = None) -> AsyncGenerator[str, None]:
         yield self.response
 
 
@@ -78,3 +73,49 @@ def settings_override() -> Generator[None, None, None]:
         mock.tracing_enabled = True
         mock.short_term_window = 20
         yield
+
+
+@pytest.fixture
+def seeded_db(tmp_path, monkeypatch):
+    """临时 SQLite 业务库：拟真商品+订单+物流全量入库，返回数据句柄"""
+    from types import SimpleNamespace
+
+    from harness.config import settings
+    from harness.storage import db as store
+    from harness.storage.seeds import DEMO_USER, SECOND_USER, load_logistics, load_orders, load_products
+
+    monkeypatch.setattr(settings, "db_path", tmp_path / "test.db")
+    store.init_schema()
+
+    products = load_products()
+    with store.db() as c:
+        for p in products:
+            store.upsert_product(c, p)
+    orders, logistics = load_orders(), load_logistics()
+    now_iso = "2026-08-23T00:00:00"
+    with store.db() as c:
+        c.executemany(
+            """INSERT INTO orders(order_id,user_id,product_id,product_name,
+                                 price,qty,discount_coupon,discount_promo,
+                                 status,logistics_no,courier,created_at)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+            [(o["order_id"], o["user_id"], o["product_id"], o["product_name"],
+              o["price"], o["qty"], o.get("discount_coupon", 0),
+              o.get("discount_promo", 0), o["status"], o.get("logistics_no", ""),
+              o.get("courier", ""), o["created_at"]) for o in orders],
+        )
+        c.executemany(
+            """INSERT INTO logistics(tracking_no,nodes_json,updated_at) VALUES(?,?,?)""",
+            [(tno, __import__("json").dumps(nodes, ensure_ascii=False), now_iso)
+             for tno, nodes in logistics.items()],
+        )
+
+    return SimpleNamespace(
+        products=products,
+        orders=orders,
+        logistics=logistics,
+        demo_user=DEMO_USER,
+        second_user=SECOND_USER,
+        demo_orders=[o for o in orders if o["user_id"] == DEMO_USER],
+        second_orders=[o for o in orders if o["user_id"] == SECOND_USER],
+    )
