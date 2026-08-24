@@ -218,7 +218,7 @@ class TestReActLoopIntegration:
         from harness.observability.tracer import Tracer
         from tests.conftest import MockLLMClient
 
-        llm = MockLLMClient(response="您好，我已经记得您的需求了。")
+        llm = MockLLMClient(response="您好，我已经记得您的需求了。\n- 用户 咨询 手机推荐")
         long_term = MagicMock()
         long_term.enabled = True
         long_term.search = AsyncMock(return_value=[

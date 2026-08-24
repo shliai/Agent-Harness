@@ -46,6 +46,13 @@ _FACT_SYSTEM_PROMPT = (
     "只输出可靠的新信息事实行；无则输出空。禁止解释，禁止照抄原文整句。"
 )
 
+# 寒暄/无信息量输入：跳过轮末事实抽取与长期记忆写入
+_TRIVIAL_INPUT_RE = re.compile(
+    r"^(你好|您好|您好呀|hello|hi|hey|在吗|在么|谢谢|多谢|感谢|辛苦了|"
+    r"好的|好滴|嗯+|哦+|ok|okay|收到|明白了|知道了|再见|拜拜)[!！？?。～~，,.\s]*$",
+    re.IGNORECASE,
+)
+
 SYSTEM_PROMPT_TEMPLATE = """你是专业的电商智能客服助手，名叫小慧。
 
 ## 核心能力
@@ -401,13 +408,25 @@ class ReActLoop:
             # ── 记忆整理（结果已送达，此处耗时用户无感）──
             # 轻量 LLM 抽取「实体-关系」事实 → 合并进工作记忆 + 结构化写入长期记忆；
             # 仅在长期记忆启用时执行，单元测试环境自动跳过
+            #
+            # 垃圾防线的三种结局分流：
+            #   ① LLM 异常        → 兜底确定性文档入库（数据安全）
+            #   ② 抽取成功但为空   → 跳过：不入库、不动 WM（没有值得记的）
+            #   ③ 抽取到事实       → WM 合并 + 事实文档入库
             distilled_facts: list[str] = []
+            extraction_failed = False
+            skip_memory = False
             if self.long_term_memory is not None and self.long_term_memory.enabled:
-                distilled_facts = await self._extract_turn_facts(validated_input, result.answer)
-                for f in distilled_facts:
-                    wm.add_fact(f)
-                if distilled_facts:
-                    logger.info("轮末事实抽取 %d 条", len(distilled_facts))
+                if _TRIVIAL_INPUT_RE.match(validated_input.strip()) or result.success is False:
+                    skip_memory = True  # 寒暄/失败轮：连抽取调用都不发，错误不是知识
+                else:
+                    distilled_facts, extraction_failed = await self._extract_turn_facts(
+                        validated_input, result.answer
+                    )
+                    for f in distilled_facts:
+                        wm.add_fact(f)
+                    if distilled_facts:
+                        logger.info("轮末事实抽取 %d 条", len(distilled_facts))
 
             new_trace = {
                 "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -419,17 +438,25 @@ class ReActLoop:
                 prev_traces=prev_traces, new_trace=new_trace,
             )
 
-            # 长期记忆：结构化事实文档（非原文）；抽取失败降级为确定性结构化摘要
-            if self.long_term_memory is not None and self.long_term_memory.enabled:
-                doc = "\n".join(distilled_facts) if distilled_facts else \
-                    self._deterministic_doc(validated_input, result.answer, wm)
-                await self.long_term_memory.add(
-                    user_input=validated_input,
-                    assistant_answer=result.answer,
-                    session_id=sid,
-                    user_id=user_id,
-                    document=doc,
-                )
+            # 长期记忆：结构化事实文档（非原文）
+            # 仅两种情况写入：抽取到事实；或 LLM 异常时兜底确定性摘要。
+            # 抽取为空 / 寒暄轮 / 失败轮 → 不写（没有值得记的信息就不制造垃圾）
+            if (self.long_term_memory is not None and self.long_term_memory.enabled
+                    and not skip_memory):
+                if distilled_facts:
+                    doc: str | None = "\n".join(distilled_facts)
+                elif extraction_failed:
+                    doc = self._deterministic_doc(validated_input, result.answer, wm)
+                else:
+                    doc = None
+                if doc:
+                    await self.long_term_memory.add(
+                        user_input=validated_input,
+                        assistant_answer=result.answer,
+                        session_id=sid,
+                        user_id=user_id,
+                        document=doc,
+                    )
 
         except GuardrailError as e:
             logger.warning("Guardrail 拦截: %s", e)
@@ -550,8 +577,12 @@ class ReActLoop:
     # 轮末事实抽取的 system 提示词（模块级常量的类内别名，方法体引用模块级版本）
     FACT_SYSTEM_PROMPT = _FACT_SYSTEM_PROMPT
 
-    async def _extract_turn_facts(self, user_input: str, answer: str) -> list[str]:
-        """轮末轻量抽取「实体-关系」事实 ≤6 条（工作记忆与长期记忆共用）"""
+    async def _extract_turn_facts(self, user_input: str, answer: str) -> tuple[list[str], bool]:
+        """轮末轻量抽取「实体-关系」事实 ≤6 条（工作记忆与长期记忆共用）
+
+        返回 (facts, extraction_failed)：failed=True 表示 LLM 异常（调用方走兜底），
+        failed=False 且 facts 为空表示本轮确无可抽取信息（调用方跳过入库）。
+        """
         try:
             reply = await self.llm.chat_async(
                 [
@@ -573,10 +604,10 @@ class ReActLoop:
                     facts.append(line)
                 if len(facts) >= 6:
                     break
-            return facts
+            return facts, False
         except Exception as e:
             logger.warning("轮末事实抽取失败: %s", e)
-            return []
+            return [], True
 
     @staticmethod
     def _deterministic_doc(user_input: str, answer: str, wm: WorkingMemory) -> str:

@@ -321,8 +321,23 @@ class TestChapterMemory:
                 return LLMReply(content="- 用户 偏好 华为品牌\n好的呀\n- 订单20240601001 状态 已退货")
 
         inst = SimpleNamespace(llm=FakeLLM())
-        facts = await ReActLoop._extract_turn_facts(inst, "想买手机", "已为您推荐华为")  # type: ignore[arg-type]
+        facts, failed = await ReActLoop._extract_turn_facts(inst, "想买手机", "已为您推荐华为")  # type: ignore[arg-type]
+        assert failed is False
         assert facts == ["用户 偏好 华为品牌", "订单20240601001 状态 已退货"]
+
+    @pytest.mark.asyncio
+    async def test_extract_empty_means_skip_not_fallback(self) -> None:
+        """抽取成功但无可抽事实 → failed=False（调用方据此跳过入库而非走兜底）"""
+        from harness.core.loop import ReActLoop
+
+        class ChattyLLM:
+            async def chat_async(self, messages, temperature=None):
+                return LLMReply(content="好的呀，这个简单！")
+
+        facts, failed = await ReActLoop._extract_turn_facts(
+            SimpleNamespace(llm=ChattyLLM()), "你好呀", "您好，有什么可以帮您？"
+        )  # type: ignore[arg-type]
+        assert facts == [] and failed is False
 
     def test_deterministic_doc_format(self) -> None:
         from harness.core.loop import ReActLoop
