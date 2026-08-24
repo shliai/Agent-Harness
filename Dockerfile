@@ -6,7 +6,8 @@ FROM python:3.11-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    HF_ENDPOINT=https://hf-mirror.com
+    HF_ENDPOINT=https://hf-mirror.com \
+    HF_HOME=/app/.hf_cache
 
 WORKDIR /app
 
@@ -20,8 +21,8 @@ COPY src ./src
 # 依赖层单独缓存（代码变更不触发重装 torch）
 RUN pip install -e .
 
-# 本地 BGE 模型直接打进镜像，避免运行时联网下载
-COPY models /app/models
+# BGE 模型不在 git 中（~100MB 二进制），首次启动时自动从 HuggingFace 下载
+# 如需离线部署，可本地构建后手动 COPY 或挂载模型目录
 
 COPY scripts ./scripts
 COPY data/policies.json data/eval/golden_set.jsonl ./data/

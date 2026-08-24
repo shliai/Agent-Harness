@@ -12,6 +12,7 @@ services:
     volumes:
       # 业务库/向量库/审计日志持久化在宿主 ./data
       - ./data:/app/data
+      - ./.hf_cache:/app/.hf_cache   # BGE 模型缓存（避免每次重启重下）
     restart: unless-stopped
 
   # 预留：多实例时把限流/风控计数器迁到 Redis（当前为进程内实现）
