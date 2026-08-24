@@ -215,7 +215,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="Agent Harness API",
-        version="0.7.2",
+        version="0.7.3",
         description="智能体运行时外壳 — Web API",
     )
 
@@ -257,7 +257,7 @@ def create_app() -> FastAPI:
                 pass
         return {
             "status": "ok",
-            "version": "0.7.2",
+            "version": "0.7.3",
             "model": settings.openai_model,
             "components": {
                 "knowledge_base_documents": kb_count,
@@ -572,11 +572,14 @@ async def _stream_chat(
                         payload["tool_call"] = event["tool_call"]
                     if event.get("tool_result"):
                         payload["tool_result"] = event["tool_result"]
+                    if event.get("final"):
+                        payload["final"] = True
                     yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
                 elif etype == "delta":
                     yield f"data: {json.dumps({'type': 'delta', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
                 elif etype == "delta_reset":
-                    yield 'data: {"type": "delta_reset"}\n\n'
+                    reason = event.get("reason", "")
+                    yield ('data: {"type": "delta_reset", "reason": "%s"}\n\n' % reason) if reason else 'data: {"type": "delta_reset"}\n\n'
                 elif etype == "answer_replace":
                     yield f"data: {json.dumps({'type': 'answer_replace', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
                 elif etype == "result":

@@ -283,13 +283,13 @@ class ReActLoop:
                     malformed_retries += 1
                     if malformed_retries <= 2:
                         logger.warning("ACTION JSON 解析失败(第%d次)，要求重试", malformed_retries)
-                        yield {"type": "delta_reset"}
+                        yield {"type": "delta_reset", "reason": "retry"}
                         memory.add(AgentMessage(role=ChatRole.assistant, content=thought))
                         memory.add(AgentMessage(role=ChatRole.tool, content=_MALFORMED_ACTION_HINT))
                         continue
                     # 连续失败：回滚流式文本并降级为友好提示，绝不输出原始残片
                     logger.warning("ACTION 解析连续失败，降级为友好提示")
-                    yield {"type": "delta_reset"}
+                    yield {"type": "delta_reset", "reason": "retry"}
                     thought = _MALFORMED_FALLBACK_ANSWER
 
                 if tool_call is None:
@@ -307,6 +307,7 @@ class ReActLoop:
                         "type": "step",
                         "step_index": step_index,
                         "thought": thought,
+                        "final": True,
                     }
                     await asyncio.sleep(0.001)
 

@@ -14,7 +14,7 @@
 
 ```bash
 # ① 克隆并安装
-git clone https://github.com/yourname/Agent-Harness.git
+git clone https://github.com/shliai/Agent-Harness.git
 cd Agent-Harness
 pip install -e .
 
@@ -106,7 +106,7 @@ data/seed/          400 商品 + 260 订单 + 200 物流种子数据
 data/policies.json  10 条官方政策条款
 data/eval/          36 条评测用例
 tests/              159 个测试用例
-docs/               9 份文档
+docs/               10 份文档
 ```
 
 ## 测试与评测
@@ -131,7 +131,7 @@ python scripts/eval.py --live       # 含在线路由评测（消耗真实 token
 | [接口文档](docs/API.md) | REST/SSE 端点规范 |
 | [运维手册](docs/OPERATIONS.md) | 日志聚合、指标告警、灰度发布、密钥管理 |
 | [评测报告](docs/EVALUATION.md) | 五层评测方法论与详细结果 |
-| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.7.2 演进史 |
+| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.7.3 演进史 |
 
 ## 技术栈
 
