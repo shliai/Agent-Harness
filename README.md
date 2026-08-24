@@ -105,14 +105,14 @@ scripts/            init_db / eval / export_badcase
 data/seed/          400 商品 + 260 订单 + 200 物流种子数据
 data/policies.json  10 条官方政策条款
 data/eval/          36 条评测用例
-tests/              168 个测试用例
+tests/              172 个测试用例
 docs/               10 份文档
 ```
 
 ## 测试与评测
 
 ```bash
-pytest tests/ -v                    # 168 个测试
+pytest tests/ -v                    # 172 个测试
 python scripts/eval.py              # 五层离线评测（28/28 PASS）
 python scripts/eval.py --live       # 含在线路由评测（消耗真实 tokens）
 ```

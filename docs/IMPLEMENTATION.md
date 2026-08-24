@@ -413,6 +413,8 @@ class WorkingMemory(BaseModel):
 - 物流号：`(SF|YT|ZTO|STO|JD|EMS)\d{9,12}`
 - prompt_block() 渲染为「状态尾注」消息（对话末尾、本轮输入之前），含槽位与关键事实
 - 轮末 LLM 抽取实体-关系事实（_extract_turn_facts）合并进 important_facts，并结构化写入长期记忆
+- 更新语义：状态/进度等可变关系同实体同关系 → WM 原地替换；长期库一事实一记录（entity_key 元数据），写时替换 + 读时保鲜（跨会话只留最新）
+- 垃圾防线：抽取为空/寒暄输入/失败轮 → 跳过长期写入；仅 LLM 异常时写确定性兜底文档
 - 压缩事件时整块烘入冻结章节后 reset_for_new_cycle() 清零开新周期
 
 ### 短期记忆与章节压缩（v0.7.4 LSM 式）
