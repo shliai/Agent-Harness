@@ -27,20 +27,27 @@ class Settings(BaseSettings):
     max_iterations: int = 6   # 减少最大迭代次数
 
     # ── 记忆 ─────────────────────────────────────────
-    short_term_window: int = 20
-    # 会话压缩：超过阈值条数时把较旧对话用 LLM 压成滚动摘要，
-    # LLM 视角 = 摘要 + 最近 keep_recent 条（上下文工程）
+    # KV-cache 友好：窗口内只追加不淘汰；满 100 条(50轮)触发一次压缩，
+    # 压缩后 = [system][摘要消息][最近 keep_recent 条]，前缀稳定仅追加
+    short_term_window: int = 100
+    # 会话压缩：达到阈值条数时把较旧对话用 LLM 压成滚动摘要（独立消息，紧跟 system）
     context_compress_enabled: bool = True
-    context_compress_threshold: int = 28
-    context_keep_recent: int = 16
-    context_summary_max_chars: int = 500
+    context_compress_threshold: int = 100
+    context_keep_recent: int = 20
+    context_summary_max_chars: int = 2000
     long_term_enabled: bool = False
     long_term_store_path: Path = Path("./data/memory_store")
     long_term_top_k: int = 3
     # 检索距离超过该值的历史视为不相关，不注入 prompt；None 表示不过滤。
     # 注意：旧集合以 L2 空间创建，余弦阈值仅对新建集合（cosine）严格成立，
     # 设为 None 可完全关闭该行为。
-    long_term_max_distance: float | None = None
+    # 余弦距离阈值：BGE 向量 distance = 1 - cos_sim，≤0.45 视为语义相关；
+    # None 关闭过滤（不推荐——不相关历史会污染上下文）
+    long_term_max_distance: float | None = 0.45
+    # 维护策略（启动后首次使用时后台执行一次）
+    long_term_ttl_days: int = 90            # 低价值记录保留期；含订单号/金额等标识符的高价值记录豁免
+    long_term_dup_distance: float = 0.08    # 近重复判定：与更新记录距离低于此值 → 合并删除旧条
+    long_term_max_records: int = 5000       # 容量熔断：超出后按「低价值且最旧」优先淘汰
 
     # ── Guardrails ──────────────────────────────────
     rate_limit_max_requests: int = 60

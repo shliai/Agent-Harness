@@ -215,7 +215,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="Agent Harness API",
-        version="0.7.3",
+        version="0.7.4",
         description="智能体运行时外壳 — Web API",
     )
 
@@ -257,7 +257,7 @@ def create_app() -> FastAPI:
                 pass
         return {
             "status": "ok",
-            "version": "0.7.3",
+            "version": "0.7.4",
             "model": settings.openai_model,
             "components": {
                 "knowledge_base_documents": kb_count,
@@ -538,7 +538,16 @@ def create_app() -> FastAPI:
         owner = data.get("user_id") or ""
         if x_user_id and owner and x_user_id != owner:
             raise HTTPException(status_code=403, detail="无权访问该会话")
-        return data
+        # 只暴露客户端需要的字段；chapters/summary 属提示词内部态，不外泄
+        return {
+            "session_id": session_id,
+            "title": data.get("title") or "",
+            "user_id": owner,
+            "messages": data.get("messages") or [],
+            "working_memory": data.get("working_memory") or {},
+            "traces": data.get("traces") or [],
+            "updated_at": data.get("updated_at"),
+        }
 
     return app
 

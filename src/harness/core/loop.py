@@ -36,6 +36,16 @@ from harness.tools.base import BaseTool
 
 logger = logging.getLogger("harness.core.loop")
 
+# 轮末事实抽取提示词：从单轮对话提炼「实体-关系-值」结构化事实（工作记忆与长期记忆共用）
+_FACT_SYSTEM_PROMPT = (
+    "你是电商客服对话的信息抽取器。从本轮对话中抽取「实体-关系-值」事实，"
+    "每行一条、以 - 开头，例如：\n"
+    "- 用户 偏好 小米品牌\n"
+    "- 订单20240601001 状态 退货申请待审核\n"
+    "- 用户 预算 3000元\n"
+    "只输出可靠的新信息事实行；无则输出空。禁止解释，禁止照抄原文整句。"
+)
+
 SYSTEM_PROMPT_TEMPLATE = """你是专业的电商智能客服助手，名叫小慧。
 
 ## 核心能力
@@ -170,6 +180,7 @@ class ReActLoop:
         user_id: str | None = None,
     ) -> AsyncGenerator[dict[str, Any], None]:
         """流式执行：在每个 ReAct 步骤发生时即时 yield 事件"""
+        self._schedule_lt_maintenance()
         from harness.tools.context import DEFAULT_USER, current_session_id, current_user_id
 
         start_time = time.perf_counter()
@@ -185,8 +196,8 @@ class ReActLoop:
         current_session_id.set(sid)
         memory = ShortTermMemory(window_size=settings.short_term_window, track_full=True)
 
-        # 恢复会话完整状态：消息全量 + 滚动摘要 + 工作记忆槽位 + 历史推理轨迹
-        prior_summary: str | None = None
+        # 恢复会话完整状态：消息全量 + 冻结章节 + 工作记忆槽位 + 历史推理轨迹
+        chapters: list[str] = []
         prev_traces: list[dict] = []
         wm = WorkingMemory()
         if session_id:
@@ -197,10 +208,13 @@ class ReActLoop:
                         memory.add(AgentMessage(**raw_msg))
                     except Exception:
                         logger.warning("跳过无法解析的历史消息: %s", str(raw_msg)[:80])
-                prior_summary = (state.get("summary") or "").strip() or None
+                        chapters = list(state.get("chapters") or [])
                 prev_traces = list(state.get("traces") or [])[-8:]
                 wm = WorkingMemory.from_dict(state.get("working_memory"))
-                logger.info("已恢复会话 %s: %d 条历史消息", session_id, len(memory.all_messages()))
+                logger.info(
+                    "已恢复会话 %s: %d 条历史消息, %d 个冻结章节",
+                    session_id, len(memory.all_messages()), len(chapters),
+                )
 
         # 预算槽位供检索工具确定性注入价格条件；用量槽供流式回写真实 usage
         from harness.tools.context import current_budget, llm_usage_sink
@@ -216,33 +230,45 @@ class ReActLoop:
                 tool_descriptions=tool_descriptions or "（当前没有可用工具）"
             )
 
-            # 上下文工程：滚动摘要（更早的、已压缩出窗口的对话）
-            if prior_summary:
-                system_prompt += (
-                    "\n\n## 更早对话的摘要\n"
-                    "以下是对较早对话的压缩摘要，其中的事实（预算、单号等）仍然有效：\n"
-                    + prior_summary
-                )
-
             # 上下文工程：跨轮工作记忆（预算/订单号/物流号，确定性规则维护）
             turn_no = len(memory.all_messages()) + 1
             wm.update_from_input(validated_input, turn=turn_no)
+
+            # 状态尾注：工作记忆 + 长期记忆召回合并为一条消息，
+            # 注入在对话末尾、当前输入之前——每轮变化的内容集中在尾部，
+            # 前缀（系统提示词+摘要+全部历史）保持稳定，KV cache 全程命中
+            state_parts: list[str] = []
+
+            # 当期工作记忆全量渲染（压缩周期开始时已清零，体量很小）
             wm_block = wm.prompt_block()
             if wm_block:
-                system_prompt += "\n\n" + wm_block
+                state_parts.append(wm_block)
 
-            # 长期记忆：检索与当前输入相关的历史对话，注入 system prompt
+            # 长期记忆：检索「其他会话」中与当前输入相关的历史对话片段
             if self.long_term_memory is not None and self.long_term_memory.enabled:
-                hits = await self.long_term_memory.search(validated_input, user_id=uid)
+                hits = await self.long_term_memory.search(
+                    validated_input, user_id=uid, exclude_session_id=sid,
+                )
                 if hits:
-                    recall_lines = [f"[{i}] {h['document']}" for i, h in enumerate(hits, 1)]
-                    system_prompt += (
-                        "\n\n## 相关历史记忆\n"
-                        "以下是与当前问题可能相关的历史对话片段，"
+                    recall_lines = []
+                    for i, h in enumerate(hits, 1):
+                        # 每条截断至 160 字：召回只做线索提示，不搬运全文
+                        doc = h["document"]
+                        if len(doc) > 160:
+                            doc = doc[:160] + "…"
+                        # 时效信号：注入记录日期，帮助 LLM 判断新旧
+                        ts = str(h.get("metadata", {}).get("timestamp") or "")
+                        date_tag = f"({ts[:10]}) " if ts else ""
+                        recall_lines.append(f"[{i}] {date_tag}{doc}")
+                    state_parts.append(
+                        "## 相关历史记忆\n"
+                        "以下是该用户在其他会话中的相关历史片段（含日期），"
                         "若与本次问题相关可参考，无关则忽略：\n"
-                        + "\n\n".join(recall_lines)
+                        + "\n".join(recall_lines)
                     )
                     logger.info("长期记忆召回 %d 条相关历史", len(hits))
+
+            state_note = "\n\n".join(state_parts) or None
 
             memory.add(AgentMessage(role=ChatRole.user, content=validated_input))
 
@@ -250,7 +276,7 @@ class ReActLoop:
             malformed_retries = 0
 
             for step_index in range(self.max_iterations):
-                messages = self._build_messages(system_prompt, memory)
+                messages = self._build_messages(system_prompt, memory, chapters, state_note)
 
                 # token 级流式：增量即时推送前端；若本轮实际是工具规划，
                 # 由 delta_reset 事件通知前端回滚临时文本
@@ -337,6 +363,8 @@ class ReActLoop:
                     initial_thought=thought,
                     initial_call=tool_call,
                     req_metrics=req_metrics,
+                    chapters=chapters,
+                    state_note=state_note,
                 )
                 total_tokens += step_result["extra_tokens"]
                 self._account_budget(sid, wm, step_result["extra_tokens"])
@@ -358,29 +386,8 @@ class ReActLoop:
                 raise MaxIterationsExceeded(f"超过最大迭代次数 ({self.max_iterations})")
 
             assert result is not None
-            new_trace = {
-                "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                "user": validated_input[:80],
-                "steps": [s.model_dump(mode="json") for s in steps],
-            } if steps else None
-            await self._persist_session(
-                sid, memory, prior_summary=prior_summary, wm=wm,
-                prev_traces=prev_traces, new_trace=new_trace,
-            )
 
-            # 长期记忆：本轮完整对话后台异步写入（持引用防 GC）
-            if self.long_term_memory is not None and self.long_term_memory.enabled:
-                task = asyncio.create_task(
-                    self.long_term_memory.add(
-                        user_input=validated_input,
-                        assistant_answer=result.answer,
-                        session_id=sid,
-                        user_id=user_id,
-                    )
-                )
-                self._bg_tasks.add(task)
-                task.add_done_callback(self._on_bg_done)
-
+            # 答案先行推给用户——之后的记忆整理不占用用户感知时间
             yield {
                 "type": "result",
                 "result": result,
@@ -391,6 +398,39 @@ class ReActLoop:
                 "success": result.success,
             }
 
+            # ── 记忆整理（结果已送达，此处耗时用户无感）──
+            # 轻量 LLM 抽取「实体-关系」事实 → 合并进工作记忆 + 结构化写入长期记忆；
+            # 仅在长期记忆启用时执行，单元测试环境自动跳过
+            distilled_facts: list[str] = []
+            if self.long_term_memory is not None and self.long_term_memory.enabled:
+                distilled_facts = await self._extract_turn_facts(validated_input, result.answer)
+                for f in distilled_facts:
+                    wm.add_fact(f)
+                if distilled_facts:
+                    logger.info("轮末事实抽取 %d 条", len(distilled_facts))
+
+            new_trace = {
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "user": validated_input[:80],
+                "steps": [s.model_dump(mode="json") for s in steps],
+            } if steps else None
+            await self._persist_session(
+                sid, memory, chapters=chapters, wm=wm,
+                prev_traces=prev_traces, new_trace=new_trace,
+            )
+
+            # 长期记忆：结构化事实文档（非原文）；抽取失败降级为确定性结构化摘要
+            if self.long_term_memory is not None and self.long_term_memory.enabled:
+                doc = "\n".join(distilled_facts) if distilled_facts else \
+                    self._deterministic_doc(validated_input, result.answer, wm)
+                await self.long_term_memory.add(
+                    user_input=validated_input,
+                    assistant_answer=result.answer,
+                    session_id=sid,
+                    user_id=user_id,
+                    document=doc,
+                )
+
         except GuardrailError as e:
             logger.warning("Guardrail 拦截: %s", e)
             err = AgentResult(answer=str(e), steps=steps, success=False, error=str(e))
@@ -400,7 +440,7 @@ class ReActLoop:
             logger.info("会话 %s 执行被中断，保存部分状态", sid)
             try:
                 await self._persist_session(
-                    sid, memory, prior_summary=prior_summary, wm=wm,
+                    sid, memory, chapters=chapters, wm=wm,
                     prev_traces=prev_traces, new_trace=None,
                 )
             except Exception as persist_err:
@@ -451,33 +491,41 @@ class ReActLoop:
         sid: str,
         memory: ShortTermMemory,
         *,
-        prior_summary: str | None,
+        chapters: list[str],
         wm: WorkingMemory,
         prev_traces: list[dict] | None = None,
         new_trace: dict | None = None,
     ) -> None:
-        """落盘会话状态；超过阈值时把较旧的一半压缩为滚动摘要
+        """落盘会话状态；达到阈值(满窗口)时把本周期压缩为一个冻结章节
 
-        - LLM 看到的始终是「摘要 + 最近 keep_recent 条」（上下文工程核心）
+        - LSM 式章节追加：摘要 + WM 快照组装成新章节 append 到 chapters，
+          旧章节永不改写——压缩事件只让历史区位移一次，已缓存章节保持命中
+        - 章节烘焙后工作记忆清零，新周期从空白积累
         - 压缩失败自动降级为保留完整历史，绝不丢数据
         - traces 保留最近 8 轮推理轨迹，供前端历史回放
         """
         msgs = memory.all_messages()
-        summary = prior_summary
 
         if (
             settings.context_compress_enabled
             and len(msgs) >= settings.context_compress_threshold
         ):
-            keep = max(settings.context_keep_recent, 2)
-            old_part, recent = msgs[:-keep], msgs[-keep:]
-            new_summary = await self._summarize(prior_summary, old_part)
-            if new_summary:
-                summary = new_summary
+            old_part, recent = memory.split_for_compression(settings.context_keep_recent)
+            cycle_no = len(chapters) + 1
+            chapter_summary = await self._summarize(old_part)
+            if chapter_summary:
+                # 组装冻结章节：本周期压缩内容 + 该周期结束时刻的 WM 快照
+                snapshot = wm.prompt_block() or "（本周期无显著任务状态）"
+                chapters.append(
+                    f"【第{cycle_no}阶段】对话压缩\n{chapter_summary}\n\n"
+                    f"【该阶段任务状态】\n{snapshot}"
+                )
                 msgs = recent
+                memory.trim_to(recent)
+                wm.reset_for_new_cycle()
                 logger.info(
-                    "会话 %s 已压缩: %d 条 → 摘要(%d字) + 保留最近 %d 条",
-                    sid, len(old_part), len(summary), len(recent),
+                    "会话 %s 已压缩为第%d章节: %d 条 → 摘要(%d字)+WM快照, 保留最近 %d 条",
+                    sid, cycle_no, len(old_part), len(chapter_summary), len(recent),
                 )
             else:
                 logger.info("会话 %s 压缩失败，保留完整历史 (%d 条)", sid, len(msgs))
@@ -488,27 +536,101 @@ class ReActLoop:
         traces = traces[-8:]
 
         await self.conversation_history.asave_state(
-            sid, msgs, summary=summary, working_memory=wm.to_dict(), traces=traces,
-            user_id=self._owner_uid,
+            sid, msgs, working_memory=wm.to_dict(), traces=traces,
+            chapters=chapters, user_id=self._owner_uid,
         )
 
-    async def _summarize(self, prior_summary: str | None, msgs: list[AgentMessage]) -> str | None:
-        """LLM 滚动摘要：把较旧对话压缩成一段保留关键事实的短文"""
+    # 压缩摘要的 system 提示词（模块级常量，测试以此识别摘要调用）
+    SUMMARY_SYSTEM_PROMPT = (
+        "你是电商客服 Agent 的对话档案员。你输出的摘要会作为独立上下文块注入后续对话，"
+        "是客服了解该用户历史的唯一依据。只输出摘要正文，"
+        "不要任何解释、寒暄或代码块标记。"
+    )
+
+    # 轮末事实抽取的 system 提示词（模块级常量的类内别名，方法体引用模块级版本）
+    FACT_SYSTEM_PROMPT = _FACT_SYSTEM_PROMPT
+
+    async def _extract_turn_facts(self, user_input: str, answer: str) -> list[str]:
+        """轮末轻量抽取「实体-关系」事实 ≤6 条（工作记忆与长期记忆共用）"""
+        try:
+            reply = await self.llm.chat_async(
+                [
+                    AgentMessage(role=ChatRole.system, content=_FACT_SYSTEM_PROMPT),
+                    AgentMessage(
+                        role=ChatRole.user,
+                        content=f"[用户输入]\n{user_input}\n\n[助手回复]\n{answer[:800]}",
+                    ),
+                ],
+                temperature=0.0,
+            )
+            facts: list[str] = []
+            for raw in reply.content.splitlines():
+                line = raw.strip().lstrip("-•*").strip()
+                # 结构守卫：≥3 个词元（实体/关系/值）或带显式分隔符，避免把闲聊回复当事实
+                if 4 <= len(line) <= 80 and (
+                    len(line.split()) >= 3 or "-" in line or "：" in line or ":" in line
+                ):
+                    facts.append(line)
+                if len(facts) >= 6:
+                    break
+            return facts
+        except Exception as e:
+            logger.warning("轮末事实抽取失败: %s", e)
+            return []
+
+    @staticmethod
+    def _deterministic_doc(user_input: str, answer: str, wm: WorkingMemory) -> str:
+        """确定性结构化文档：LLM 抽取失败时的长期记忆降级格式（绝不存原文全文）"""
+        first_line = user_input.strip().splitlines()[0][:60]
+        parts = [f"[诉求] {first_line}"]
+        ents = []
+        if wm.order_ids:
+            ents.append("订单:" + ",".join(wm.order_ids[-3:]))
+        if wm.tracking_nos:
+            ents.append("物流:" + ",".join(wm.tracking_nos[-3:]))
+        if wm.budget_amount is not None:
+            cat = f"({wm.budget_category})" if wm.budget_category else ""
+            ents.append(f"预算:{int(wm.budget_amount)}元{cat}")
+        if ents:
+            parts.append("[实体] " + "；".join(ents))
+        gist = " ".join(answer.split())[:120]
+        parts.append(f"[结论] {gist}")
+        return "\n".join(parts)
+
+    @staticmethod
+    def _build_summary_prompt(transcript: str) -> str:
+        max_chars = settings.context_summary_max_chars
+        return (
+            "请把以下对话记录压缩为一份阶段摘要（章节式记忆，每章独立、互不合并）。\n\n"
+            "## 核心要求：提炼，不是摘录\n"
+            "- 用档案语言重写：每条信息是一行客观事实陈述，禁止对话体\n"
+            "- 禁止出现\"用户说\"\"客服回答\"\"然后\"等引用或叙事结构，禁止按时间顺序复述过程\n"
+            "- 合并同类信息：多轮讨论的同一件事只留最终结论与当前状态\n"
+            "- 唯一例外：订单号/金额等原子标识符必须与原文完全一致——"
+            "这是数据完整性要求（改一个数字就是另一个订单），不等于允许照搬句子\n\n"
+            "## 摘要格式\n"
+            f"总长度不超过 {max_chars} 字。用以下固定字段组织，"
+            "没有内容的字段整行省略，字段顺序保持不变：\n\n"
+            "【当前诉求】用户此刻最想解决的一件事\n"
+            "【关键标识符】订单号/售后单号/物流单号/商品编号（逐字保真）\n"
+            "【金额与预算】预算上限、涉事金额、优惠规则（数字保真）\n"
+            "【办理进度】每个在办事项的状态机位置，如\"订单20240601001：退货申请待商家审核\"\n"
+            "【已做承诺】客服已答应的事项与数字（到账天数、运费承担等）——合规凭据，数字保真\n"
+            "【未解决事项】尚未办结的问题\n"
+            "【已排除选项】用户拒绝过的方案或不满意的推荐（防止重复推销）\n"
+            "【用户状态】情绪信号：不满、焦虑、重复追问、转人工倾向\n\n"
+            f"[待压缩的本周期对话记录]\n{transcript}"
+        )
+
+    async def _summarize(self, msgs: list[AgentMessage]) -> str | None:
+        """LLM 章节压缩：把本周期旧对话按电商客服档案结构压缩成独立章节摘要"""
         try:
             transcript = "\n".join(f"{m.role.value}: {m.content}" for m in msgs)
-            prompt = (
-                "你是客服对话摘要助手。请把以下智能客服对话记录压缩为一段中文摘要，"
-                f"不超过{settings.context_summary_max_chars}字。\n"
-                "必须保留：用户表达的预算及品类、提到过的订单号/物流单号、"
-                "已确认的结论与承诺、未解决的诉求。省略寒暄和工具调用细节，直接输出摘要正文。\n\n"
-            )
-            if prior_summary:
-                prompt += f"[更早的已有摘要]\n{prior_summary}\n\n"
-            prompt += f"[待压缩的对话记录]\n{transcript}"
+            prompt = self._build_summary_prompt(transcript)
 
             reply = await self.llm.chat_async(
                 [
-                    AgentMessage(role=ChatRole.system, content="你是对话摘要助手，只输出摘要本身。"),
+                    AgentMessage(role=ChatRole.system, content=self.SUMMARY_SYSTEM_PROMPT),
                     AgentMessage(role=ChatRole.user, content=prompt),
                 ],
                 temperature=0.1,
@@ -530,6 +652,8 @@ class ReActLoop:
         initial_thought: str,
         initial_call: ToolCall,
         req_metrics: MetricsCollector,
+        chapters: list[str] | None = None,
+        state_note: str | None = None,
     ) -> dict[str, Any]:
         """执行一次「LLM 决定调工具 → 执行（含修正重试）→ 结果入记忆」的完整步骤"""
         thought = initial_thought
@@ -592,7 +716,7 @@ class ReActLoop:
                     tool_call_id=tool_call.id,
                 ))
 
-                messages = self._build_messages(system_prompt, memory)
+                messages = self._build_messages(system_prompt, memory, chapters, state_note)
                 reply = await self.llm.chat_async(messages, temperature=settings.temperature)
                 thought = reply.content
                 tokens = reply.total_tokens or estimate_tokens(thought)
@@ -655,12 +779,58 @@ class ReActLoop:
         if not task.cancelled() and task.exception() is not None:
             logger.warning("长期记忆后台写入失败: %s", task.exception())
 
+    def _schedule_lt_maintenance(self) -> None:
+        """长期记忆维护：进程生命周期内只调度一次（首次对话时后台执行）"""
+        if getattr(self, "_lt_maintained", False):
+            return
+        self._lt_maintained = True
+        if self.long_term_memory is None or not self.long_term_memory.enabled:
+            return
+
+        async def _run() -> None:
+            try:
+                live = set(await self.conversation_history.alist_sessions())
+                stats = await self.long_term_memory.maintain(live_session_ids=live)
+                logger.info("长期记忆维护完成: %s", stats)
+            except Exception as e:
+                logger.warning("长期记忆维护失败(不影响使用): %s", e)
+
+        task = asyncio.create_task(_run())
+        self._bg_tasks.add(task)
+        task.add_done_callback(self._on_bg_done)
+
     @staticmethod
-    def _build_messages(system_prompt: str, memory: ShortTermMemory) -> list[AgentMessage]:
-        return [
-            AgentMessage(role=ChatRole.system, content=system_prompt),
-            *memory.get_context(),
+    def _build_messages(
+        system_prompt: str,
+        memory: ShortTermMemory,
+        chapters: list[str] | None = None,
+        state_note: str | None = None,
+    ) -> list[AgentMessage]:
+        """消息数组 = [system][章节1..k(冻结)][历史…][状态尾注][最新输入]
+
+        - 章节为独立 system 消息：压缩事件只 append 新章，旧章节与系统提示词
+          的缓存永不失效；每章含该周期压缩摘要 + 该周期结束时的 WM 快照
+        - 历史 strictly append-only
+        - 状态尾注仅承载当期工作记忆（周期开始时已清零）+ 跨会话召回
+        """
+        messages: list[AgentMessage] = [
+            AgentMessage(role=ChatRole.system, content=system_prompt)
         ]
+        for ch in chapters or []:
+            messages.append(AgentMessage(
+                role=ChatRole.system,
+                content="## 历史记忆章节（已归档，事实仍有效）\n" + ch,
+            ))
+        ctx = memory.get_context()
+        head, tail = ctx[:-1], ctx[-1:]
+        messages.extend(head)
+        if state_note:
+            messages.append(AgentMessage(
+                role=ChatRole.system,
+                content="## 当前任务状态（每轮更新，以此为准）\n" + state_note,
+            ))
+        messages.extend(tail)
+        return messages
 
     @staticmethod
     def _generate_id() -> str:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -71,15 +72,16 @@ class LongTermMemory:
         assistant_answer: str,
         session_id: str,
         user_id: str = "default",
+        document: str | None = None,
     ) -> None:
-        """异步写入一轮完整对话到长期记忆"""
+        """异步写入一轮记忆（优先使用整理后的结构化文档，而非原始问答全文）"""
         if not self.enabled or self.collection is None:
             return
-        if not user_input.strip() or not assistant_answer.strip():
+        if not document and (not user_input.strip() or not assistant_answer.strip()):
             return
 
         try:
-            doc = self._format_conversation(user_input, assistant_answer)
+            doc = document or self._format_conversation(user_input, assistant_answer)
             ts = datetime.now().isoformat()
             doc_id = f"{session_id}-{ts}"
 
@@ -91,7 +93,7 @@ class LongTermMemory:
                     "session_id": session_id,
                     "user_id": user_id,
                     "timestamp": ts,
-                    "role": "conversation",
+                    "role": "facts" if document else "conversation",
                 }],
             )
             logger.debug("长期记忆已写入: %s", doc_id)
@@ -99,11 +101,17 @@ class LongTermMemory:
             logger.warning("长期记忆写入失败: %s", e)
 
     async def search(
-        self, query: str, top_k: int | None = None, user_id: str | None = None
+        self,
+        query: str,
+        top_k: int | None = None,
+        user_id: str | None = None,
+        exclude_session_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """异步语义检索相关历史对话
 
         - 按 user_id 过滤（多用户隔离）；None 表示不过滤
+        - exclude_session_id：排除当前会话——本会话近期内容已在短期窗口，
+          召回只补「跨会话」的远期记忆，避免重复注入
         - 距离超过 long_term_max_distance 的结果视为不相关，直接丢弃
         """
         if not self.enabled or self.collection is None:
@@ -114,7 +122,15 @@ class LongTermMemory:
         try:
             k = top_k or settings.long_term_top_k
             threshold = settings.long_term_max_distance
-            where = {"user_id": user_id} if user_id else None
+
+            where: dict[str, Any] | None = None
+            if user_id and exclude_session_id:
+                where = {"$and": [
+                    {"user_id": user_id},
+                    {"session_id": {"$ne": exclude_session_id}},
+                ]}
+            elif user_id:
+                where = {"user_id": user_id}
 
             def _do_query():
                 count = self.collection.count()
@@ -152,3 +168,121 @@ class LongTermMemory:
             return self.collection.count()
         except Exception:
             return 0
+
+    # ── 维护：TTL / 近重复合并 / 孤儿清除 / 容量熔断 ──────
+
+    _HIGH_VALUE_RE = re.compile(
+        r"20\d{9}|\b(SF|YT|ZTO|STO|JD|EMS)\d{9,12}\b|承诺|\d{3,}元", re.IGNORECASE
+    )
+
+    @classmethod
+    def _value_score(cls, doc: str) -> int:
+        """价值分：含订单号/物流号/金额/承诺等硬信息为高价值（TTL 豁免）"""
+        score = 0
+        if cls._HIGH_VALUE_RE.search(doc):
+            score += 2
+        if len(doc) >= 60:
+            score += 1
+        return score
+
+    async def maintain(self, live_session_ids: set[str] | None = None) -> dict:
+        """启动维护（后台执行一次）：清理 + 合并 + 熔断，返回统计
+
+        - TTL：超过 ttl_days 的低价值记录删除；高价值豁免
+        - 近重复：与更新记录距离 < dup_distance 的旧条合并删除
+        - 孤儿：session 已不存在 → 删除（需传 live_session_ids）
+        - 容量：超 max_records 时按「低价值且最旧」优先淘汰
+        """
+        stats = {"ttl_deleted": 0, "dup_merged": 0, "orphan_deleted": 0, "cap_evicted": 0}
+        if not self.enabled or self.collection is None:
+            return stats
+        try:
+            got = await asyncio.to_thread(
+                self.collection.get, include=["documents", "metadatas"]
+            )
+            ids = list(got.get("ids") or [])
+            docs = list(got.get("documents") or [])
+            metas = list(got.get("metadatas") or [])
+            now = datetime.now()
+
+            def age_days(m: dict) -> float:
+                ts = str(m.get("timestamp") or "")
+                try:
+                    return (now - datetime.fromisoformat(ts)).days
+                except Exception:
+                    return 999.0
+
+            scores = {i: self._value_score(d or "") for i, d in zip(ids, docs)}
+            delete: set[str] = set()
+
+            # ① TTL（高价值豁免）
+            ttl = settings.long_term_ttl_days
+            for i, m in zip(ids, metas):
+                if age_days(m or {}) > ttl and scores[i] < 2:
+                    delete.add(i)
+
+            # ③ 孤儿清除
+            if live_session_ids is not None:
+                for i, m in zip(ids, metas):
+                    sid = str((m or {}).get("session_id") or "")
+                    if sid and sid not in live_session_ids:
+                        delete.add(i)
+
+            # ② 近重复合并：旧条若与某条「更新记录」几乎相同则删旧保新
+            if settings.long_term_dup_distance is not None and len(ids) > 1:
+                order = sorted(range(len(ids)), key=lambda k: age_days(metas[k] or {}))
+                for pos, k in enumerate(order):
+                    iid = ids[k]
+                    if iid in delete:
+                        continue
+                    nearest = await asyncio.to_thread(
+                        self.collection.query,
+                        query_texts=[docs[k]],
+                        n_results=min(2, len(ids)),
+                    )
+                    near_ids = (nearest.get("ids") or [[]])[0]
+                    near_dists = (nearest.get("distances") or [[]])[0]
+                    for nid, dist in zip(near_ids[1:], near_dists[1:]):
+                        if nid in delete:
+                            continue
+                        other_pos = next(
+                            (p for p, j in enumerate(order) if ids[j] == nid), None
+                        )
+                        # 只向「更新」的记录合并
+                        if other_pos is not None and other_pos < pos \
+                                and float(dist) < settings.long_term_dup_distance:
+                            delete.add(iid)
+                            stats["dup_merged"] += 1
+                            break
+
+            # 执行删除（TTL/孤儿/去重）
+            if delete:
+                await asyncio.to_thread(self.collection.delete, ids=list(delete))
+                stats["ttl_deleted"] = sum(
+                    1 for i in delete
+                    if age_days(dict(zip(ids, metas))[i] or {}) > ttl and scores[i] < 2
+                )
+                stats["orphan_deleted"] = len(delete) - stats["ttl_deleted"] - stats.pop("dup_merged")
+                stats["dup_merged"] = stats.get("dup_merged", 0)
+
+            # ④ 容量熔断
+            overflow = self.count() - settings.long_term_max_records
+            if overflow > 0:
+                got2 = await asyncio.to_thread(
+                    self.collection.get, include=["documents", "metadatas"]
+                )
+                cand = sorted(
+                    zip(got2["ids"], got2.get("documents") or [], got2.get("metas") or got2.get("metadatas") or []),
+                    key=lambda t: (self._value_score(t[1] or ""), str((t[2] or {}).get("timestamp") or "")),
+                )
+                evict = [t[0] for t in cand[:overflow]]
+                if evict:
+                    await asyncio.to_thread(self.collection.delete, ids=evict)
+                    stats["cap_evicted"] = len(evict)
+
+            if any(stats.values()):
+                logger.info("长期记忆维护完成: %s", stats)
+            return stats
+        except Exception as e:
+            logger.warning("长期记忆维护失败(不影响使用): %s", e)
+            return stats

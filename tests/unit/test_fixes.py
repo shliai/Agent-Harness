@@ -720,7 +720,7 @@ class TestLoopRobustness:
 
         saved = {}
 
-        async def fake_save_state(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None):
+        async def fake_save_state(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None, chapters=None):
 
             saved["msgs"] = msgs
 

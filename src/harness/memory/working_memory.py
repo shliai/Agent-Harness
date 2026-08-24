@@ -17,14 +17,18 @@ _MAX_TOPICS = 5
 
 
 class WorkingMemory(BaseModel):
-    """跨轮工作记忆：结构化任务状态槽位
+    """跨轮工作记忆：结构化任务状态槽位 + 实体关系事实（当期周期）
 
     与短期记忆（原始消息窗口）互补：
     - 短期记忆给 LLM 看「最近说了什么」，超窗即丢
-    - 工作记忆存「任务里最关键的少量事实」，全程持久、注入 system prompt
-      （预算约束 / 订单号 / 物流单号 / 近期话题），不依赖 LLM 的注意力
+    - 工作记忆存「任务里最关键的少量事实」，全程持久、注入状态尾注
+      （预算约束 / 订单号 / 物流单号 / 近期话题 / 关键事实），不依赖 LLM 的注意力
 
-    槽位由确定性规则从用户输入中抽取，无 LLM 参与，零额外延迟。
+    槽位由确定性规则从用户输入中抽取，零额外延迟；
+    important_facts 由轮末轻量 LLM 抽取的「实体-关系」事实补充。
+
+    生命周期：压缩事件时整块烘焙进冻结章节后 reset_for_new_cycle() 清零，
+    新周期从空白开始重新积累——章节负责历史，工作记忆只管当下。
     """
 
     budget_amount: float | None = None
@@ -33,8 +37,9 @@ class WorkingMemory(BaseModel):
     order_ids: list[str] = Field(default_factory=list)
     tracking_nos: list[str] = Field(default_factory=list)
     recent_topics: list[str] = Field(default_factory=list)
+    important_facts: list[str] = Field(default_factory=list)  # 实体-关系事实（长尾关键信息）
     awaiting_slot: str | None = None  # 上一轮向用户发起的澄清（等待补充的信息）
-    tokens_used: int = 0  # 会话累计 token 消耗（预算控制）
+    tokens_used: int = 0  # 会话累计 token 消耗（预算控制，跨周期保留）
     updated_turn: int = 0
 
     # ── 序列化 ─────────────────────────────────────────
@@ -59,7 +64,31 @@ class WorkingMemory(BaseModel):
             and not self.order_ids
             and not self.tracking_nos
             and not self.recent_topics
+            and not self.important_facts
         )
+
+    def add_fact(self, fact: str) -> bool:
+        """登记一条实体-关系事实（不设上限——工作记忆随会话存续，事实是会话资产）。
+
+        仅做近似去重（互相包含视为重复）控制增长质量；
+        压缩事件时整块烘入冻结章节后清零。
+        """
+        fact = " ".join(fact.split()).strip()[:100]
+        if not fact:
+            return False
+        for existing in self.important_facts:
+            if fact == existing or fact in existing or existing in fact:
+                return False
+        self.important_facts.append(fact)
+        return True
+
+    def reset_for_new_cycle(self) -> None:
+        """压缩事件后清空知识槽位开启新周期；仅保留会话级计数器"""
+        kept_tokens = self.tokens_used
+        kept_turn = self.updated_turn
+        fresh = WorkingMemory(tokens_used=kept_tokens, updated_turn=kept_turn)
+        self.__dict__.update(fresh.__dict__)
+        logger.info("工作记忆已随章节烘焙清零，进入新周期")
 
     # ── 更新（规则抽取，确定性） ────────────────────────
 
@@ -138,7 +167,7 @@ class WorkingMemory(BaseModel):
     # ── Prompt 注入 ────────────────────────────────────
 
     def prompt_block(self) -> str:
-        """渲染为 system prompt 片段；空状态返回空串"""
+        """渲染为状态尾注片段；空状态返回空串"""
         if self.is_empty():
             return ""
 
@@ -161,5 +190,9 @@ class WorkingMemory(BaseModel):
             lines.append(f"- 近期话题：{' / '.join(self.recent_topics[-3:])}")
         if self.awaiting_slot:
             lines.append(f"- 等待用户提供：{self.awaiting_slot}（若用户本轮已给出则直接使用，勿再追问）")
+        if self.important_facts:
+            lines.append("- 关键事实（实体-关系，按时间序）：")
+            for f in self.important_facts:
+                lines.append(f"  · {f}")
 
         return "\n".join(lines)

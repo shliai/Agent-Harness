@@ -76,32 +76,39 @@ class ConversationHistory:
         working_memory: dict | None = None,
         traces: list[dict] | None = None,
         user_id: str | None = None,
+        chapters: list[str] | None = None,
     ) -> Path:
         """保存完整会话状态（整体事务替换 messages，保留既有 title 与归属）
 
         user_id 为会话归属者；冲突更新时保留首次写入的归属（不可被后续请求篡改）。
+        chapters 为冻结的记忆章节（LSM 式只追加，见 loop._persist_session）。
         """
         from harness.storage import db as store
 
         now = datetime.now().isoformat(timespec="seconds")
         with store.db() as c:
             prev = c.execute(
-                "SELECT title, created_at, user_id FROM sessions WHERE session_id=?",
+                "SELECT title, created_at, user_id, chapters_json FROM sessions WHERE session_id=?",
                 (session_id,),
             ).fetchone()
             title = prev["title"] if prev else ""
             created_at = prev["created_at"] if prev else now
             owner = (prev["user_id"] if prev else "") or (user_id or "")
+            # chapters 追加语义：调用方未显式传入时保留库中已有章节
+            kept_chapters = json.loads(prev["chapters_json"]) if prev else []
+            final_chapters = chapters if chapters is not None else kept_chapters
 
             c.execute(
-                """INSERT INTO sessions(session_id,user_id,title,summary,working_memory_json,
+                """INSERT INTO sessions(session_id,user_id,title,summary,chapters_json,working_memory_json,
                                         traces_json,updated_at,created_at)
-                   VALUES(?,?,?,?,?,?,?,?)
+                   VALUES(?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(session_id) DO UPDATE SET
                      title=excluded.title, summary=excluded.summary,
+                     chapters_json=excluded.chapters_json,
                      working_memory_json=excluded.working_memory_json,
                      traces_json=excluded.traces_json, updated_at=excluded.updated_at""",
                 (session_id, owner, title, summary or "",
+                 json.dumps(final_chapters, ensure_ascii=False),
                  json.dumps(working_memory or {}, ensure_ascii=False),
                  json.dumps(traces or [], ensure_ascii=False), now, created_at),
             )
@@ -144,6 +151,7 @@ class ConversationHistory:
             "user_id": srow["user_id"] or "",
             "title": srow["title"] or "",
             "summary": srow["summary"] or "",
+            "chapters": json.loads(srow["chapters_json"] or "[]"),
             "working_memory": json.loads(srow["working_memory_json"] or "{}"),
             "traces": json.loads(srow["traces_json"] or "[]"),
             "messages": [m.model_dump(mode="json") for m in messages],
@@ -242,9 +250,10 @@ class ConversationHistory:
         working_memory: dict | None = None,
         traces: list[dict] | None = None,
         user_id: str | None = None,
+        chapters: list[str] | None = None,
     ) -> Path:
         return await asyncio.to_thread(
-            self.save_state, session_id, messages, summary, working_memory, traces, user_id
+            self.save_state, session_id, messages, summary, working_memory, traces, user_id, chapters
         )
 
     async def aload_state(self, session_id: str) -> dict | None:

@@ -42,11 +42,13 @@ Agent = LLM（推理内核）+ Harness（调度外壳）
 execute_stream(user_input, session_id, user_id):
   1. 设置请求上下文(ContextVar: user_id/session_id)
      —— 订单归属校验、工单归属、长期记忆隔离的数据基础
-  2. 加载会话状态(messages + summary + working_memory + traces)
+  2. 加载会话状态(messages + chapters + working_memory + traces)
+     —— 首次对话时后台调度长期记忆维护(TTL/孤儿/去重/熔断)
   3. Guardrails.check_input()（含审计留痕）
-  4. 工作记忆规则抽取（预算/单号/话题）→ 注入 system prompt
-  5. 上下文装配顺序：
-     系统提示 → 工具说明 → 历史摘要 → 任务状态槽位 → 长期记忆召回 → 最近窗口消息
+  4. 工作记忆规则抽取（预算/单号/话题）→ 状态尾注
+  5. 上下文装配顺序（KV-cache 友好）：
+     [system 人设+工具] → [system 冻结章节×k] → [历史消息(只追加)]
+     → [system 状态尾注=当期WM+跨会话召回] → [本轮输入]
   6. for step in range(MAX_ITERATIONS):
      a. stream_chat_async 流式生成 → delta 增量即时推送前端
      b. _parse_tool_call()（raw_decode 安全解析）

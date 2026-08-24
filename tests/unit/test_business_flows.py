@@ -265,7 +265,7 @@ class TestCancelPersistenceAndTraces:
         loop = _make_loop(_HangLLM())
         saved: dict = {}
 
-        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None):
+        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None, chapters=None):
             saved["count"] = len(msgs)
 
         loop.conversation_history.aload_state.return_value = None
@@ -283,7 +283,7 @@ class TestCancelPersistenceAndTraces:
         loop = _make_loop(_ToolCallLLM())
         saved: dict = {}
 
-        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None):
+        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None, chapters=None):
             saved["traces"] = traces
 
         loop.conversation_history.aload_state.return_value = None

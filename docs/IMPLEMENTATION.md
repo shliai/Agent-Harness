@@ -411,22 +411,29 @@ class WorkingMemory(BaseModel):
 - 预算：区分「明确预算」（预算3000/3999的手机/3k/2000预算）与「临时上限」（5000以下不覆盖既有预算）；用户改口自动更新并记录轮次
 - 订单号：`20\d{9}` 11 位数字模式
 - 物流号：`(SF|YT|ZTO|STO|JD|EMS)\d{9,12}`
-- prompt_block() 渲染为 system prompt 的「任务状态」区块
+- prompt_block() 渲染为「状态尾注」消息（对话末尾、本轮输入之前），含槽位与关键事实
+- 轮末 LLM 抽取实体-关系事实（_extract_turn_facts）合并进 important_facts，并结构化写入长期记忆
+- 压缩事件时整块烘入冻结章节后 reset_for_new_cycle() 清零开新周期
 
-### 短期记忆与会话压缩
+### 短期记忆与章节压缩（v0.7.4 LSM 式）
 
-ShortTermMemory 双视图设计：
-- `get_context()`：deque(maxlen=N) 只返回最近 N 条给 LLM
-- `all_messages()`：全量列表供落盘和压缩使用
+ShortTermMemory 只追加设计：
+- `get_context()` / `all_messages()`：纯 list 追加，无滑动淘汰（淘汰会打穿 KV cache 前缀）
+- `split_for_compression(keep)` / `trim_to(recent)`：显式压缩接口
 
-压缩流程（loop._persist_session）：
+章节压缩流程（loop._persist_session）：
 ```
-len(all_messages) >= CONTEXT_COMPRESS_THRESHOLD (28)?
-  ├─ 是 → 取前 (len-KEEP_RECENT) 条调 LLM 摘要
-  │       成功 → 落盘 {messages: 最近16条, summary: 新摘要}
+len(all_messages) >= CONTEXT_COMPRESS_THRESHOLD (100)?
+  ├─ 是 → 本周期旧 80 条调 LLM 章节摘要（不合并旧章节，零级联损耗）
+  │       成功 → 组装冻结章节【第N阶段】摘要+WM快照 → chapters.append()
+  │            → WM reset_for_new_cycle() 清零开新周期
+  │            → 落盘 {messages: 最近20条, chapters: 追加后全量}
   │       失败 → 落盘完整历史（降级保数据）
   └─ 否 → 直接落盘全部
 ```
+
+上下文组装 = [system 人设+工具] + [system 章节×k] + [历史(只追加)] + [system 状态尾注=当期WM+跨会话召回] + [本轮输入]。
+稳定期纯追加 → KV cache 零失效；压缩事件仅历史区位移一次。
 
 ### 长期记忆 long_term_memory
 

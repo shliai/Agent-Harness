@@ -1,6 +1,7 @@
 """v0.3.1 记忆系统测试：WorkingMemory / 会话压缩 / 多轮注入"""
 from __future__ import annotations
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -90,11 +91,12 @@ class TestWorkingMemoryExtraction:
 # ── ShortTermMemory：全量追踪 ──────────────────────────────
 
 class TestShortTermFullTracking:
-    def test_window_trims_but_full_kept(self) -> None:
+    def test_append_only_full_kept(self) -> None:
+        """只追加语义：context 与 full 同步增长，裁剪仅由 trim_to 触发"""
         mem = ShortTermMemory(window_size=4, track_full=True)
         for i in range(10):
             mem.add(AgentMessage(role=ChatRole.user, content=f"m{i}"))
-        assert len(mem.get_context()) == 4          # LLM 视角：最近窗口
+        assert len(mem.get_context()) == 10         # 只追加：不自动淘汰
         assert len(mem.all_messages()) == 10        # 落盘视角：全量
         assert mem.all_messages()[0].content == "m0"
 
@@ -102,7 +104,7 @@ class TestShortTermFullTracking:
         mem = ShortTermMemory(window_size=3)
         for i in range(5):
             mem.add(AgentMessage(role=ChatRole.user, content=f"x{i}"))
-        assert len(mem.all_messages()) == 3  # 无 track_full 时退化为窗口
+        assert len(mem.all_messages()) == 5  # 无 track_full 时退化为当前列表（同样只追加）
 
 
 # ── ConversationHistory：状态存储 ──────────────────────────
@@ -140,7 +142,7 @@ class TestConversationStatePersistence:
 # ── loop.py：压缩 + 工作记忆多轮注入 ───────────────────────
 
 class _SummaryLLM(StreamFromChat):
-    """正常回答；若收到摘要请求（system 含「摘要助手」）则返回固定摘要"""
+    """正常回答；若收到摘要请求（system 含档案员提示词）则返回固定摘要"""
 
     def __init__(self) -> None:
         self.calls: list[list[AgentMessage]] = []
@@ -148,7 +150,9 @@ class _SummaryLLM(StreamFromChat):
 
     async def chat_async(self, messages, temperature=None):
         self.calls.append(list(messages))
-        if any(m.content.startswith("你是客服对话摘要助手") for m in messages):
+        from harness.core.loop import ReActLoop
+
+        if any(m.content.startswith(ReActLoop.SUMMARY_SYSTEM_PROMPT) for m in messages):
             self.summarize_called = True
             return LLMReply(content="用户预算3000元买手机，已推荐小米14。")
         return LLMReply(content="好的，明白了。")
@@ -172,7 +176,168 @@ def _make_loop(llm, registry=None, **overrides):
     )
 
 
-class TestLoopContextEngineering:
+class TestChapterMemory:
+    """LSM 式章节前缀：压缩 = 摘要+WM快照烘焙成章，追加后冻结，WM清零开新周期"""
+
+    def test_reset_for_new_cycle_clears_knowledge_keeps_counters(self) -> None:
+        wm = WorkingMemory(
+            budget_amount=3000.0, budget_category="手机", budget_turn=1,
+            order_ids=["20240601001"], tracking_nos=["SF1234567890"],
+            tokens_used=4567, updated_turn=9,
+        )
+        wm.add_fact("用户 偏好 小米品牌")
+        wm.set_awaiting("具体型号")
+
+        wm.reset_for_new_cycle()
+
+        assert wm.budget_amount is None
+        assert wm.order_ids == [] and wm.tracking_nos == []
+        assert wm.important_facts == []
+        assert wm.awaiting_slot is None
+        assert wm.tokens_used == 4567          # 会话级计数器保留
+        assert wm.updated_turn == 9
+
+    def test_build_messages_renders_chapters_as_frozen_block(self) -> None:
+        """章节渲染为独立 system 消息，位于系统提示词之后、历史之前"""
+        from harness.core.loop import ReActLoop
+
+        memory = ShortTermMemory(window_size=10)
+        memory.add(AgentMessage(role=ChatRole.user, content="新问题"))
+        msgs = ReActLoop._build_messages(
+            "人设X", memory,
+            chapters=["【第1阶段】压缩A\n【该阶段任务状态】\n预算3000"],
+            state_note=None,
+        )
+        assert len(msgs) == 3                  # [system][chapter1][user]
+        assert msgs[1].role == ChatRole.system
+        assert "历史记忆章节" in msgs[1].content
+        assert "第1阶段" in msgs[1].content and "3000" in msgs[1].content
+        # 多章节保持给定顺序（追加语义）
+        msgs2 = ReActLoop._build_messages("人设X", memory, chapters=["章一", "章二"])
+        assert "章一" in msgs2[1].content and "章二" in msgs2[2].content
+
+    @pytest.mark.asyncio
+    async def test_loop_persists_chapters_and_resets_wm(self) -> None:
+        """压缩事件后：chapters 追加新章、WM 清零、消息裁剪"""
+        llm = _SummaryLLM()
+        loop = _make_loop(llm)
+        saved_states: dict[str, dict] = {}
+
+        async def fake_aread_raw(sid):
+            return saved_states.get(sid)
+
+        async def fake_asave_state(sid, msgs, summary=None, working_memory=None,
+                                   traces=None, user_id=None, chapters=None):
+            saved_states[sid] = {
+                "messages": [m.model_dump(mode="json") for m in msgs],
+                "summary": summary or "",
+                "working_memory": working_memory or {},
+                "chapters": chapters if chapters is not None else [],
+            }
+
+        loop.conversation_history.aload_state = fake_aread_raw
+        loop.conversation_history.asave_state = fake_asave_state
+
+        import harness.config as cfg
+        original = (cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent)
+        cfg.settings.context_compress_threshold = 4
+        cfg.settings.context_keep_recent = 2
+        try:
+            await loop.execute("预算3000买个手机", session_id="bake-test")
+            await loop.execute("还有别的吗", session_id="bake-test")
+        finally:
+            cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent = original
+
+        state = saved_states["bake-test"]
+        assert len(state["chapters"]) == 1, "应产生第1章节"
+        assert "3000" in state["chapters"][0]
+        assert "任务状态" in state["chapters"][0]
+        # WM 已清零（预算随快照进入章节，槽位归空）
+        assert state["working_memory"].get("budget_amount") is None
+        assert len(state["messages"]) <= 2 * 2
+
+
+
+    def test_add_fact_dedup_no_cap(self) -> None:
+        """事实登记：近似去重；不设上限（工作记忆随会话存续，事实是会话资产）"""
+        wm = WorkingMemory()
+        assert wm.add_fact("用户 偏好 小米品牌") is True
+        assert wm.add_fact("用户 偏好 小米品牌") is False          # 完全重复
+        assert wm.add_fact("用户 偏好 小米品牌系列") is False      # 包含关系视为重复
+        for i in range(30):
+            assert wm.add_fact(f"事实{i}-状态-{i}") is True
+        assert len(wm.important_facts) == 31                      # 全量保留（1+30）
+        # 渲染端也全量输出
+        block = wm.prompt_block()
+        for i in (0, 15, 29):
+            assert f"事实{i}-状态-{i}" in block
+
+    @pytest.mark.asyncio
+    async def test_working_memory_isolated_per_session(self) -> None:
+        """工作记忆按会话隔离：不同 session 的预算/事实互不可见"""
+        llm = _SummaryLLM()
+        loop = _make_loop(llm)
+
+        saved_states: dict[str, dict] = {}
+
+        async def fake_aread_raw(sid):
+            return saved_states.get(sid)
+
+        async def fake_asave_state(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None, chapters=None):
+            saved_states[sid] = {
+                "messages": [m.model_dump(mode="json") for m in msgs],
+                "summary": summary or "",
+                "working_memory": working_memory or {},
+            }
+
+        loop.conversation_history.aload_state = fake_aread_raw
+        loop.conversation_history.asave_state = fake_asave_state
+
+        await loop.execute("预算3000买个手机", session_id="sess-A")
+        await loop.execute("预算8000买个笔记本", session_id="sess-B")
+
+        wm_a = saved_states["sess-A"]["working_memory"]
+        wm_b = saved_states["sess-B"]["working_memory"]
+        assert wm_a["budget_amount"] == 3000.0
+        assert wm_b["budget_amount"] == 8000.0
+        # 会话 B 的状态尾注不得出现 A 的预算（隔离）
+        turn_b_msgs = llm.calls[-1]
+        b_note = next(m for m in turn_b_msgs if m.role == ChatRole.system and m.content.startswith("## 当前任务状态"))
+        assert "8000" in b_note.content and "3000" not in b_note.content
+
+    def test_prompt_block_renders_facts(self) -> None:
+        wm = WorkingMemory()
+        wm.add_fact("用户 偏好 小米品牌")
+        block = wm.prompt_block()
+        assert "关键事实" in block and "小米品牌" in block
+
+    @pytest.mark.asyncio
+    async def test_extract_turn_facts_structure_guard(self) -> None:
+        """抽取解析：仅接受带关系分隔符的结构化行，闲聊回复不误收"""
+        from harness.core.loop import ReActLoop
+
+        class FakeLLM:
+            async def chat_async(self, messages, temperature=None):
+                return LLMReply(content="- 用户 偏好 华为品牌\n好的呀\n- 订单20240601001 状态 已退货")
+
+        inst = SimpleNamespace(llm=FakeLLM())
+        facts = await ReActLoop._extract_turn_facts(inst, "想买手机", "已为您推荐华为")  # type: ignore[arg-type]
+        assert facts == ["用户 偏好 华为品牌", "订单20240601001 状态 已退货"]
+
+    def test_deterministic_doc_format(self) -> None:
+        from harness.core.loop import ReActLoop
+
+        wm = WorkingMemory()
+        wm.budget_amount = 3000.0
+        wm.budget_category = "手机"
+        wm.order_ids = ["20240601001"]
+        doc = ReActLoop._deterministic_doc("预算3000买手机\n谢谢", "为您推荐了小米14 2999元 很不错", wm)
+        assert doc.startswith("[诉求] 预算3000买手机")
+        assert "[实体] 订单:20240601001；预算:3000元(手机)" in doc
+        assert "[结论]" in doc
+
+
+
     @pytest.mark.asyncio
     async def test_working_memory_injected_next_turn(self) -> None:
         """第 1 轮设定预算 → 第 2 轮 system prompt 应包含工作记忆槽位"""
@@ -184,7 +349,7 @@ class TestLoopContextEngineering:
         async def fake_aread_raw(sid):
             return saved_states.get(sid)
 
-        async def fake_asave_state(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None):
+        async def fake_asave_state(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None, chapters=None):
             saved_states[sid] = {
                 "messages": [m.model_dump(mode="json") for m in msgs],
                 "summary": summary or "",
@@ -197,10 +362,15 @@ class TestLoopContextEngineering:
         await loop.execute("预算3000以内买个拍照手机", session_id="wm-test")
         await loop.execute("有什么屏幕小的吗", session_id="wm-test")
 
-        # 第 2 轮的首条 system prompt 必须包含预算约束（即使该消息早已滑出窗口）
-        second_turn_system = llm.calls[-1][0].content
-        assert "任务状态" in second_turn_system
-        assert "预算上限：3000" in second_turn_system
+        # 第 2 轮应包含工作记忆「状态尾注」消息（尾部注入，不破坏前缀缓存）
+        turn2_msgs = llm.calls[-1]
+        wm_notes = [m for m in turn2_msgs if m.role == ChatRole.system and m.content.startswith("## 当前任务状态")]
+        assert wm_notes, "第 2 轮应包含工作记忆尾注消息"
+        assert "预算上限：3000" in wm_notes[0].content
+        # 尾注位于最后一条用户消息之前
+        assert turn2_msgs.index(wm_notes[0]) == len(turn2_msgs) - 2
+        # 首条 system prompt 不再携带每轮变化的工作记忆（前缀稳定性）
+        assert not turn2_msgs[0].content.startswith("## 当前任务状态")
 
         # 状态文件里也应持久化了工作记忆
         assert saved_states["wm-test"]["working_memory"]["budget_amount"] == 3000.0
@@ -217,12 +387,13 @@ class TestLoopContextEngineering:
         async def fake_aread_raw(sid):
             return saved_states.get(sid)
 
-        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None):
-            saved["msgs"], saved["summary"] = msgs, summary
+        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None, chapters=None):
+            saved["msgs"], saved["chapters"] = msgs, (chapters if chapters is not None else [])
             saved_states[sid] = {
                 "messages": [m.model_dump(mode="json") for m in msgs],
                 "summary": summary or "",
                 "working_memory": working_memory or {},
+                "chapters": chapters if chapters is not None else [],
             }
 
         loop.conversation_history.aload_state = fake_aread_raw
@@ -240,7 +411,8 @@ class TestLoopContextEngineering:
             cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent = original
 
         assert llm.summarize_called, "应触发过摘要压缩"
-        assert saved["summary"] and "预算" in saved["summary"]
+        assert saved["chapters"], "应产生冻结章节"
+        assert any("预算" in ch or "状态" in ch for ch in saved["chapters"])
         assert len(saved["msgs"]) <= 4 * 2  # 只保留最近 keep_recent*2 条消息
 
     @pytest.mark.asyncio
@@ -249,7 +421,9 @@ class TestLoopContextEngineering:
 
         class BrokenSummaryLLM(_SummaryLLM):
             async def chat_async(self, messages, temperature=None):
-                if any(m.content.startswith("你是客服对话摘要助手") for m in messages):
+                from harness.core.loop import ReActLoop
+
+                if any(m.content.startswith(ReActLoop.SUMMARY_SYSTEM_PROMPT) for m in messages):
                     raise RuntimeError("LLM 不可用")
                 return LLMReply(content="ok")
 
@@ -258,7 +432,7 @@ class TestLoopContextEngineering:
 
         saved: dict = {}
 
-        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None):
+        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None, chapters=None):
             saved["count"] = len(msgs)
 
         loop.conversation_history.aload_state.return_value = None

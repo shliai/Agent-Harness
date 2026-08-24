@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS sessions(
     user_id              TEXT NOT NULL DEFAULT '',
     title                TEXT NOT NULL DEFAULT '',
     summary              TEXT NOT NULL DEFAULT '',
+    chapters_json        TEXT NOT NULL DEFAULT '[]',
     working_memory_json  TEXT NOT NULL DEFAULT '{}',
     traces_json          TEXT NOT NULL DEFAULT '[]',
     updated_at           TEXT NOT NULL,
@@ -99,6 +100,8 @@ _EXPECTED_COLUMNS = {
     "aftersale": {"qty": "INTEGER NOT NULL DEFAULT 0",
                   "refund_amount": "REAL NOT NULL DEFAULT 0",
                   "breakdown_json": "TEXT NOT NULL DEFAULT '{}'"},
+    # v0.7.4 章节追加式记忆前缀：冻结的历史压缩章节（LSM 风格，只追加永不重写）
+    "sessions": {"chapters_json": "TEXT NOT NULL DEFAULT '[]'"},
 }
 
 

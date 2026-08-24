@@ -244,12 +244,23 @@ class TestReActLoopIntegration:
 
         result = await loop.execute("我想买手机", session_id="test-sid")
 
-        # 应检索过长期记忆（带 user_id 隔离参数）
-        long_term.search.assert_called_once_with("我想买手机", user_id="demo_user")
-        # 注入到 system prompt 的消息应包含「相关历史记忆」
-        system_msg = llm.last_messages[0]
-        assert "相关历史记忆" in system_msg.content
-        assert "之前买过手机" in system_msg.content
+        # 应检索过长期记忆（带 user_id 隔离 + 排除当前会话）
+        long_term.search.assert_called_once_with(
+            "我想买手机", user_id="demo_user", exclude_session_id="test-sid"
+        )
+        # 注入到「状态尾注」消息（对话末尾）应包含「相关历史记忆」
+        # 注意：轮末还有一次事实抽取调用，需取主调用（排除抽取器提示词）
+        from harness.domain.models import ChatRole
+        from harness.core.loop import ReActLoop
+
+        main_calls = [c for c in llm.all_calls
+                      if c and not c[0].content.startswith(ReActLoop.FACT_SYSTEM_PROMPT)]
+        assert main_calls, "应存在主对话调用"
+        note_msgs = [m for m in main_calls[-1]
+                     if m.role == ChatRole.system and m.content.startswith("## 当前任务状态")]
+        assert note_msgs, "应存在状态尾注消息"
+        assert "相关历史记忆" in note_msgs[0].content
+        assert "之前买过手机" in note_msgs[0].content
         # 完成后应触发写入长期记忆（async create_task）
         # 等待后台任务完成
         await asyncio.sleep(0.05)

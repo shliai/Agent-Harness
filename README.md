@@ -82,7 +82,7 @@ docker compose up -d
 | 政策问答 | 结构化条款库 · 强制引用编号 · 未命中引导转人工 |
 | 转人工 | 工单创建 · 排队确认话术 |
 | 安全护栏 | 注入拦截 · PII 掩码 · 承诺合规 · 会话限频 · 审计轮转 |
-| 记忆体系 | 工作记忆(规则抽取) · 短期窗口 · LLM滚动压缩 · ChromaDB长期召回 |
+| 记忆体系 | 短期窗口(只追加100条) · 冻结章节(LSM式压缩归档) · 工作记忆(规则槽位+LLM实体事实) · ChromaDB长期记忆(结构化+TTL维护) |
 
 完整功能矩阵见 [docs/FEATURES.md](docs/FEATURES.md)。
 
@@ -105,14 +105,14 @@ scripts/            init_db / eval / export_badcase
 data/seed/          400 商品 + 260 订单 + 200 物流种子数据
 data/policies.json  10 条官方政策条款
 data/eval/          36 条评测用例
-tests/              159 个测试用例
+tests/              168 个测试用例
 docs/               10 份文档
 ```
 
 ## 测试与评测
 
 ```bash
-pytest tests/ -v                    # 159 个测试
+pytest tests/ -v                    # 168 个测试
 python scripts/eval.py              # 五层离线评测（28/28 PASS）
 python scripts/eval.py --live       # 含在线路由评测（消耗真实 tokens）
 ```
@@ -131,7 +131,7 @@ python scripts/eval.py --live       # 含在线路由评测（消耗真实 token
 | [接口文档](docs/API.md) | REST/SSE 端点规范 |
 | [运维手册](docs/OPERATIONS.md) | 日志聚合、指标告警、灰度发布、密钥管理 |
 | [评测报告](docs/EVALUATION.md) | 五层评测方法论与详细结果 |
-| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.7.3 演进史 |
+| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.7.4 演进史 |
 
 ## 技术栈
 

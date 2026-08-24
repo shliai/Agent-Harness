@@ -96,7 +96,7 @@ class TestClarification:
 
         saved: dict = {}
 
-        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None):
+        async def fake_save(sid, msgs, summary=None, working_memory=None, traces=None, user_id=None, chapters=None):
             saved["wm"] = working_memory
 
         loop.conversation_history.asave_state = fake_save

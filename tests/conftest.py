@@ -16,17 +16,20 @@ class MockLLMClient(AbstractLLMClient):
     def __init__(self, response: str = "测试回复") -> None:
         self.response = response
         self.last_messages: list[AgentMessage] = []
+        self.all_calls: list[list[AgentMessage]] = []
 
     async def chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None
     ) -> LLMReply:
         self.last_messages = messages
+        self.all_calls.append(list(messages))
         return LLMReply(content=self.response, total_tokens=len(self.response) // 4)
 
     async def stream_chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None
     ) -> AsyncGenerator[str, None]:
         self.last_messages = messages
+        self.all_calls.append(list(messages))
         yield self.response
 
 
@@ -71,7 +74,7 @@ def settings_override() -> Generator[None, None, None]:
         mock.max_iterations = 10
         mock.temperature = 0.7
         mock.tracing_enabled = True
-        mock.short_term_window = 20
+        mock.short_term_window = 100
         yield
 
 
