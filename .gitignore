@@ -8,6 +8,7 @@ build/
 
 # 环境变量（严禁提交真实密钥）
 .env
+.env.*
 !.env.example
 
 # IDE
@@ -34,6 +35,7 @@ data/eval/badcase_*.jsonl
 
 # 本地模型（Docker 构建时 COPY，git 不追踪二进制大文件）
 models/
+.hf_cache/
 
 # 测试与覆盖率
 .coverage

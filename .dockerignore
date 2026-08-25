@@ -2,6 +2,11 @@
 .git
 .github
 
+# 环境配置（密钥不进构建上下文；compose 用 env_file 运行时注入）
+.env
+.env.*
+!.env.example
+
 # Python 缓存
 __pycache__
 *.py[cod]
