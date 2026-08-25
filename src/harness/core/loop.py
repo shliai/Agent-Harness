@@ -210,12 +210,12 @@ class ReActLoop:
         if session_id:
             state = await self.conversation_history.aload_state(session_id)
             if state:
+                chapters = list(state.get("chapters") or [])
                 for raw_msg in state.get("messages", []):
                     try:
                         memory.add(AgentMessage(**raw_msg))
                     except Exception:
                         logger.warning("跳过无法解析的历史消息: %s", str(raw_msg)[:80])
-                        chapters = list(state.get("chapters") or [])
                 prev_traces = list(state.get("traces") or [])[-8:]
                 wm = WorkingMemory.from_dict(state.get("working_memory"))
                 logger.info(

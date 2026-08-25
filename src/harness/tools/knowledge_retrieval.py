@@ -433,10 +433,6 @@ class KnowledgeRetrievalTool(BaseTool):
             rrf_vec = (1 - alpha) / (vec_rank_of[i] + RRF_K + 1)
             cand["hybrid_score"] = rrf_vec + rrf_kw
 
-        # 意图词加成：查询含强意图关键词时，tags/文本命中的候选获得加成，
-        # 避免大目录下「贴预算但不匹配意图」的商品挤占头部
-        from harness.tools.query_enricher import SYNONYMS
-
         # 意图词命中数作为一级排序键（强意图必须优先满足），
         # 相关度分数退为二级键——避免大目录下贴预算但不匹配意图的商品挤占头部
         from harness.tools.query_enricher import SYNONYMS

@@ -12,6 +12,14 @@ logger = logging.getLogger("harness.tools.policy")
 
 POLICY_PATH = Path("data/policies.json")
 
+# 中文高频停用词：不参与政策匹配打分，避免「的/了/什么」等无信息量词
+# 与任意政策正文共现导致误命中（返回无关条款=变相编造）
+_POLICY_STOPWORDS = {
+    "的", "了", "吗", "呢", "吧", "啊", "哦", "嗯", "是", "在", "有", "和",
+    "与", "或", "及", "等", "这", "那", "什么", "怎么", "为什么", "一个",
+    "可以", "能不能", "是否", "请问", "你好", "您", "我", "你", "他", "她",
+}
+
 
 class PolicyQueryTool(BaseTool):
     """结构化政策库检索：退换货/保修/价保/发票/配送等官方口径
@@ -57,7 +65,7 @@ class PolicyQueryTool(BaseTool):
 
         corpus = [f"{p['title']} {' '.join(p.get('tags', []))} {p['content']}" for p in self._policies]
         bm25 = BM25([tokenize(doc) for doc in corpus])
-        q_tokens = tokenize(topic)
+        q_tokens = [t for t in tokenize(topic) if t not in _POLICY_STOPWORDS]
         scored = sorted(
             range(len(self._policies)), key=lambda i: -bm25.score(q_tokens, i)
         )

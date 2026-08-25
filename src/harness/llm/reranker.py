@@ -76,7 +76,7 @@ async def rerank(query: str, candidates: list[dict]) -> list[dict]:
         rest = candidates[len(top):]
         reranked = placed + missing + rest
         logger.info("LLM 重排完成: top1=%s", reranked[0]["id"])
-        return reranked + rest
+        return reranked
     except Exception as e:
         logger.warning("Rerank 失败回退 RRF 序: %s", e)
         return candidates

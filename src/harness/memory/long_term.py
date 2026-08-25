@@ -334,8 +334,7 @@ class LongTermMemory:
                     1 for i in delete
                     if age_days(dict(zip(ids, metas))[i] or {}) > ttl and scores[i] < 2
                 )
-                stats["orphan_deleted"] = len(delete) - stats["ttl_deleted"] - stats.pop("dup_merged")
-                stats["dup_merged"] = stats.get("dup_merged", 0)
+                stats["orphan_deleted"] = len(delete) - stats["ttl_deleted"] - stats.get("dup_merged", 0)
 
             # ④ 容量熔断
             overflow = self.count() - settings.long_term_max_records
