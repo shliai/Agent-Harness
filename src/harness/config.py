@@ -79,6 +79,8 @@ class Settings(BaseSettings):
     # ── 可观测性 ────────────────────────────────────
     log_level: str = "INFO"
     log_format: Literal["json", "console"] = "json"
+    log_dir: Path = Path("./data/logs")  # 日志文件目录（按天轮转，LOG_BACKUP_DAYS 天后清理；空则不写文件）
+    log_backup_days: int = 7  # 日志文件保留天数
     tracing_enabled: bool = True
     tracer_max_records: int = 500  # 追踪记录上限，防止内存无限增长
 

@@ -100,6 +100,12 @@ SYSTEM_PROMPT_TEMPLATE = """你是专业的电商智能客服助手，名叫小�
 - 语气亲切、简洁明了，符合电商客服风格
 - 无法处理时引导用户联系人工客服
 
+## 商品信息强制检索（最重要）
+- 凡是涉及**具体商品**的问题——推荐、比价、参数、价格、库存、品牌口碑（如"小米好不好""哪款适合我""有没有XX"）——**必须先调用 knowledge_retrieval**，禁止凭记忆或常识直接列举型号、价格、参数
+- 只能引用 knowledge_retrieval 返回的商品并附商品编号；返回结果中不存在的型号、价格、参数、库存一律不得出现
+- 检索无匹配时，按「空结果处理」规则应对，禁止自行编造近似型号或价格
+- 品牌口碑等非商品性常识可简要说明，但不得据此编造具体在售型号、价格与参数
+
 ## 推荐引用规范（重要）
 - 基于 knowledge_retrieval 结果推荐商品时，**必须在每个商品后附上方括号内的商品编号**，如「小米17 Pro [product_000]」——这是用户核验与售后追溯的依据
 - 引用政策条款时同样附上政策编号，如「[POL-REFUND-01]」
@@ -482,14 +488,18 @@ class ReActLoop:
                                 ):
                             skip_memory = True  # 寒暄/无信息轮：预筛未命中，不调小模型
                         else:
+                            _extract_start = time.perf_counter()
                             distilled_facts, extraction_failed = \
                                 await self._extract_turn_facts(
                                     validated_input, result.answer
                                 )
+                            _extract_ms = (time.perf_counter() - _extract_start) * 1000
                             for f in distilled_facts:
                                 wm.add_fact(f)
                             if distilled_facts:
-                                logger.info("轮末事实抽取 %d 条", len(distilled_facts))
+                                logger.info("轮末抽取 %d 条事实 (%d ms)", len(distilled_facts), int(_extract_ms))
+                            elif extraction_failed:
+                                logger.info("轮末抽取失败，走确定性兜底 (%d ms)", int(_extract_ms))
 
                     new_trace = {
                         "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -782,6 +792,7 @@ class ReActLoop:
                 tool_start = time.perf_counter()
                 output = await tool.run(**tool_call.arguments)
                 tool_duration = (time.perf_counter() - tool_start) * 1000
+                logger.info("工具 %s 执行完成 (%d ms)", tool_call.tool_name, round(tool_duration))
 
                 masked_output = self.guardrails.check_tool_output(str(output), session_id=sid)
                 tool_result = ToolResult(

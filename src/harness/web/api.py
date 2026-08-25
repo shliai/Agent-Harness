@@ -26,6 +26,7 @@ from harness.guardrails.input_validator import InputValidator
 from harness.guardrails.compliance_filter import ComplianceFilter
 from harness.guardrails.output_filter import OutputFilter
 from harness.guardrails.rate_limiter import RateLimiter
+from harness.observability.logger import set_session_id
 from harness.tools.calculator import CalculatorTool
 from harness.tools.knowledge_retrieval import KnowledgeRetrievalTool
 from harness.tools.logistics_query import LogisticsQueryTool
@@ -555,53 +556,61 @@ def create_app() -> FastAPI:
 async def _stream_chat(
     agent: Agent, message: str, session_id: str, user_id: str | None = None
 ) -> AsyncGenerator[str, None]:
-    """SSE 真流式响应：每个 ReAct 步骤即时推送（同会话加锁串行）"""
-    yield f"data: {json.dumps({'type': 'meta', 'session_id': session_id}, ensure_ascii=False)}\n\n"
+    """SSE 真流式响应：每个 ReAct 步骤即时推送（同会话加锁串行）
 
-    lock = _session_locks.setdefault(session_id, asyncio.Lock())
-    if lock.locked():
-        yield f"data: {json.dumps({'type': 'error', 'message': '当前会话有请求正在处理，请稍候'}, ensure_ascii=False)}\n\n"
-        yield "data: [DONE]\n\n"
-        return
-
+    同时把 session_id 注入日志上下文，本轮内所有日志（含后台记忆整理任务）
+    自动携带 session_id；生成器关闭/退出时统一清理。
+    """
+    set_session_id(session_id)
     try:
-        async with lock:
-            async for event in agent.loop.execute_stream(
-                message, session_id=session_id, user_id=user_id
-            ):
-                etype = event.get("type")
-                if etype == "step":
-                    payload: dict[str, Any] = {
-                        "type": "step",
-                        "step_index": event.get("step_index"),
-                    }
-                    if event.get("thought"):
-                        payload["thought"] = event["thought"]
-                    if event.get("tool_call"):
-                        payload["tool_call"] = event["tool_call"]
-                    if event.get("tool_result"):
-                        payload["tool_result"] = event["tool_result"]
-                    if event.get("final"):
-                        payload["final"] = True
-                    yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
-                elif etype == "delta":
-                    yield f"data: {json.dumps({'type': 'delta', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
-                elif etype == "delta_reset":
-                    reason = event.get("reason", "")
-                    yield ('data: {"type": "delta_reset", "reason": "%s"}\n\n' % reason) if reason else 'data: {"type": "delta_reset"}\n\n'
-                elif etype == "answer_replace":
-                    yield f"data: {json.dumps({'type': 'answer_replace', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
-                elif etype == "result":
-                    yield f"data: {json.dumps({'type': 'result', 'answer': event['answer'], 'total_duration_ms': event['total_duration_ms'], 'total_steps': event['total_steps'], 'total_tokens': event.get('total_tokens', 0), 'success': event['success']}, ensure_ascii=False)}\n\n"
-                elif etype == "error":
-                    err_result = event.get("result")
-                    answer = err_result.answer if err_result else event.get("message", "")
-                    yield f"data: {json.dumps({'type': 'error', 'message': answer}, ensure_ascii=False)}\n\n"
-    except Exception as e:
-        logger.exception("流式响应异常")
-        yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
+        yield f"data: {json.dumps({'type': 'meta', 'session_id': session_id}, ensure_ascii=False)}\n\n"
 
-    yield "data: [DONE]\n\n"
+        lock = _session_locks.setdefault(session_id, asyncio.Lock())
+        if lock.locked():
+            yield f"data: {json.dumps({'type': 'error', 'message': '当前会话有请求正在处理，请稍候'}, ensure_ascii=False)}\n\n"
+            yield "data: [DONE]\n\n"
+            return
+
+        try:
+            async with lock:
+                async for event in agent.loop.execute_stream(
+                    message, session_id=session_id, user_id=user_id
+                ):
+                    etype = event.get("type")
+                    if etype == "step":
+                        payload: dict[str, Any] = {
+                            "type": "step",
+                            "step_index": event.get("step_index"),
+                        }
+                        if event.get("thought"):
+                            payload["thought"] = event["thought"]
+                        if event.get("tool_call"):
+                            payload["tool_call"] = event["tool_call"]
+                        if event.get("tool_result"):
+                            payload["tool_result"] = event["tool_result"]
+                        if event.get("final"):
+                            payload["final"] = True
+                        yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+                    elif etype == "delta":
+                        yield f"data: {json.dumps({'type': 'delta', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
+                    elif etype == "delta_reset":
+                        reason = event.get("reason", "")
+                        yield ('data: {"type": "delta_reset", "reason": "%s"}\n\n' % reason) if reason else 'data: {"type": "delta_reset"}\n\n'
+                    elif etype == "answer_replace":
+                        yield f"data: {json.dumps({'type': 'answer_replace', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
+                    elif etype == "result":
+                        yield f"data: {json.dumps({'type': 'result', 'answer': event['answer'], 'total_duration_ms': event['total_duration_ms'], 'total_steps': event['total_steps'], 'total_tokens': event.get('total_tokens', 0), 'success': event['success']}, ensure_ascii=False)}\n\n"
+                    elif etype == "error":
+                        err_result = event.get("result")
+                        answer = err_result.answer if err_result else event.get("message", "")
+                        yield f"data: {json.dumps({'type': 'error', 'message': answer}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            logger.exception("流式响应异常")
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
+
+        yield "data: [DONE]\n\n"
+    finally:
+        set_session_id(None)
 
 
 def run_server(host: str = "localhost", port: int = 8000) -> None:

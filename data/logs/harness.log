@@ -1,0 +1,2 @@
+{"timestamp": "2026-08-25T05:22:22.006099+00:00", "level": "INFO", "logger": "test.file", "message": "file log with session", "session_id": "sess-file-1"}
+{"timestamp": "2026-08-25T05:22:22.007088+00:00", "level": "INFO", "logger": "test.file", "message": "file log without session"}

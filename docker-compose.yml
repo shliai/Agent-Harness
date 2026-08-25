@@ -1,6 +1,7 @@
 services:
   harness:
     build: .
+    image: agent-harness
     container_name: agent-harness
     ports:
       - "8000:8000"

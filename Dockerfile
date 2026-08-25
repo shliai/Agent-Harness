@@ -6,13 +6,17 @@ FROM python:3.11-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
+    PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ \
+    PIP_TRUSTED_HOST=mirrors.aliyun.com \
     HF_ENDPOINT=https://hf-mirror.com \
     HF_HOME=/app/.hf_cache
 
 WORKDIR /app
 
 # 系统依赖（sentence-transformers/torch CPU 轮子无需编译工具链）
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+# 使用阿里云镜像源替代 deb.debian.org，避免国内网络经代理访问 Debian 源被断开
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md ./

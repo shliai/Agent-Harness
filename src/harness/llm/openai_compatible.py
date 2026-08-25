@@ -60,6 +60,7 @@ class OpenAICompatibleClient(AbstractLLMClient):
     async def stream_chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None
     ) -> AsyncGenerator[str, None]:
+        t0 = time.perf_counter()
         try:
             payload = self._payload(messages, temperature)
             payload["stream"] = True
@@ -74,6 +75,12 @@ class OpenAICompatibleClient(AbstractLLMClient):
                     yield delta
         except Exception as e:
             raise LLMError(f"异步流式调用失败: {e}") from e
+        finally:
+            # 逐次耗时：流式生成结束（或客户端中断）后记录
+            logger.info(
+                "LLM 流式完成: %.0fms | model=%s",
+                (time.perf_counter() - t0) * 1000, self.model,
+            )
 
     # ── 内部工具方法 ───────────────────────────────────
 
