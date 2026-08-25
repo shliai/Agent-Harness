@@ -58,10 +58,10 @@ scrape_configs:
 输出 `[ALERT][BUDGET]` WARNING 日志——告警管道对该关键字建立规则即可联动；
 达到 100% 且 `TOKEN_BUDGET_HARD_STOP=true` 时会话被优雅终止。
 
-## 3. 灰度发布
+## 3. 灰度发布（预留能力）
 
-- 每个响应携带 `X-Release-Channel` 头（`RELEASE_CHANNEL` 配置，stable/canary）
-- 推荐路径：
+- `RELEASE_CHANNEL` 配置项（stable/canary）已定义于 config，但当前代码暂未消费（不实际下发响应头）
+- 功能落地后推荐路径：
   1. 构建两个镜像 tag（stable / canary）
   2. 反向代理按权重分流（Traefik/Nginx 示例：canary weight=10%）
   3. 观察 canary 的 token 增速、工具失败率、badcase 导出结果后再放量
@@ -70,10 +70,7 @@ scrape_configs:
 
 ## 4. 密钥管理
 
-主模型当前支持两级解析（优先级从高到低）：
-
-1. 环境变量 `OPENAI_API_KEY`
-2. 文件挂载 `OPENAI_API_KEY_FILE`（Docker Swarm/K8s Secret 挂载为文件的标准形态）
+主模型密钥从环境变量 `OPENAI_API_KEY` 读取（OpenAI v1 兼容协议统一入口，未实现文件挂载）。
 
 可选小模型 `OPENAI_SMALL_API_KEY` 同理（URL/KEY 留空时继承主配置）；`OPENAI_SMALL_MODEL`
 留空则旁路调用（事实抽取/重排）自动回落主模型，成本与主模型一致。
@@ -81,16 +78,14 @@ scrape_configs:
 规范：
 
 - `.env` 已列入 `.gitignore`，严禁提交真实密钥
-- K8s 生产示例：
+- K8s 生产示例（Secret 注入为环境变量）：
   ```yaml
   env:
-    - name: OPENAI_API_KEY_FILE
-      value: /etc/secrets/openai_key
-  containers:
-    - volumeMounts:
-        - name: secrets
-          mountPath: /etc/secrets
-          readOnly: true
+    - name: OPENAI_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: openai-secret
+          key: api-key
   ```
 - 轮换：更新 Secret 后滚动重启进程即可（客户端启动时读取一次）
 

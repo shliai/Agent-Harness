@@ -104,7 +104,7 @@ execute_stream(user_input, session_id, user_id):
 | 层 | 模块 | 生命周期 | 解决的问题 |
 |---|---|---|---|
 | 工作记忆 | `working_memory.py` | 跨轮持久 | 预算/单号/话题等关键事实的结构化槽位；规则抽取零 LLM 开销；窗口截断也不遗忘 |
-| 短期记忆 | `short_term.py` | 单请求 | LLM 可见的最近 N 条消息（deque）；track_full 模式同时保留全量供落盘 |
+| 短期记忆 | `short_term.py` | 跨轮持久 | 原始消息只追加（无滑动淘汰）；track_full 模式同时保留全量供落盘 |
 | 会话压缩 | loop 内 `_summarize` | 跨轮持久 | 单会话消息估算 token ≥ 窗口×比例（相对模型上下文）时 LLM 章节式滚动摘要，LLM 视角 = 冻结章节 + 最近 KEEP_RECENT 条 |
 | 长期记忆 | `long_term.py` | 跨会话 | ChromaDB+BGE 语义召回，按 user_id 隔离、距离阈值过滤、后台异步写入 |
 

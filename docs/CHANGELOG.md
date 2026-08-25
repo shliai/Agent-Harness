@@ -157,8 +157,8 @@
 
 ### 运维能力
 - `/metrics/prometheus` 文本格式指标端点（LLM 调用/token/耗时/分工具计数/uptime）
-- 灰度可观测：全响应携带 `X-Release-Channel` 头（RELEASE_CHANNEL 配置）
-- **docs/OPERATIONS.md** 新增：日志聚合方案（stdout→Filebeat→Loki/ELK）、抓取配置与告警规则示例、灰度发布路径、密钥两级解析（OPENAI_API_KEY_FILE 支持挂载 Secret）、数据生命周期表、故障速查
+- 灰度发布（预留）：`RELEASE_CHANNEL` 配置项定义于 config，当前暂未消费、未实际下发 `X-Release-Channel` 响应头
+- **docs/OPERATIONS.md** 新增：日志聚合方案（stdout→Filebeat→Loki/ELK）、抓取配置与告警规则示例、灰度发布路径、密钥管理（仅环境变量 `OPENAI_API_KEY`，`OPENAI_API_KEY_FILE` 文件挂载为规划未实现）、数据生命周期表、故障速查
 
 ### 测试
 新增 9 个用例（注入防护/查询改写/token 预算字段/审计轮转），总计 **159 passed**。
