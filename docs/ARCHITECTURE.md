@@ -1,6 +1,6 @@
 # Agent Harness 架构文档
 
-> 版本：v0.5.0 · 更新日期：2026-08-23
+> 版本：v0.7.4 · 更新日期：2026-08-25
 
 ## 设计思想
 
@@ -20,14 +20,14 @@ Agent = LLM（推理内核）+ Harness（调度外壳）
 │   FastAPI · SSE 流式事件 · 会话锁 · 商品管理 API(鉴权+限流)          │
 ├──────────────────────────────────────────────────────────────────┤
 │                     Agent 装配层 (core/agent.py)                   │
-│       LLM 工厂 + Registry(8工具) + GuardrailPipeline + 记忆        │
+│       LLM 工厂 + Registry(10工具) + GuardrailPipeline + 记忆       │
 ├──────────────────────────────────────────────────────────────────┤
 │                  ReAct 循环引擎 (core/loop.py)                     │
 │   token流式 → 解析 ACTION → 工具执行(修正重试) → 脱敏 → 持久化      │
 ├───────┬──────────┬──────────┬──────────┬──────────┬─────────────┤
 │ 工具层 │  记忆层   │  护栏层   │  观测层   │  存储层   │   LLM 层    │
 │tools/ │ memory/  │guardrails│observ-   │ storage/ │ llm/        │
-│ 8个   │ 四层架构  │ 5道护栏   │ability/  │ SQLite + │ OpenAI v1   │
+│ 10个  │ 四层架构  │ 6道护栏   │ability/  │ SQLite + │ OpenAI v1   │
 │       │          │          │          │ ChromaDB │ 兼容协议     │
 ├───────┴──────────┴──────────┴──────────┴──────────┴─────────────┤
 │            领域模型 domain/ · 配置中心 config.py                    │
@@ -58,7 +58,8 @@ execute_stream(user_input, session_id, user_id):
         - 直接回答   → check_output 脱敏（变化则 answer_replace）
                        反问检测写入 awaiting_slot（澄清式多轮）
      c. tracer 记录（带 session_id）+ SSE step 事件
-  7. 收尾：压缩判定 → asave_state 事务落盘 → 长期记忆后台写入(持引用)
+  7. 收尾：压缩判定 → 基础状态事务落盘 → 记忆整理（抽取预筛→小模型抽取→
+     WM 合并→长期写入）转入 asyncio 后台任务，立即结束 SSE 流不阻塞响应
   异常分支：GuardrailError / MaxIterationsExceeded /
            CancelledError（客户端断开也落盘部分状态，不丢对话）
 ```
@@ -79,11 +80,12 @@ execute_stream(user_input, session_id, user_id):
 **事实源原则**：SQLite 是商品/订单唯一事实源；ChromaDB 只是可随时全量重建的检索索引。
 管理端删除商品 = DB 删除 + 向量 delete 同步；检索 where 恒定附带 `status=在售` 双保险。
 
-### 3. 工具层 (`tools/`) —— 8 个
+### 3. 工具层 (`tools/`) —— 10 个
 
 | 工具 | 类型 | 要点 |
 |---|---|---|
 | knowledge_retrieval | 读 | 向量+BM25 RRF 融合、中文数量词归一化(万/块/k)、价格品类过滤下推、预算接近度加权、在售状态双保险 |
+| calculator | 读 | AST 白名单求值器（仅四则/幂/一元运算，幂运算限界），零注入面 |
 | order_query | 读 | SQLite 精确查询 + 归属校验 + 枚举风控熔断 |
 | order_list | 读 | 按当前用户列订单（不记得单号的入口） |
 | logistics_query | 读 | 物流轨迹查询 + 枚举风控 |
@@ -103,7 +105,7 @@ execute_stream(user_input, session_id, user_id):
 |---|---|---|---|
 | 工作记忆 | `working_memory.py` | 跨轮持久 | 预算/单号/话题等关键事实的结构化槽位；规则抽取零 LLM 开销；窗口截断也不遗忘 |
 | 短期记忆 | `short_term.py` | 单请求 | LLM 可见的最近 N 条消息（deque）；track_full 模式同时保留全量供落盘 |
-| 会话压缩 | loop 内 `_summarize` | 跨轮持久 | 超 CONTEXT_COMPRESS_THRESHOLD 条时 LLM 滚动摘要，LLM 视角 = 摘要 + 最近 KEEP_RECENT 条 |
+| 会话压缩 | loop 内 `_summarize` | 跨轮持久 | 单会话消息估算 token ≥ 窗口×比例（相对模型上下文）时 LLM 章节式滚动摘要，LLM 视角 = 冻结章节 + 最近 KEEP_RECENT 条 |
 | 长期记忆 | `long_term.py` | 跨会话 | ChromaDB+BGE 语义召回，按 user_id 隔离、距离阈值过滤、后台异步写入 |
 
 会话状态持久化：`conversation_history.py` —— SQLite sessions/session_messages 双表，
@@ -133,6 +135,8 @@ check_tool_output: 同 output（子任务分发内部同样生效）
 统一 OpenAI v1 兼容协议（v0.5 移除供应商分支）：
 OpenAI / 智谱 / DeepSeek / 通义 / 本地 vLLM 仅需配置
 `OPENAI_API_URL / OPENAI_API_KEY / OPENAI_MODEL` 三项。
+可选小模型三件套 `OPENAI_SMALL_API_URL / KEY / MODEL`：事实抽取、检索重排等
+旁路低风险调用优先走小模型省成本（URL/KEY 留空继承主网关；MODEL 留空自动回落主模型）。
 
 - `chat_async` → LLMReply(content, total_tokens)——token 用量随调用返回，并发不串号
 - `stream_chat_async` → token 级增量（主循环使用）
@@ -168,4 +172,4 @@ pip install -e ".[dev]" && python scripts/init_db.py --reindex && python -m harn
 docker compose up -d      # ./data 卷持久化，启动自动建库填充
 ```
 
-CI（GitHub Actions）：ruff 关键规则门禁 → pytest(138) → main 分支镜像构建验证。
+CI（GitHub Actions）：ruff 关键规则门禁 → pytest(176) → main 分支镜像构建验证。

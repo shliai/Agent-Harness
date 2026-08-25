@@ -29,6 +29,8 @@ class Agent:
         metrics: MetricsCollector | None = None,
     ) -> None:
         self.llm = llm or LLMFactory.create()
+        # 小模型（可空）：旁路低风险调用（事实抽取/重排）专用，省成本
+        self.cheap_llm = LLMFactory.create_cheap()
         self.registry = registry or Registry()
         self.guardrails = guardrails or GuardrailPipeline()
         self.tracer = tracer or Tracer(enabled=settings.tracing_enabled)
@@ -37,6 +39,7 @@ class Agent:
         self.long_term_memory = LongTermMemory()
         self.loop = ReActLoop(
             llm=self.llm,
+            cheap_llm=self.cheap_llm,
             registry=self.registry,
             guardrails=self.guardrails,
             tracer=self.tracer,

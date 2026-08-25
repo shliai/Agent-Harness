@@ -1,6 +1,6 @@
 # Agent 评测报告与 RAG 评测方法论
 
-> 版本：v0.7.2 · 评测日期：2026-08-24 · 数据规模：400 商品 / 260 订单 / 精确 200 物流轨迹
+> 版本：v0.7.4 · 评测日期：2026-08-24 · 数据规模：400 商品 / 260 订单 / 精确 200 物流轨迹
 
 ---
 
@@ -213,7 +213,7 @@ Spy Registry 包装全部工具实例，记录真实 LLM 的每次工具调用�
 pip install -e ".[dev]"
 
 # 运行全部测试
-pytest tests/ -v                          # 159 passed
+pytest tests/ -v                          # 176 passed
 
 # 运行五层离线评测
 python scripts/eval.py                    # 28/28 PASS

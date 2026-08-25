@@ -26,6 +26,7 @@ from harness.domain.models import (
 )
 from harness.guardrails.base import GuardrailPipeline
 from harness.llm.base import AbstractLLMClient
+from harness.llm.factory import cheap_semaphore
 from harness.memory.conversation_history import ConversationHistory
 from harness.memory.long_term import LongTermMemory
 from harness.memory.short_term import ShortTermMemory
@@ -37,13 +38,18 @@ from harness.tools.base import BaseTool
 logger = logging.getLogger("harness.core.loop")
 
 # 轮末事实抽取提示词：从单轮对话提炼「实体-关系-值」结构化事实（工作记忆与长期记忆共用）
+# 面向小模型设计：输出契约更死板、显式列禁止项，提升弱模型的结构遵循率
 _FACT_SYSTEM_PROMPT = (
-    "你是电商客服对话的信息抽取器。从本轮对话中抽取「实体-关系-值」事实，"
-    "每行一条、以 - 开头，例如：\n"
-    "- 用户 偏好 小米品牌\n"
-    "- 订单20240601001 状态 退货申请待审核\n"
-    "- 用户 预算 3000元\n"
-    "只输出可靠的新信息事实行；无则输出空。禁止解释，禁止照抄原文整句。"
+    "你是电商客服对话的信息抽取器。从本轮对话抽取「实体-关系-值」事实。\n"
+    "输出要求（严格遵守）：\n"
+    "- 每行一条事实，以 - 开头，格式：实体 关系 值 或 实体：关系：值\n"
+    "  示例：\n"
+    "  - 用户 偏好 小米品牌\n"
+    "  - 订单20240601001 状态 退货申请待审核\n"
+    "  - 用户 预算 3000元\n"
+    "- 每条不超过 40 字；最多 6 条；只输出可靠的新信息\n"
+    "- 没有值得记的新信息时，只输出一个空行，不要任何文字\n"
+    "禁止：标题、序号、总结句、解释、寒暄、照抄原文整句。"
 )
 
 # 寒暄/无信息量输入：跳过轮末事实抽取与长期记忆写入
@@ -52,6 +58,24 @@ _TRIVIAL_INPUT_RE = re.compile(
     r"好的|好滴|嗯+|哦+|ok|okay|收到|明白了|知道了|再见|拜拜)[!！？?。～~，,.\s]*$",
     re.IGNORECASE,
 )
+
+# 轮末抽取预筛：命中「硬实体信号」或「意图/偏好表达」才调小模型抽取，
+# 纯寒暄/无信息轮直接跳过——小模型不每轮空转，省调用与限流配额
+_INTENT_KEYWORDS = (
+    "喜欢", "想要", "想", "希望", "偏好", "倾向", "考虑", "比较", "推荐",
+    "麻烦", "帮忙", "帮", "要求", "介意", "不想", "不接受", "能不能",
+    "可以", "需要", "了解", "看看", "咨询",
+)
+_EXTRACT_MIN_INPUT_LEN = 40  # 较长输入视为含实质内容（意图/想法/偏好），兜底触发抽取
+
+
+def _should_extract_turn(user_input: str, answer: str) -> bool:
+    """预筛本轮是否值得 LLM 抽取：硬实体信号 OR 意图/偏好表达 OR 输入较长"""
+    if WorkingMemory.has_hard_entity_signal(f"{user_input}\n{answer}"):
+        return True
+    if len(user_input.strip()) >= _EXTRACT_MIN_INPUT_LEN:
+        return True
+    return any(kw in user_input for kw in _INTENT_KEYWORDS)
 
 SYSTEM_PROMPT_TEMPLATE = """你是专业的电商智能客服助手，名叫小慧。
 
@@ -155,8 +179,12 @@ class ReActLoop:
         conversation_history: ConversationHistory,
         max_iterations: int = 10,
         long_term_memory: LongTermMemory | None = None,
+        cheap_llm: AbstractLLMClient | None = None,
     ) -> None:
         self.llm = llm
+        # 小模型（可空）：旁路低风险调用（事实抽取等）优先走它，省成本；
+        # 未配置时回退主模型，行为与旧版一致
+        self.cheap_llm = cheap_llm
         self.registry = registry
         self.guardrails = guardrails
         self.tracer = tracer
@@ -165,6 +193,11 @@ class ReActLoop:
         self.max_iterations = max_iterations
         self.long_term_memory = long_term_memory
         self._bg_tasks: set[asyncio.Task] = set()  # 后台任务持引用，防 GC
+        # 轮末记忆整理的后台落盘任务（按 session 登记）：下一轮开始前 await，
+        # 保证读到完整状态；同时让 [DONE] 随 result 立即送达，不再占用户感知时间
+        self._pending_finalize: dict[str, asyncio.Task] = {}
+        # 最近一次流式执行的 session id（execute 非流式收尾时据此等待落盘）
+        self._last_stream_sid: str | None = None
 
     async def execute(
         self, user_input: str, session_id: str | None = None, user_id: str | None = None
@@ -178,6 +211,14 @@ class ReActLoop:
                 result = event["result"]
         if result is None:
             raise MaxIterationsExceeded("Agent 未产生任何结果")
+        # 非流式调用方（CLI/测试）需拿到完整落盘状态：等待本会话的后台收尾任务
+        sid = session_id or self._last_stream_sid
+        pending = self._pending_finalize.get(sid) if sid else None
+        if pending:
+            try:
+                await pending
+            except Exception:
+                logger.warning("等待会话落盘任务失败: %s", sid)
         return result
 
     async def execute_stream(
@@ -196,12 +237,21 @@ class ReActLoop:
         total_tokens = 0
 
         sid = session_id or self._generate_id()
+        self._last_stream_sid = sid
         uid = user_id or DEFAULT_USER
         self._owner_uid = uid  # 本次会话归属（落盘与越权校验依据）
         # 请求级身份上下文：订单归属校验 / 我的订单 / 工单归属 都从这里取
         current_user_id.set(uid)
         current_session_id.set(sid)
         memory = ShortTermMemory(window_size=settings.short_term_window, track_full=True)
+
+        # 上一轮的轮末落盘可能仍在后台运行：先等它完成再加载状态，避免读到过期状态
+        pending = self._pending_finalize.get(sid)
+        if pending:
+            try:
+                await pending
+            except Exception:
+                logger.warning("等待上一轮落盘任务失败，按现有状态继续")
 
         # 恢复会话完整状态：消息全量 + 冻结章节 + 工作记忆槽位 + 历史推理轨迹
         chapters: list[str] = []
@@ -405,58 +455,81 @@ class ReActLoop:
                 "success": result.success,
             }
 
-            # ── 记忆整理（结果已送达，此处耗时用户无感）──
-            # 轻量 LLM 抽取「实体-关系」事实 → 合并进工作记忆 + 结构化写入长期记忆；
-            # 仅在长期记忆启用时执行，单元测试环境自动跳过
+            # ── 记忆整理（后台任务：答案已送达，[DONE] 立即返回，UI 即时脱离推理态）──
+            # 轻量 LLM 抽取「实体-关系」事实 → 合并进工作记忆 + 会话落盘 + 结构化写入长期记忆；
+            # 整块放入 asyncio.create_task，生成器在此立即 return → SSE 关闭 → 前端 finally 收尾。
+            # 数据一致性：任务按 session 登记到 _pending_finalize，下一轮开始前 await 它，
+            # 因此紧接的下一条消息能读到完整状态；长期记忆延迟写入对单会话用法无影响。
             #
             # 垃圾防线的三种结局分流：
             #   ① LLM 异常        → 兜底确定性文档入库（数据安全）
             #   ② 抽取成功但为空   → 跳过：不入库、不动 WM（没有值得记的）
             #   ③ 抽取到事实       → WM 合并 + 事实文档入库
-            distilled_facts: list[str] = []
-            extraction_failed = False
-            skip_memory = False
-            if self.long_term_memory is not None and self.long_term_memory.enabled:
-                if _TRIVIAL_INPUT_RE.match(validated_input.strip()) or result.success is False:
-                    skip_memory = True  # 寒暄/失败轮：连抽取调用都不发，错误不是知识
-                else:
-                    distilled_facts, extraction_failed = await self._extract_turn_facts(
-                        validated_input, result.answer
-                    )
-                    for f in distilled_facts:
-                        wm.add_fact(f)
-                    if distilled_facts:
-                        logger.info("轮末事实抽取 %d 条", len(distilled_facts))
+            owner_uid = self._owner_uid  # 快照：后台任务运行时可能已被下一请求覆盖
 
-            new_trace = {
-                "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                "user": validated_input[:80],
-                "steps": [s.model_dump(mode="json") for s in steps],
-            } if steps else None
-            await self._persist_session(
-                sid, memory, chapters=chapters, wm=wm,
-                prev_traces=prev_traces, new_trace=new_trace,
-            )
+            async def _finalize() -> None:
+                try:
+                    distilled_facts: list[str] = []
+                    extraction_failed = False
+                    skip_memory = False
+                    if (self.long_term_memory is not None
+                            and self.long_term_memory.enabled):
+                        if result.success is False:
+                            skip_memory = True  # 失败轮：错误不是知识
+                        elif _TRIVIAL_INPUT_RE.match(validated_input.strip()) \
+                                or not _should_extract_turn(
+                                    validated_input, result.answer
+                                ):
+                            skip_memory = True  # 寒暄/无信息轮：预筛未命中，不调小模型
+                        else:
+                            distilled_facts, extraction_failed = \
+                                await self._extract_turn_facts(
+                                    validated_input, result.answer
+                                )
+                            for f in distilled_facts:
+                                wm.add_fact(f)
+                            if distilled_facts:
+                                logger.info("轮末事实抽取 %d 条", len(distilled_facts))
 
-            # 长期记忆：结构化事实文档（非原文）
-            # 仅两种情况写入：抽取到事实；或 LLM 异常时兜底确定性摘要。
-            # 抽取为空 / 寒暄轮 / 失败轮 → 不写（没有值得记的信息就不制造垃圾）
-            if (self.long_term_memory is not None and self.long_term_memory.enabled
-                    and not skip_memory):
-                if distilled_facts:
-                    doc: str | None = "\n".join(distilled_facts)
-                elif extraction_failed:
-                    doc = self._deterministic_doc(validated_input, result.answer, wm)
-                else:
-                    doc = None
-                if doc:
-                    await self.long_term_memory.add(
-                        user_input=validated_input,
-                        assistant_answer=result.answer,
-                        session_id=sid,
-                        user_id=user_id,
-                        document=doc,
+                    new_trace = {
+                        "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                        "user": validated_input[:80],
+                        "steps": [s.model_dump(mode="json") for s in steps],
+                    } if steps else None
+                    await self._persist_session(
+                        sid, memory, chapters=chapters, wm=wm,
+                        prev_traces=prev_traces, new_trace=new_trace,
+                        user_id=owner_uid,
                     )
+
+                    # 长期记忆：结构化事实文档（非原文）
+                    # 仅两种情况写入：抽取到事实；或 LLM 异常时兜底确定性摘要。
+                    # 抽取为空 / 寒暄轮 / 失败轮 → 不写（没有值得记的信息就不制造垃圾）
+                    if (self.long_term_memory is not None
+                            and self.long_term_memory.enabled
+                            and not skip_memory):
+                        if distilled_facts:
+                            doc: str | None = "\n".join(distilled_facts)
+                        elif extraction_failed:
+                            doc = self._deterministic_doc(
+                                validated_input, result.answer, wm
+                            )
+                        else:
+                            doc = None
+                        if doc:
+                            await self.long_term_memory.add(
+                                user_input=validated_input,
+                                assistant_answer=result.answer,
+                                session_id=sid,
+                                user_id=user_id,
+                                document=doc,
+                            )
+                except Exception:
+                    logger.exception("轮末记忆整理后台任务失败")
+
+            task = asyncio.create_task(_finalize())
+            self._pending_finalize[sid] = task
+            task.add_done_callback(lambda t: self._pending_finalize.pop(sid, None))
 
         except GuardrailError as e:
             logger.warning("Guardrail 拦截: %s", e)
@@ -522,8 +595,9 @@ class ReActLoop:
         wm: WorkingMemory,
         prev_traces: list[dict] | None = None,
         new_trace: dict | None = None,
+        user_id: str | None = None,
     ) -> None:
-        """落盘会话状态；达到阈值(满窗口)时把本周期压缩为一个冻结章节
+        """落盘会话状态；达到压缩触发条件时把本周期压缩为一个冻结章节
 
         - LSM 式章节追加：摘要 + WM 快照组装成新章节 append 到 chapters，
           旧章节永不改写——压缩事件只让历史区位移一次，已缓存章节保持命中
@@ -533,9 +607,13 @@ class ReActLoop:
         """
         msgs = memory.all_messages()
 
+        # 压缩触发：单会话当前消息估算 token ≥ 窗口×比例（相对模型上下文，
+        # 换模型只需调 context_window_tokens）；估算基于启发式，非精确计数
         if (
             settings.context_compress_enabled
-            and len(msgs) >= settings.context_compress_threshold
+            and msgs
+            and estimate_tokens("\n".join(m.content for m in msgs))
+            >= settings.context_window_tokens * settings.context_compress_ratio
         ):
             old_part, recent = memory.split_for_compression(settings.context_keep_recent)
             cycle_no = len(chapters) + 1
@@ -564,7 +642,7 @@ class ReActLoop:
 
         await self.conversation_history.asave_state(
             sid, msgs, working_memory=wm.to_dict(), traces=traces,
-            chapters=chapters, user_id=self._owner_uid,
+            chapters=chapters, user_id=user_id or self._owner_uid,
         )
 
     # 压缩摘要的 system 提示词（模块级常量，测试以此识别摘要调用）
@@ -584,16 +662,19 @@ class ReActLoop:
         failed=False 且 facts 为空表示本轮确无可抽取信息（调用方跳过入库）。
         """
         try:
-            reply = await self.llm.chat_async(
-                [
-                    AgentMessage(role=ChatRole.system, content=_FACT_SYSTEM_PROMPT),
-                    AgentMessage(
-                        role=ChatRole.user,
-                        content=f"[用户输入]\n{user_input}\n\n[助手回复]\n{answer[:800]}",
-                    ),
-                ],
-                temperature=0.0,
-            )
+            # 小模型优先（旁路调用省成本）；未配置/直接构造无 cheap_llm 时回退主模型
+            extractor = getattr(self, "cheap_llm", None) or self.llm
+            async with cheap_semaphore:
+                reply = await extractor.chat_async(
+                    [
+                        AgentMessage(role=ChatRole.system, content=_FACT_SYSTEM_PROMPT),
+                        AgentMessage(
+                            role=ChatRole.user,
+                            content=f"[用户输入]\n{user_input}\n\n[助手回复]\n{answer[:800]}",
+                        ),
+                    ],
+                    temperature=0.0,
+                )
             facts: list[str] = []
             for raw in reply.content.splitlines():
                 line = raw.strip().lstrip("-•*").strip()

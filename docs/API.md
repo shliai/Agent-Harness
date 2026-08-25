@@ -1,6 +1,6 @@
 # Agent Harness API 文档
 
-> 版本：v0.5.0 · 更新日期：2026-08-23
+> 版本：v0.7.4 · 更新日期：2026-08-25
 
 ## 基础信息
 
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | GET | `/` | Web 控制台页面 | - |
 | GET | `/health` | 健康检查（含组件状态） | - |
-| GET | `/api/tools` | 工具清单（8 个） | - |
+| GET | `/api/tools` | 工具清单（10 个） | - |
 | GET | `/api/metrics` | 进程级聚合指标 + 最近追踪 | - |
 | POST | `/api/chat` | 对话（SSE 流式 / JSON） | - |
 | POST | `/api/session/clear` | 清空会话 | - |
@@ -45,12 +45,12 @@
 ```json
 {
   "status": "ok",
-  "version": "0.5.0",
+  "version": "0.7.4",
   "components": {
-    "knowledge_base_documents": 62,
+    "knowledge_base_documents": 400,
     "long_term_memory_enabled": true,
-    "long_term_memory_records": 106,
-    "tools": 8
+    "long_term_memory_records": 0,
+    "tools": 10
   }
 }
 ```

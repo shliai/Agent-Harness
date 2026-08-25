@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     openai_api_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4o-mini"
 
+    # ── 小模型（OpenAI 兼容，旁路低风险调用专用）─────────────────
+    # 用于事实抽取 / 检索重排等非关键 LLM 调用，省成本且不占用主模型配额。
+    # URL/KEY 留空则继承主配置（默认同一网关）；MODEL 留空 = 未启用小模型，全部走主模型。
+    openai_small_api_url: str = ""  # alias OPENAI_SMALL_API_URL
+    openai_small_api_key: str = ""  # alias OPENAI_SMALL_API_KEY
+    openai_small_model: str = ""    # alias OPENAI_SMALL_MODEL
+
     # ── 生成参数 ─────────────────────────────────────
     temperature: float = 0.3  # 降低随机性，提高响应速度
     max_tokens: int = 2048   # 减少最大token数量
@@ -27,12 +34,16 @@ class Settings(BaseSettings):
     max_iterations: int = 6   # 减少最大迭代次数
 
     # ── 记忆 ─────────────────────────────────────────
-    # KV-cache 友好：窗口内只追加不淘汰；满 100 条(50轮)触发一次压缩，
+    # KV-cache 友好：窗口内只追加不淘汰；达触发条件时压缩一次，
     # 压缩后 = [system][摘要消息][最近 keep_recent 条]，前缀稳定仅追加
     short_term_window: int = 100
-    # 会话压缩：达到阈值条数时把较旧对话用 LLM 压成滚动摘要（独立消息，紧跟 system）
+    # 会话压缩：按「相对模型窗口」触发——单会话当前消息估算 token
+    # ≥ context_window_tokens × context_compress_ratio 时，把较旧对话用
+    # LLM 压成滚动摘要（独立消息，紧跟 system）。估算基于 estimate_tokens
+    # 启发式（非精确），换模型只需调整 window_tokens 即可适配其上下文。
     context_compress_enabled: bool = True
-    context_compress_threshold: int = 100
+    context_window_tokens: int = 131072   # 所用模型的上下文窗口（token）
+    context_compress_ratio: float = 0.5   # 触发压缩的窗口占用比例
     context_keep_recent: int = 20
     context_summary_max_chars: int = 2000
     long_term_enabled: bool = False
@@ -63,6 +74,7 @@ class Settings(BaseSettings):
     retrieval_relevance_floor: float = 0.85  # 向量距离超过该值触发放宽重查
     rerank_enabled: bool = True  # LLM as Reranker 开关
     rerank_top_n: int = 20  # 进入精排的候选数
+    rerank_small_top_n: int = 8  # 小模型重排候选数（小模型限流严/延迟高，缩小输入量）
     hybrid_search_alpha: float = 0.5  # BM25 关键字通道权重（RRF 融合）
 
     # ── 可观测性 ────────────────────────────────────

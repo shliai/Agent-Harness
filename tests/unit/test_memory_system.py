@@ -239,14 +239,18 @@ class TestChapterMemory:
         loop.conversation_history.asave_state = fake_asave_state
 
         import harness.config as cfg
-        original = (cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent)
-        cfg.settings.context_compress_threshold = 4
+        original = (cfg.settings.context_window_tokens, cfg.settings.context_compress_ratio,
+                    cfg.settings.context_keep_recent)
+        # 阈值 = 30*0.5=15 token：1 轮(≈9)不触发，2 轮(≈16)触发压缩 → 恰产生 1 个章节
+        cfg.settings.context_window_tokens = 30
+        cfg.settings.context_compress_ratio = 0.5
         cfg.settings.context_keep_recent = 2
         try:
             await loop.execute("预算3000买个手机", session_id="bake-test")
             await loop.execute("还有别的吗", session_id="bake-test")
         finally:
-            cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent = original
+            (cfg.settings.context_window_tokens, cfg.settings.context_compress_ratio,
+             cfg.settings.context_keep_recent) = original
 
         state = saved_states["bake-test"]
         assert len(state["chapters"]) == 1, "应产生第1章节"
@@ -362,6 +366,38 @@ class TestChapterMemory:
         assert "[结论]" in doc
 
 
+class TestExtractPrefilter:
+    """轮末抽取预筛：硬实体信号 / 意图偏好关键词 / 输入长度 → 才调小模型"""
+
+    def test_hard_entity_signal_triggers(self) -> None:
+        from harness.core.loop import _should_extract_turn
+
+        assert _should_extract_turn("订单20240601001到哪了", "已查询，运输中。") is True   # 订单号
+        assert _should_extract_turn("SF1234567890查物流", "已查询。") is True              # 物流号
+        assert _should_extract_turn("3000元以内买手机", "推荐如下。") is True              # 金额
+        assert _should_extract_turn("预算5000买个笔记本", "推荐如下。") is True            # 预算
+
+    def test_intent_keyword_triggers(self) -> None:
+        from harness.core.loop import _should_extract_turn
+
+        assert _should_extract_turn("我想买个拍照好的手机", "推荐小米14。") is True
+        assert _should_extract_turn("比较喜欢华为品牌", "好的。") is True
+        assert _should_extract_turn("帮我看看有没有黑色的", "有的。") is True
+
+    def test_long_input_triggers(self) -> None:
+        from harness.core.loop import _should_extract_turn
+
+        long_input = "我之前买的那个耳机左耳没声音了，想问问能不能保修，另外还想顺便了解一下以旧换新怎么操作"
+        assert _should_extract_turn(long_input, "可以的。") is True
+
+    def test_trivial_short_input_skips(self) -> None:
+        from harness.core.loop import _should_extract_turn
+
+        assert _should_extract_turn("好的", "还有什么可以帮您？") is False
+        assert _should_extract_turn("换颜色", "换哪种颜色？") is False
+        assert _should_extract_turn("嗯嗯", "好的。") is False
+
+
 
     @pytest.mark.asyncio
     async def test_working_memory_injected_next_turn(self) -> None:
@@ -426,14 +462,18 @@ class TestChapterMemory:
 
         import harness.config as cfg
 
-        original = (cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent)
-        cfg.settings.context_compress_threshold = 6
+        original = (cfg.settings.context_window_tokens, cfg.settings.context_compress_ratio,
+                    cfg.settings.context_keep_recent)
+        # 阈值 = 100*0.1=10 token：多轮对话累计远超 → 稳定触发压缩
+        cfg.settings.context_window_tokens = 100
+        cfg.settings.context_compress_ratio = 0.1
         cfg.settings.context_keep_recent = 4
         try:
-            for i in range(8):  # 8 轮对话 → all_messages ≥ 16 条 ≥ 阈值
+            for i in range(8):  # 8 轮对话 → token 累计远超阈值
                 await loop.execute(f"问题{i}", session_id="compress-test")
         finally:
-            cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent = original
+            (cfg.settings.context_window_tokens, cfg.settings.context_compress_ratio,
+             cfg.settings.context_keep_recent) = original
 
         assert llm.summarize_called, "应触发过摘要压缩"
         assert saved["chapters"], "应产生冻结章节"
@@ -465,13 +505,17 @@ class TestChapterMemory:
 
         import harness.config as cfg
 
-        original = (cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent)
-        cfg.settings.context_compress_threshold = 6
+        original = (cfg.settings.context_window_tokens, cfg.settings.context_compress_ratio,
+                    cfg.settings.context_keep_recent)
+        # 阈值 = 100*0.1=10 token：5 轮累计远超 → 触发压缩但 LLM 失败 → 降级保留全量
+        cfg.settings.context_window_tokens = 100
+        cfg.settings.context_compress_ratio = 0.1
         cfg.settings.context_keep_recent = 4
         try:
             for i in range(5):
                 await loop.execute(f"问题{i}", session_id="degrade-test")
         finally:
-            cfg.settings.context_compress_threshold, cfg.settings.context_keep_recent = original
+            (cfg.settings.context_window_tokens, cfg.settings.context_compress_ratio,
+             cfg.settings.context_keep_recent) = original
 
         assert not llm.summarize_called or saved["count"] > 8  # 未压缩 → 全量落盘

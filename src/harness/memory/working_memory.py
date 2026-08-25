@@ -16,6 +16,8 @@ _MAX_LIST = 10
 _MAX_TOPICS = 5
 # 可变关系：同一实体再次出现时新值替换旧值（状态机会推进，旧状态即过期）
 _MUTABLE_RELATIONS = {"状态", "进度", "预计", "地址"}
+# 金额信号：数字 + 元/块/¥/rmb（用于抽取预筛，与 _update_budget 的槽位逻辑互补）
+_AMOUNT_RE = re.compile(r"\d+(?:\.\d+)?\s*(?:元|块|¥|rmb)", re.IGNORECASE)
 
 
 class WorkingMemory(BaseModel):
@@ -107,6 +109,20 @@ class WorkingMemory(BaseModel):
         logger.info("工作记忆已随章节烘焙清零，进入新周期")
 
     # ── 更新（规则抽取，确定性） ────────────────────────
+
+    @staticmethod
+    def has_hard_entity_signal(text: str) -> bool:
+        """文本中是否存在订单号/物流号/金额/预算等确定性硬信号。
+
+        供轮末 LLM 抽取预筛复用：命中说明该轮含值得抽取的硬信息，
+        未命中则交由「输入长度 / 意图偏好关键词」兜底，避免每轮都调小模型。
+        """
+        return bool(
+            _ORDER_ID_RE.search(text)
+            or _TRACKING_RE.search(text)
+            or _AMOUNT_RE.search(text)
+            or "预算" in text
+        )
 
     def update_from_input(self, text: str, turn: int) -> None:
         """从用户输入抽取关键状态。每轮调用一次。"""

@@ -12,6 +12,7 @@ import logging
 import re
 
 from harness.config import settings
+from harness.llm.factory import LLMFactory, cheap_semaphore
 
 logger = logging.getLogger("harness.llm.reranker")
 
@@ -21,9 +22,8 @@ _client = None
 def _get_client():
     global _client
     if _client is None:
-        from harness.llm.factory import LLMFactory
-
-        _client = LLMFactory.create()
+        # 小模型优先（若配置了 OPENAI_SMALL_MODEL），否则回退主模型
+        _client = LLMFactory.create_cheap() or LLMFactory.create()
     return _client
 
 
@@ -45,7 +45,10 @@ async def rerank(query: str, candidates: list[dict]) -> list[dict]:
     if not settings.rerank_enabled or len(candidates) < 6:
         return candidates
 
-    top = candidates[: settings.rerank_top_n]
+    # 小模型重排：限流严/延迟高，缩小候选量（rerank_small_top_n）控制输入与耗时
+    using_small = bool(settings.openai_small_model)
+    top_n = settings.rerank_small_top_n if using_small else settings.rerank_top_n
+    top = candidates[:top_n]
     lines = [
         f"{c['id']} | {c['metadata'].get('brand', '')}{c['metadata'].get('category', '')} "
         f"¥{c['metadata'].get('price', 0)} | {c['document'][:80]}"
@@ -54,17 +57,19 @@ async def rerank(query: str, candidates: list[dict]) -> list[dict]:
     prompt = (
         "你是电商检索重排器。根据用户需求，对以下商品按相关度从高到低排序。\n"
         f"用户需求：{query}\n\n商品列表：\n" + "\n".join(lines) +
-        "\n\n只输出按相关度排序的商品 id（形如 product_123），空格分隔，不要其他内容。"
+        "\n\n只输出按相关度从高到低排序的商品 id（形如 product_123），每行一个，"
+        "不要解释、不要序号、不要重复。"
     )
     try:
         from harness.domain.models import AgentMessage, ChatRole
 
         async with asyncio.timeout(12):
-            reply = await _get_client().chat_async(
-                [AgentMessage(role=ChatRole.system, content="只输出商品id序列。"),
-                 AgentMessage(role=ChatRole.user, content=prompt)],
-                temperature=0.0,
-            )
+            async with cheap_semaphore:
+                reply = await _get_client().chat_async(
+                    [AgentMessage(role=ChatRole.system, content="只输出商品id，每行一个。"),
+                     AgentMessage(role=ChatRole.user, content=prompt)],
+                    temperature=0.0,
+                )
         ordered_ids = _parse_order(reply.content, [c["id"] for c in top])
         if not ordered_ids:
             logger.warning("Rerank 输出无法解析，回退 RRF 序")

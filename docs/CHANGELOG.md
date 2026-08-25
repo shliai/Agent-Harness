@@ -1,5 +1,30 @@
 # Agent Harness 更新日志
 
+## [Unreleased] - 2026-08-25
+
+**成本与延迟优化专项：小模型旁路路由 / 相对模型窗口压缩触发 / 轮末记忆整理后台化**。176 个测试全部通过。
+
+### 小模型旁路（省成本）
+- 新增可选小模型三件套 `OPENAI_SMALL_API_URL / OPENAI_SMALL_API_KEY / OPENAI_SMALL_MODEL`（OpenAI v1 兼容）
+  - URL/KEY 留空继承主网关（默认同一兼容端点，仅换模型名）；MODEL 留空 = 未启用小模型，全部走主模型
+- 事实抽取、检索重排等**旁路低风险调用**优先走小模型，不占用主模型配额/限流
+- 小模型并发经共享信号量 `cheap_semaphore(3)` 限流护栏，防瞬时打满小模型限流触发 429 风暴
+- LLM Reranker 改走小模型并缩小输入量：`RERANK_SMALL_TOP_N=8`（主模型 `RERANK_TOP_N=20`），减小小模型延迟影响
+
+### 压缩触发改「相对模型窗口」
+- 触发条件由「消息条数（100 条）」改为「单会话消息估算 token ≥ `CONTEXT_WINDOW_TOKENS × CONTEXT_COMPRESS_RATIO`」
+- 估算基于 `estimate_tokens` 启发式（非精确计数）；换模型只需把 `CONTEXT_WINDOW_TOKENS` 设为所用模型的上下文窗口即可适配触发时机
+- 新增配置：`CONTEXT_WINDOW_TOKENS` / `CONTEXT_COMPRESS_RATIO`（替代旧的条数阈值）
+
+### 轮末记忆整理后台化（不阻塞响应）
+- 收尾的记忆整理（抽取预筛 → 小模型抽取 → WM 合并 → 长期写入）转入 `asyncio.create_task` 后台任务，yield result 后立即结束 SSE 流
+- 修复「回答完成后前端仍显示推理中、停止按钮失效」根因——此前 2~4s 同步记忆整理阻塞了流关闭
+- 一致性保障：下一轮执行前等待上一轮后台落盘任务完成；owner_uid 快照隔离后台任务
+
+### 轮末抽取预筛（降调用频次）
+- `_should_extract_turn`：仅命中硬实体信号（订单/物流/金额/预算正则）或意图/偏好关键词（喜欢/想要/推荐…）或输入较长（≥40 字）才调 LLM 抽取
+- 纯寒暄/无信息轮直接跳过，省调用与限流配额
+
 ## [v0.7.4] - 2026-08-24
 
 **记忆架构重构：LSM 式章节前缀 + 上下文工程 KV-cache 专项 + 长期记忆维护闭环**。168 个测试全部通过。

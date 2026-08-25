@@ -1,6 +1,6 @@
 # Agent Harness 功能实现说明
 
-> 版本：v0.7.2 · 面向开发者的功能实现细节文档
+> 版本：v0.7.4 · 面向开发者的功能实现细节文档
 > 架构总览见 [ARCHITECTURE.md](ARCHITECTURE.md) · 接口定义见 [API.md](API.md)
 
 ---
@@ -412,7 +412,11 @@ class WorkingMemory(BaseModel):
 - 订单号：`20\d{9}` 11 位数字模式
 - 物流号：`(SF|YT|ZTO|STO|JD|EMS)\d{9,12}`
 - prompt_block() 渲染为「状态尾注」消息（对话末尾、本轮输入之前），含槽位与关键事实
-- 轮末 LLM 抽取实体-关系事实（_extract_turn_facts）合并进 important_facts，并结构化写入长期记忆
+- 轮末抽取**预筛**（_should_extract_turn）：命中硬实体信号（订单/物流/金额/预算正则）
+  或意图/偏好关键词（喜欢/想要/推荐…）或输入较长（≥40 字）才调 LLM 抽取——
+  纯寒暄/无信息轮直接跳过，省调用与限流配额
+- 抽取路由**小模型优先**（`cheap_llm`，未配置自动回落主模型），经 cheap_semaphore 限并发
+  （防瞬时打满小模型限流触发 429 风暴）；结果合并进 important_facts 并结构化写入长期记忆
 - 更新语义：状态/进度等可变关系同实体同关系 → WM 原地替换；长期库一事实一记录（entity_key 元数据），写时替换 + 读时保鲜（跨会话只留最新）
 - 垃圾防线：抽取为空/寒暄输入/失败轮 → 跳过长期写入；仅 LLM 异常时写确定性兜底文档
 - 压缩事件时整块烘入冻结章节后 reset_for_new_cycle() 清零开新周期
@@ -425,14 +429,16 @@ ShortTermMemory 只追加设计：
 
 章节压缩流程（loop._persist_session）：
 ```
-len(all_messages) >= CONTEXT_COMPRESS_THRESHOLD (100)?
-  ├─ 是 → 本周期旧 80 条调 LLM 章节摘要（不合并旧章节，零级联损耗）
+单会话消息估算 token >= CONTEXT_WINDOW_TOKENS × CONTEXT_COMPRESS_RATIO?
+  ├─ 是 → 本周期旧消息调 LLM 章节摘要（不合并旧章节，零级联损耗）
   │       成功 → 组装冻结章节【第N阶段】摘要+WM快照 → chapters.append()
   │            → WM reset_for_new_cycle() 清零开新周期
-  │            → 落盘 {messages: 最近20条, chapters: 追加后全量}
+  │            → 落盘 {messages: 最近 keep_recent 条, chapters: 追加后全量}
   │       失败 → 落盘完整历史（降级保数据）
   └─ 否 → 直接落盘全部
 ```
+触发阈值按「相对模型窗口」估算（`estimate_tokens` 启发式，非精确计数）：
+换模型只需调整 `CONTEXT_WINDOW_TOKENS`（所用模型的上下文窗口）即可适配其触发时机。
 
 上下文组装 = [system 人设+工具] + [system 章节×k] + [历史(只追加)] + [system 状态尾注=当期WM+跨会话召回] + [本轮输入]。
 稳定期纯追加 → KV cache 零失效；压缩事件仅历史区位移一次。

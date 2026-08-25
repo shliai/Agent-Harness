@@ -24,6 +24,7 @@ cp .env.example .env
 #   OPENAI_API_KEY=sk-xxx
 #   OPENAI_API_URL=https://api.openai.com/v1   # 或智谱/DeepSeek 等
 #   OPENAI_MODEL=gpt-4o-mini
+#   （可选）OPENAI_SMALL_MODEL=deepseek-chat    # 事实抽取/重排走小模型，省成本
 
 # ③ 初始化数据 + 启动（首次自动下载 BGE 模型约 2 分钟）
 python scripts/init_db.py --reindex
@@ -105,14 +106,14 @@ scripts/            init_db / eval / export_badcase
 data/seed/          400 商品 + 260 订单 + 200 物流种子数据
 data/policies.json  10 条官方政策条款
 data/eval/          36 条评测用例
-tests/              172 个测试用例
+tests/              176 个测试用例
 docs/               10 份文档
 ```
 
 ## 测试与评测
 
 ```bash
-pytest tests/ -v                    # 172 个测试
+pytest tests/ -v                    # 176 个测试
 python scripts/eval.py              # 五层离线评测（28/28 PASS）
 python scripts/eval.py --live       # 含在线路由评测（消耗真实 tokens）
 ```
