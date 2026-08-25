@@ -1,20 +1,26 @@
-"""Agent Harness 评测框架（四层）
+"""Agent Harness 评测框架（多维度）
 
 用法：
-    python scripts/eval.py                    # 离线层：检索 Recall@5 / 预算合规 / 鲁棒性
-    python scripts/eval.py --live             # 追加在线层：工具路由（调用真实 LLM）
-    python scripts/eval.py --layers retrieval,budget
-    python scripts/eval.py --strict           # 有失败时退出码非 0
+    python scripts/eval.py --mode L0 --strict   # CI 离线五层：检索/预算/鲁棒性/长期记忆/工作记忆流
+    python scripts/eval.py --mode L1            # 发版前：L0 + 生成质量/护栏/任务流程/路由/非功能
+    python scripts/eval.py --mode L2            # 定期：追加 LLM-as-Judge 层
+    python scripts/eval.py --layers gen,guardrail,workflow
+    python scripts/eval.py --live               # 兼容旧用法：追加在线路由层
 
 层次设计（确定性从强到弱）：
     retrieval   检索质量：ground truth 由 data/products.json 结构化字段运行时计算，
                 指标 Recall@5 / MRR / 价格硬合规 / 品类硬合规
     budget      预算合规：带预算查询返回的商品必须全部 ≤ 预算（硬性），
                 且 top1 价格接近度不低于中位数（软性参考）
-    routing     工具路由：真实 LLM 决策，spy registry 记录实际调用的工具，
-                断言期望工具被命中（--live 才执行）
-    robustness  对抗鲁棒性：幂运算炸弹 / 代码注入 / 坏 JSON ACTION /
-                PII 脱敏 / 控制字符拦截 / per-key 限流 / 路径穿越
+    robustness  对抗鲁棒性：幂运算炸弹 / 代码注入 / PII 脱敏 / 控制字符拦截 /
+                per-key 限流 / 路径穿越 / 超大输入 / 畸形订单与物流单号
+    memory      长期记忆检索（L0 确定性）：语义命中 + 负例 + user 隔离
+    wm_flow     工作记忆流（L0 确定性）：预算写入/覆盖/去重
+    gen         生成质量（真实 LLM）：忠实度 / 幻觉率 / 上下文利用率（L1 规则版 / L2 Judge 版）
+    guardrail   护栏一致性（真实 LLM）：商品强制检索 / 闲聊零工具 / 引用一致 / 不死循环
+    workflow    任务流程（真实 LLM）：多轮端到端，期望工具序列匹配
+    routing     工具路由（真实 LLM）：spy registry 记录实际调用工具
+    perf        非功能（真实 LLM）：延迟 P50/P95、每轮 token、调用次数（仅报告）
 
 报告写入 data/eval/report_<timestamp>.json。
 """
@@ -298,6 +304,54 @@ async def eval_robustness(cases: list[dict]) -> dict:
                 validate_session_id(evil)
         return "非法 session_id 全部拦截"
 
+    async def x09_oversized_input():
+        with pytest_raises(InputValidationError):
+            InputValidator().check({"type": "input", "content": "长" * 5000})
+        return "超大输入已被拦截"
+
+    async def x10_empty_input():
+        with pytest_raises(InputValidationError):
+            InputValidator().check({"type": "input", "content": "   "})
+        return "空输入已被拦截"
+
+    async def x11_bank_card_masked():
+        f = OutputFilter()
+        masked = f.check({"type": "output", "content": "您的卡号6222021234567890123已绑定"})
+        assert "6222021234567890123" not in masked
+        return "银行卡号已掩码"
+
+    async def x12_api_key_masked():
+        f = OutputFilter()
+        masked = f.check({"type": "output", "content": "密钥为 sk-abcdefghijklmnopqrstuvwxyz123456，请保密"})
+        assert "sk-abcdefghijklmnopqrstuvwxyz123456" not in masked
+        return "API Key 已掩码"
+
+    async def x13_calc_injection_variant():
+        out = await calc.run(expression="__import__('subprocess').Popen")
+        assert "subprocess" not in out or out.strip() != "subprocess", "注入变体竟然成功"
+        return f"拒绝响应: {out}"
+
+    async def x14_order_malformed():
+        from harness.tools.order_query import OrderQueryTool
+
+        out = await OrderQueryTool().run(order_id="abc-123")
+        assert "格式不正确" in out, f"畸形订单号未被拒绝: {out}"
+        return f"拒绝响应: {out}"
+
+    async def x15_order_not_found():
+        from harness.tools.order_query import OrderQueryTool
+
+        out = await OrderQueryTool().run(order_id="2024010100000")
+        assert "未找到订单" in out, f"不存在订单未优雅处理: {out}"
+        return f"优雅提示: {out}"
+
+    async def x16_tracking_malformed():
+        from harness.tools.logistics_query import LogisticsQueryTool
+
+        out = await LogisticsQueryTool().run(logistics_no="12345")
+        assert "格式不正确" in out, f"畸形物流单号未被拒绝: {out}"
+        return f"拒绝响应: {out}"
+
     plan = {
         "calc_pow_bomb": x01_pow_bomb,
         "calc_code_injection": x02_injection,
@@ -307,6 +361,14 @@ async def eval_robustness(cases: list[dict]) -> dict:
         "input_control_chars_blocked": x06_control_chars,
         "rate_limit_per_key_isolated": x07_rate_limit_keys,
         "session_traversal_rejected": x08_traversal,
+        "oversized_input_blocked": x09_oversized_input,
+        "empty_input_blocked": x10_empty_input,
+        "bank_card_masked": x11_bank_card_masked,
+        "api_key_masked": x12_api_key_masked,
+        "calc_injection_variant": x13_calc_injection_variant,
+        "order_malformed_rejected": x14_order_malformed,
+        "order_not_found_graceful": x15_order_not_found,
+        "tracking_malformed_rejected": x16_tracking_malformed,
     }
     for case in [c for c in cases if c["layer"] == "robustness"]:
         fn = plan.get(case["kind"])
@@ -364,13 +426,31 @@ def _load_products() -> list[dict]:
 async def main_async(args: argparse.Namespace) -> int:
     products = _load_products()
     golden = load_golden()
-    layers = set(args.layers.split(",")) if args.layers else {"retrieval", "budget", "robustness", "memory"}
+
+    # 三档模式 → 层集合（--layers 显式指定时优先）
+    MODE_LAYERS = {
+        "L0": ["retrieval", "budget", "robustness", "memory", "wm_flow"],
+        "L1": ["retrieval", "budget", "robustness", "memory", "wm_flow",
+               "gen", "guardrail", "workflow", "routing", "perf"],
+        "L2": ["retrieval", "budget", "robustness", "memory", "wm_flow",
+               "gen", "gen_judge", "guardrail", "workflow", "routing", "perf"],
+    }
+    if args.layers:
+        layers = set(args.layers.split(","))
+    elif args.mode:
+        layers = set(MODE_LAYERS[args.mode])
+    else:
+        layers = {"retrieval", "budget", "robustness", "memory", "wm_flow"}
     if args.live:
         layers.add("routing")
 
-    report: dict[str, Any] = {"timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "layers": []}
+    report: dict[str, Any] = {
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "mode": args.mode or "default",
+        "layers": [],
+    }
     print(f"══ Agent Harness 评测 · {report['timestamp']} ══")
-    print(f"知识库商品数: {len(products)} | 用例数: {len(golden)} | 层: {sorted(layers)}\n")
+    print(f"知识库商品数: {len(products)} | 用例数: {len(golden)} | 模式: {args.mode or '自定义'} | 层: {sorted(layers)}\n")
 
     all_ok = True
     if "retrieval" in layers:
@@ -396,12 +476,62 @@ async def main_async(args: argparse.Namespace) -> int:
         report["layers"].append(r)
         _print_layer(r)
         all_ok &= r["pass_rate"] >= 0.75
+    if "wm_flow" in layers:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from eval_memory import eval_wm_flow as _eval_wm_flow
+
+        r = await _eval_wm_flow(golden)
+        report["layers"].append(r)
+        _print_layer(r)
+        all_ok &= r["pass_rate"] >= 0.9
+    if "gen" in layers or "gen_judge" in layers:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from eval_gen import eval_gen as _eval_gen
+
+        judge = "gen_judge" in layers
+        print("→ 生成质量评测（调用真实 LLM）…")
+        r = await _eval_gen(golden, products, judge=judge)
+        report["layers"].append(r)
+        _print_layer(r)
+        all_ok &= r["pass_rate"] >= (0.6 if judge else 0.8)
+    if "guardrail" in layers:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from eval_guardrail import eval_guardrail as _eval_guardrail
+
+        print("→ 护栏一致性评测（调用真实 LLM）…")
+        r = await _eval_guardrail(golden, products)
+        report["layers"].append(r)
+        _print_layer(r)
+        all_ok &= r["pass_rate"] >= 0.8
+    if "workflow" in layers:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from eval_workflow import eval_workflow as _eval_workflow
+
+        print("→ 任务流程评测（调用真实 LLM）…")
+        r = await _eval_workflow(golden)
+        report["layers"].append(r)
+        _print_layer(r)
+        all_ok &= r["pass_rate"] >= 0.8
     if "routing" in layers:
         print("→ 在线路由评测（调用真实 LLM）…")
         r = await eval_routing(golden)
         report["layers"].append(r)
         _print_layer(r)
         all_ok &= r["pass_rate"] >= 0.75  # LLM 决策有固有随机性
+    if "perf" in layers:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from eval_perf import eval_perf as _eval_perf
+
+        print("→ 非功能评测（延迟/成本，仅报告）…")
+        r = await _eval_perf()
+        report["layers"].append(r)
+        _print_layer(r)
+        if r.get("report"):
+            print("  延迟: avg={avg}ms p50={p50}ms p95={p95}ms | token/轮 avg={tavg} | LLM调用/轮 avg={lavg}".format(
+                avg=r["report"]["duration_ms"]["avg"], p50=r["report"]["duration_ms"]["p50"],
+                p95=r["report"]["duration_ms"]["p95"], tavg=r["report"]["tokens_per_turn"]["avg"],
+                lavg=r["report"]["llm_calls_per_turn"]["avg"]))
+        all_ok &= r["pass_rate"] >= 0.8
 
     out_path = REPO / "data" / "eval" / f"report_{time.strftime('%Y%m%d_%H%M%S')}.json"
     out_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -438,9 +568,12 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-    parser = argparse.ArgumentParser(description="Agent Harness 四层评测")
+    parser = argparse.ArgumentParser(description="Agent Harness 多维度评测")
+    parser.add_argument("--mode", type=str, choices=["L0", "L1", "L2"], default=None,
+                        help="运行档位：L0 离线确定性 / L1 追加在线确定性 / L2 追加 Judge")
     parser.add_argument("--live", action="store_true", help="包含在线工具路由层（消耗真实 LLM tokens）")
-    parser.add_argument("--layers", type=str, default=None, help="逗号分隔: retrieval,budget,routing,robustness")
+    parser.add_argument("--layers", type=str, default=None,
+                        help="逗号分隔: retrieval,budget,routing,robustness,memory,wm_flow,gen,guardrail,workflow,perf")
     parser.add_argument("--strict", action="store_true", help="任一失败退出码为 1")
     parser.add_argument("--threshold", type=float, default=None, help="检索层通过率阈值（默认 1.0）")
     args = parser.parse_args()

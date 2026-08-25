@@ -172,21 +172,19 @@ class KnowledgeRetrievalTool(BaseTool):
     @staticmethod
     def _extract_filters(raw_query: str) -> dict[str, Any]:
         # 中文数量词归一化：
-        # 1) "万元以上/以内" → 10000 元（隐含 1 万）
+        # 1) "1万5" / "2万8" → 15000 / 28000（口语）
         # 2) "1万"/"2.5万" → 数字展开
-        raw_query = re.sub(r"万元?以上", "10000元以上", raw_query)
-        raw_query = re.sub(r"万元?[以内下]+", "10000元以内", raw_query)
-        # 口语 "1万5" / "2万8" → 15000 / 28000
+        # 3) 裸 "万元以上/以内" → 10000 元（隐含 1 万）——必须先于数字展开，
+        #    否则 "1万以内" 会在裸替换后被拼成 "110000元以内"（bug）
         raw_query = re.sub(
             r"(\d+(?:\.\d+)?)万(\d)(?![\d])",
             lambda m: str(round(float(m.group(1)) * 10000 + int(m.group(2)) * 1000)),
             raw_query,
         )
-        query = re.sub(
-            r"(\d+(?:\.\d+)?)\s*万",
-            lambda m: str(round(float(m.group(1)) * 10000)),
-            raw_query,
-        )
+        raw_query = re.sub(r"(\d+(?:\.\d+)?)\s*万", lambda m: str(round(float(m.group(1)) * 10000)), raw_query)
+        raw_query = re.sub(r"万元?以上", "10000元以上", raw_query)
+        raw_query = re.sub(r"万元?[以内下]+", "10000元以内", raw_query)
+        query = raw_query
         filters: dict[str, Any] = {}
 
         m = re.search(r"(\d+(?:\.\d+)?)\s*(?:元|块)?\s*以[下内]", query)
@@ -434,10 +432,15 @@ class KnowledgeRetrievalTool(BaseTool):
             cand["hybrid_score"] = rrf_vec + rrf_kw
 
         # 意图词命中数作为一级排序键（强意图必须优先满足），
-        # 相关度分数退为二级键——避免大目录下贴预算但不匹配意图的商品挤占头部
+        # 相关度分数退为二级键——避免大目录下贴预算但不匹配意图的商品挤占头部。
+        # 意图词 = 属性词(SYNONYMS) + 查询中命中的品类名词（如"手环"），
+        # 否则预算接近度加权会压过 RRF，导致"手环"把小米手环挤到 OPPO Watch 之后。
         from harness.tools.query_enricher import SYNONYMS
 
         intent_words = [w for w in SYNONYMS if w in user_query]
+        cat_word = next((kw for kw in KNOWN_CATEGORIES if kw in user_query), None)
+        if cat_word and cat_word not in intent_words:
+            intent_words.append(cat_word)
         if intent_words:
             for cand in candidates:
                 hay = cand["document"]

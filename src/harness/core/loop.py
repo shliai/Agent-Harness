@@ -79,12 +79,13 @@ def _should_extract_turn(user_input: str, answer: str) -> bool:
 
 # 商品意图强制检索（防幻觉护栏）：模型本轮未主动调工具时，命中该正则
 # 即强制回滚直接回答、改为调用 knowledge_retrieval——宁可多查一次，不可凭记忆编造
+# 仅用 品类词/品牌词/意图词/价格预算 触发；不含评价词（好不好/怎么样），避免闲聊误触发
 _PRODUCT_INTENT_RE = re.compile(
     r"(?:手机|笔记本|电脑|平板|耳机|手表|手环|相机|音箱|电视|冰箱|洗衣机|空调|"
-    r"充电器|键盘|鼠标|显示器|智能家居|穿戴设备|"
+    r"充电器|键盘|鼠标|显示器|智能家居|穿戴设备|机械键盘|"
     r"苹果|华为|小米|荣耀|oppo|vivo|三星|索尼|联想|戴尔|惠普|华硕|大疆|"
     r"推荐|哪款|型号|参数|配置|比价|对比|性价比|值得买|"
-    r"价格|多少钱|价位|预算|库存|现货|好不好|怎么样)",
+    r"价格|多少钱|价位|预算|库存|现货)",
     re.IGNORECASE,
 )
 
@@ -599,7 +600,7 @@ class ReActLoop:
                                 user_input=validated_input,
                                 assistant_answer=result.answer,
                                 session_id=sid,
-                                user_id=user_id,
+                                user_id=owner_uid,
                                 document=doc,
                             )
                 except Exception:
