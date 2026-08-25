@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Literal
 from pydantic import Field, field_validator
@@ -75,6 +76,8 @@ class Settings(BaseSettings):
     rerank_top_n: int = 20  # 进入精排的候选数
     rerank_small_top_n: int = 8  # 小模型重排候选数（小模型限流严/延迟高，缩小输入量）
     hybrid_search_alpha: float = 0.5  # BM25 关键字通道权重（RRF 融合）
+    # 本地 BGE 模型优先；网络受限环境禁止 HF 联网检查（否则加载时 HEAD 远程文件会超时重试卡住）
+    hf_hub_offline: bool = True  # True=强制 huggingface_hub 离线，只读本地模型路径
 
     # ── 可观测性 ────────────────────────────────────
     log_level: str = "INFO"
@@ -119,3 +122,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# 本地 BGE 模型已内置（models/bge-small-zh-v1.5），无需联网；
+# 强制 huggingface_hub 离线，避免加载时 HEAD 远程文件在网络不可达时超时重试（WinError 10060）。
+if settings.hf_hub_offline:
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")

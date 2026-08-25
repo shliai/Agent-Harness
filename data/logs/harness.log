@@ -1,2 +1,164 @@
 {"timestamp": "2026-08-25T05:22:22.006099+00:00", "level": "INFO", "logger": "test.file", "message": "file log with session", "session_id": "sess-file-1"}
 {"timestamp": "2026-08-25T05:22:22.007088+00:00", "level": "INFO", "logger": "test.file", "message": "file log without session"}
+{"timestamp": "2026-08-25T05:40:31.972182+00:00", "level": "INFO", "logger": "harness.memory.embeddings", "message": "正在加载 BGE 嵌入模型: models/bge-small-zh-v1.5"}
+{"timestamp": "2026-08-25T05:41:36.552442+00:00", "level": "INFO", "logger": "sentence_transformers.base.model", "message": "Loading SentenceTransformer model from models/bge-small-zh-v1.5."}
+{"timestamp": "2026-08-25T05:41:58.049628+00:00", "level": "INFO", "logger": "harness.memory.embeddings", "message": "BGE 嵌入模型加载完成"}
+{"timestamp": "2026-08-25T05:41:58.916810+00:00", "level": "DEBUG", "logger": "jieba", "message": "Building prefix dict from the default dictionary ..."}
+{"timestamp": "2026-08-25T05:41:58.918097+00:00", "level": "DEBUG", "logger": "jieba", "message": "Loading model from cache C:\\Users\\Lenovo\\AppData\\Local\\Temp\\jieba.cache"}
+{"timestamp": "2026-08-25T05:41:59.674789+00:00", "level": "DEBUG", "logger": "jieba", "message": "Loading model cost 0.757 seconds."}
+{"timestamp": "2026-08-25T05:41:59.675542+00:00", "level": "DEBUG", "logger": "jieba", "message": "Prefix dict has been built successfully."}
+{"timestamp": "2026-08-25T05:42:00.057875+00:00", "level": "INFO", "logger": "harness.tools.knowledge_retrieval", "message": "KnowledgeRetrievalTool 初始化完成 (ChromaDB + BGE + BM25/RRF)"}
+{"timestamp": "2026-08-25T05:42:00.060667+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: knowledge_retrieval — 检索电商商品知识库，用于回答商品信息、价格查询、参数对比、商品推荐等业务问题"}
+{"timestamp": "2026-08-25T05:42:00.066000+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: calculator — 执行数学计算，支持加减乘除、整除、取余、幂运算和括号"}
+{"timestamp": "2026-08-25T05:42:00.074682+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: order_query — 根据订单号查询当前用户的订单详情，包括商品名称、价格、状态、物流信息等。只能查询本人订单"}
+{"timestamp": "2026-08-25T05:42:00.078589+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: logistics_query — 查询物流轨迹，根据物流单号返回详细的运输节点和状态"}
+{"timestamp": "2026-08-25T05:42:00.080231+00:00", "level": "INFO", "logger": "harness.tools.policy", "message": "PolicyQueryTool 初始化完成 (10 条政策)"}
+{"timestamp": "2026-08-25T05:42:00.083148+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: policy_query — 查询平台官方政策：七天无理由退货、质量问题退换、退款时效、保修、价保、发票、配送时效、换货流程、物流赔付、账户安全等。凡涉及政策条款的问题必须先调用本工具"}
+{"timestamp": "2026-08-25T05:42:00.089511+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: transfer_human — 将当前会话转接人工客服并创建工单。触发条件：用户明确要求人工；同一问题尝试 2 次仍无法解决；涉及投诉、赔偿、越权诉求等你无权处理的事项"}
+{"timestamp": "2026-08-25T05:42:00.097992+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: order_list — 查询当前用户的订单列表（最近下单优先），用于用户不记得订单号时先列出订单再选择"}
+{"timestamp": "2026-08-25T05:42:00.099370+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: after_sale_apply — 为用户提交退货/换货申请（仅限本人订单，且订单已发货/配送中/已完成）。返回售后单号与后续流程说明"}
+{"timestamp": "2026-08-25T05:42:00.103017+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: after_sale_query — 查询当前用户的售后申请列表及各单状态进度"}
+{"timestamp": "2026-08-25T05:42:00.108449+00:00", "level": "INFO", "logger": "harness.llm.factory", "message": "创建 LLM 客户端: model=astron-code-latest base=https://maas-coding-api.cn-huabei-1.xf-yun.com/v2"}
+{"timestamp": "2026-08-25T05:42:00.146946+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "OpenAICompatibleClient 初始化: model=astron-code-latest base=https://maas-coding-api.cn-huabei-1.xf-yun.com/v2"}
+{"timestamp": "2026-08-25T05:42:00.147339+00:00", "level": "INFO", "logger": "harness.llm.factory", "message": "创建小模型客户端: model=glm-4.5-flash base=https://open.bigmodel.cn/api/paas/v4"}
+{"timestamp": "2026-08-25T05:42:00.189987+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "OpenAICompatibleClient 初始化: model=glm-4.5-flash base=https://open.bigmodel.cn/api/paas/v4"}
+{"timestamp": "2026-08-25T05:42:00.337359+00:00", "level": "INFO", "logger": "harness.memory.long_term", "message": "LongTermMemory 初始化完成 (path=data\\memory_store)"}
+{"timestamp": "2026-08-25T05:42:00.339613+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: subtask_dispatch — 将复杂任务拆分为多个子任务，逐一分发给子智能体执行并汇总结果"}
+{"timestamp": "2026-08-25T05:42:00.340246+00:00", "level": "INFO", "logger": "harness.core.agent", "message": "Agent 初始化 | llm=OpenAICompatibleClient tools=10 guardrails=6"}
+{"timestamp": "2026-08-25T05:42:00.340771+00:00", "level": "INFO", "logger": "harness.web.api", "message": "Agent 预热完成 | tools=10 guardrails=6"}
+{"timestamp": "2026-08-25T05:42:00.491843+00:00", "level": "INFO", "logger": "harness.web.api", "message": "启动 Web 服务器: http://localhost:8000"}
+{"timestamp": "2026-08-25T05:49:32.053248+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 10 条相关历史", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:49:33.359243+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1304ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:49:36.640046+00:00", "level": "INFO", "logger": "harness.memory.long_term", "message": "长期记忆维护完成: {'ttl_deleted': 0, 'dup_merged': 26, 'orphan_deleted': 0, 'cap_evicted': 0}", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:49:36.640744+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆维护完成: {'ttl_deleted': 0, 'dup_merged': 26, 'orphan_deleted': 0, 'cap_evicted': 0}", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:50:02.167974+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 28801ms | token=592 | model=glm-4.5-flash", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:50:02.168502+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 5 条事实 (28801 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:50:22.237594+00:00", "level": "INFO", "logger": "sentence_transformers.base.model", "message": "Loading SentenceTransformer model from BAAI/bge-small-zh-v1.5.", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:51:33.383224+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/adapter_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:51:33.383757+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 1s [Retry 1/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:51:55.444459+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/adapter_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:51:55.444824+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 2s [Retry 2/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:52:18.504669+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/adapter_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:52:18.505012+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 4s [Retry 3/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:52:43.547339+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/adapter_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:52:43.547963+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 8s [Retry 4/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:53:12.597527+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/adapter_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:53:12.598118+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 8s [Retry 5/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:53:41.629380+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/adapter_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:54:22.739892+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/processor_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:54:22.740292+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 1s [Retry 1/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:54:44.776812+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/processor_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:54:44.777092+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 2s [Retry 2/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:55:07.815604+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/processor_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:55:07.815995+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 4s [Retry 3/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:55:32.865848+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "'[WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。' thrown while requesting HEAD https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/processor_config.json", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:55:32.866145+00:00", "level": "WARNING", "logger": "huggingface_hub.utils._http", "message": "Retrying in 8s [Retry 4/5].", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:56:15.477029+00:00", "level": "INFO", "logger": "harness.memory.embeddings", "message": "正在加载 BGE 嵌入模型: models/bge-small-zh-v1.5"}
+{"timestamp": "2026-08-25T05:56:40.923550+00:00", "level": "INFO", "logger": "sentence_transformers.base.model", "message": "Loading SentenceTransformer model from models/bge-small-zh-v1.5."}
+{"timestamp": "2026-08-25T05:56:41.097532+00:00", "level": "INFO", "logger": "harness.memory.embeddings", "message": "BGE 嵌入模型加载完成"}
+{"timestamp": "2026-08-25T05:56:41.442437+00:00", "level": "DEBUG", "logger": "jieba", "message": "Building prefix dict from the default dictionary ..."}
+{"timestamp": "2026-08-25T05:56:41.442847+00:00", "level": "DEBUG", "logger": "jieba", "message": "Loading model from cache C:\\Users\\Lenovo\\AppData\\Local\\Temp\\jieba.cache"}
+{"timestamp": "2026-08-25T05:56:41.923544+00:00", "level": "DEBUG", "logger": "jieba", "message": "Loading model cost 0.481 seconds."}
+{"timestamp": "2026-08-25T05:56:41.923856+00:00", "level": "DEBUG", "logger": "jieba", "message": "Prefix dict has been built successfully."}
+{"timestamp": "2026-08-25T05:56:42.088165+00:00", "level": "INFO", "logger": "harness.tools.knowledge_retrieval", "message": "KnowledgeRetrievalTool 初始化完成 (ChromaDB + BGE + BM25/RRF)"}
+{"timestamp": "2026-08-25T05:56:42.088332+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: knowledge_retrieval — 检索电商商品知识库，用于回答商品信息、价格查询、参数对比、商品推荐等业务问题"}
+{"timestamp": "2026-08-25T05:56:42.088449+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: calculator — 执行数学计算，支持加减乘除、整除、取余、幂运算和括号"}
+{"timestamp": "2026-08-25T05:56:42.089113+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: order_query — 根据订单号查询当前用户的订单详情，包括商品名称、价格、状态、物流信息等。只能查询本人订单"}
+{"timestamp": "2026-08-25T05:56:42.089296+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: logistics_query — 查询物流轨迹，根据物流单号返回详细的运输节点和状态"}
+{"timestamp": "2026-08-25T05:56:42.089728+00:00", "level": "INFO", "logger": "harness.tools.policy", "message": "PolicyQueryTool 初始化完成 (10 条政策)"}
+{"timestamp": "2026-08-25T05:56:42.089865+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: policy_query — 查询平台官方政策：七天无理由退货、质量问题退换、退款时效、保修、价保、发票、配送时效、换货流程、物流赔付、账户安全等。凡涉及政策条款的问题必须先调用本工具"}
+{"timestamp": "2026-08-25T05:56:42.090003+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: transfer_human — 将当前会话转接人工客服并创建工单。触发条件：用户明确要求人工；同一问题尝试 2 次仍无法解决；涉及投诉、赔偿、越权诉求等你无权处理的事项"}
+{"timestamp": "2026-08-25T05:56:42.090109+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: order_list — 查询当前用户的订单列表（最近下单优先），用于用户不记得订单号时先列出订单再选择"}
+{"timestamp": "2026-08-25T05:56:42.090267+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: after_sale_apply — 为用户提交退货/换货申请（仅限本人订单，且订单已发货/配送中/已完成）。返回售后单号与后续流程说明"}
+{"timestamp": "2026-08-25T05:56:42.090373+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: after_sale_query — 查询当前用户的售后申请列表及各单状态进度"}
+{"timestamp": "2026-08-25T05:56:42.090756+00:00", "level": "INFO", "logger": "harness.llm.factory", "message": "创建 LLM 客户端: model=astron-code-latest base=https://maas-coding-api.cn-huabei-1.xf-yun.com/v2"}
+{"timestamp": "2026-08-25T05:56:42.107270+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "OpenAICompatibleClient 初始化: model=astron-code-latest base=https://maas-coding-api.cn-huabei-1.xf-yun.com/v2"}
+{"timestamp": "2026-08-25T05:56:42.107432+00:00", "level": "INFO", "logger": "harness.llm.factory", "message": "创建小模型客户端: model=glm-4.5-flash base=https://open.bigmodel.cn/api/paas/v4"}
+{"timestamp": "2026-08-25T05:56:42.125324+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "OpenAICompatibleClient 初始化: model=glm-4.5-flash base=https://open.bigmodel.cn/api/paas/v4"}
+{"timestamp": "2026-08-25T05:56:42.196598+00:00", "level": "INFO", "logger": "harness.memory.long_term", "message": "LongTermMemory 初始化完成 (path=data\\memory_store)"}
+{"timestamp": "2026-08-25T05:56:42.196849+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: subtask_dispatch — 将复杂任务拆分为多个子任务，逐一分发给子智能体执行并汇总结果"}
+{"timestamp": "2026-08-25T05:56:42.197024+00:00", "level": "INFO", "logger": "harness.core.agent", "message": "Agent 初始化 | llm=OpenAICompatibleClient tools=10 guardrails=6"}
+{"timestamp": "2026-08-25T05:56:42.197153+00:00", "level": "INFO", "logger": "harness.web.api", "message": "Agent 预热完成 | tools=10 guardrails=6"}
+{"timestamp": "2026-08-25T05:56:42.254929+00:00", "level": "INFO", "logger": "harness.web.api", "message": "启动 Web 服务器: http://localhost:8000"}
+{"timestamp": "2026-08-25T05:57:33.651972+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 2 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:57:34.084475+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 10 条相关历史", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:57:35.724128+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1637ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:57:35.848353+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "工具 knowledge_retrieval 执行完成 (123 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:57:38.657358+00:00", "level": "INFO", "logger": "harness.memory.long_term", "message": "长期记忆维护完成: {'ttl_deleted': 0, 'dup_merged': 11, 'orphan_deleted': 0, 'cap_evicted': 0}", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:57:38.657850+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆维护完成: {'ttl_deleted': 0, 'dup_merged': 11, 'orphan_deleted': 0, 'cap_evicted': 0}", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:57:39.645627+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 3781ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:58:27.087830+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 47438ms | token=999 | model=glm-4.5-flash", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:58:27.088354+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (47438 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:58:27.135095+00:00", "level": "INFO", "logger": "sentence_transformers.base.model", "message": "Loading SentenceTransformer model from BAAI/bge-small-zh-v1.5.", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:58:27.265155+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 6 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:58:27.281164+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 6 条相关历史", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:58:28.962970+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1681ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:58:28.996007+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "工具 knowledge_retrieval 执行完成 (33 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:58:34.546780+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 5543ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:09.062898+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 34498ms | token=1131 | model=glm-4.5-flash", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:09.063506+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (34498 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:20.565897+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 10 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:21.969329+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1362ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:22.029412+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "工具 knowledge_retrieval 执行完成 (60 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:27.922192+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 5883ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:57.222113+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 29284ms | token=1057 | model=glm-4.5-flash", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:57.222490+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (29284 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:57.329940+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 14 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:57.371149+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 1 条相关历史", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:58.822241+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1451ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T05:59:58.876282+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "工具 knowledge_retrieval 执行完成 (54 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:00:10.378942+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 11496ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:02:07.624254+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 117229ms | token=1210 | model=glm-4.5-flash", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:02:07.624617+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (117229 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:02:07.742436+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 18 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:02:09.598667+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1808ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:02:21.113155+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 11504ms | token=536 | model=glm-4.5-flash", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:02:21.113599+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (11506 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:04:58.662076+00:00", "level": "INFO", "logger": "harness.memory.embeddings", "message": "正在加载 BGE 嵌入模型: models/bge-small-zh-v1.5"}
+{"timestamp": "2026-08-25T06:05:24.501118+00:00", "level": "INFO", "logger": "sentence_transformers.base.model", "message": "Loading SentenceTransformer model from models/bge-small-zh-v1.5."}
+{"timestamp": "2026-08-25T06:05:24.669951+00:00", "level": "INFO", "logger": "harness.memory.embeddings", "message": "BGE 嵌入模型加载完成"}
+{"timestamp": "2026-08-25T06:05:25.010888+00:00", "level": "DEBUG", "logger": "jieba", "message": "Building prefix dict from the default dictionary ..."}
+{"timestamp": "2026-08-25T06:05:25.011244+00:00", "level": "DEBUG", "logger": "jieba", "message": "Loading model from cache C:\\Users\\Lenovo\\AppData\\Local\\Temp\\jieba.cache"}
+{"timestamp": "2026-08-25T06:05:25.428648+00:00", "level": "DEBUG", "logger": "jieba", "message": "Loading model cost 0.417 seconds."}
+{"timestamp": "2026-08-25T06:05:25.428978+00:00", "level": "DEBUG", "logger": "jieba", "message": "Prefix dict has been built successfully."}
+{"timestamp": "2026-08-25T06:05:25.582890+00:00", "level": "INFO", "logger": "harness.tools.knowledge_retrieval", "message": "KnowledgeRetrievalTool 初始化完成 (ChromaDB + BGE + BM25/RRF)"}
+{"timestamp": "2026-08-25T06:05:25.583132+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: knowledge_retrieval — 检索电商商品知识库，用于回答商品信息、价格查询、参数对比、商品推荐等业务问题"}
+{"timestamp": "2026-08-25T06:05:25.583338+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: calculator — 执行数学计算，支持加减乘除、整除、取余、幂运算和括号"}
+{"timestamp": "2026-08-25T06:05:25.583982+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: order_query — 根据订单号查询当前用户的订单详情，包括商品名称、价格、状态、物流信息等。只能查询本人订单"}
+{"timestamp": "2026-08-25T06:05:25.584150+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: logistics_query — 查询物流轨迹，根据物流单号返回详细的运输节点和状态"}
+{"timestamp": "2026-08-25T06:05:25.584579+00:00", "level": "INFO", "logger": "harness.tools.policy", "message": "PolicyQueryTool 初始化完成 (10 条政策)"}
+{"timestamp": "2026-08-25T06:05:25.584781+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: policy_query — 查询平台官方政策：七天无理由退货、质量问题退换、退款时效、保修、价保、发票、配送时效、换货流程、物流赔付、账户安全等。凡涉及政策条款的问题必须先调用本工具"}
+{"timestamp": "2026-08-25T06:05:25.585102+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: transfer_human — 将当前会话转接人工客服并创建工单。触发条件：用户明确要求人工；同一问题尝试 2 次仍无法解决；涉及投诉、赔偿、越权诉求等你无权处理的事项"}
+{"timestamp": "2026-08-25T06:05:25.585425+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: order_list — 查询当前用户的订单列表（最近下单优先），用于用户不记得订单号时先列出订单再选择"}
+{"timestamp": "2026-08-25T06:05:25.585736+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: after_sale_apply — 为用户提交退货/换货申请（仅限本人订单，且订单已发货/配送中/已完成）。返回售后单号与后续流程说明"}
+{"timestamp": "2026-08-25T06:05:25.585892+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: after_sale_query — 查询当前用户的售后申请列表及各单状态进度"}
+{"timestamp": "2026-08-25T06:05:25.586269+00:00", "level": "INFO", "logger": "harness.llm.factory", "message": "创建 LLM 客户端: model=astron-code-latest base=https://maas-coding-api.cn-huabei-1.xf-yun.com/v2"}
+{"timestamp": "2026-08-25T06:05:25.604107+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "OpenAICompatibleClient 初始化: model=astron-code-latest base=https://maas-coding-api.cn-huabei-1.xf-yun.com/v2"}
+{"timestamp": "2026-08-25T06:05:25.663764+00:00", "level": "INFO", "logger": "harness.memory.long_term", "message": "LongTermMemory 初始化完成 (path=data\\memory_store)"}
+{"timestamp": "2026-08-25T06:05:25.663966+00:00", "level": "INFO", "logger": "harness.core.registry", "message": "注册工具: subtask_dispatch — 将复杂任务拆分为多个子任务，逐一分发给子智能体执行并汇总结果"}
+{"timestamp": "2026-08-25T06:05:25.664092+00:00", "level": "INFO", "logger": "harness.core.agent", "message": "Agent 初始化 | llm=OpenAICompatibleClient tools=10 guardrails=6"}
+{"timestamp": "2026-08-25T06:05:25.664201+00:00", "level": "INFO", "logger": "harness.web.api", "message": "Agent 预热完成 | tools=10 guardrails=6"}
+{"timestamp": "2026-08-25T06:05:25.719678+00:00", "level": "INFO", "logger": "harness.web.api", "message": "启动 Web 服务器: http://localhost:8000"}
+{"timestamp": "2026-08-25T06:08:24.201711+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 20 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:26.503527+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1865ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:29.782192+00:00", "level": "INFO", "logger": "harness.memory.long_term", "message": "长期记忆维护完成: {'ttl_deleted': 0, 'dup_merged': 15, 'orphan_deleted': 0, 'cap_evicted': 0}", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:29.782556+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆维护完成: {'ttl_deleted': 0, 'dup_merged': 15, 'orphan_deleted': 0, 'cap_evicted': 0}", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:33.870738+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 22 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:35.765749+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1834ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:35.917652+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "工具 knowledge_retrieval 执行完成 (151 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:43.901457+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 7968ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:43.901781+00:00", "level": "WARNING", "logger": "harness.core.loop", "message": "[ALERT][BUDGET] 会话 3a1a73d7f9f2 token 用量达告警线：103471/128000", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:45.286461+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 1380ms | token=810 | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:45.286856+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (1380 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:08:45.344891+00:00", "level": "INFO", "logger": "sentence_transformers.base.model", "message": "Loading SentenceTransformer model from BAAI/bge-small-zh-v1.5.", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:09:44.348313+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 26 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:09:44.492870+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 2 条相关历史", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:09:47.604976+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 3111ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:09:47.605345+00:00", "level": "WARNING", "logger": "harness.core.loop", "message": "[ALERT][BUDGET] 会话 3a1a73d7f9f2 token 用量达告警线：117420/128000", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:09:48.614533+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 997ms | token=527 | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:09:48.614885+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (997 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:10:04.429203+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 28 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:10:09.472252+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 4956ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:10:09.472681+00:00", "level": "WARNING", "logger": "harness.core.loop", "message": "[ALERT][BUDGET] 会话 3a1a73d7f9f2 token 已超预算上限：131825/128000", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:10:10.633873+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 1139ms | token=745 | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:10:10.634252+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 4 条事实 (1139 ms)", "session_id": "3a1a73d7f9f2"}

@@ -26,15 +26,15 @@ cp .env.example .env
 #   OPENAI_MODEL=gpt-4o-mini
 #   （可选）OPENAI_SMALL_MODEL=deepseek-chat    # 事实抽取/重排走小模型，省成本
 
-# ③ 初始化数据 + 启动（首次自动下载 BGE 模型约 2 分钟）
+# ③ 初始化数据 + 启动（BGE 嵌入模型已内置本地，离线加载）
 python scripts/init_db.py --reindex
 python -m harness.main --port 8000
 ```
 
 打开 `http://localhost:8000` 即可使用。
 
-> **首次启动说明**：BGE 嵌入模型会自动从 HuggingFace 下载（~100MB），后续启动直接使用本地缓存。
-> 如果下载慢，可在 `.env` 中设置 `HF_ENDPOINT=https://hf-mirror.com` 使用国内镜像。
+> **BGE 模型**：内置在 `models/bge-small-zh-v1.5/`，默认离线加载（`HF_HUB_OFFLINE=true`），无需联网。
+> 如需在线下载/更新模型，在 `.env` 中设 `HF_HUB_OFFLINE=false`；网络受限时可用 `HF_ENDPOINT=https://hf-mirror.com` 国内镜像。
 
 ### Docker 部署
 
