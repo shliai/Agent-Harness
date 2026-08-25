@@ -243,7 +243,7 @@ class ReActLoop:
         # 请求级身份上下文：订单归属校验 / 我的订单 / 工单归属 都从这里取
         current_user_id.set(uid)
         current_session_id.set(sid)
-        memory = ShortTermMemory(window_size=settings.short_term_window, track_full=True)
+        memory = ShortTermMemory(track_full=True)
 
         # 上一轮的轮末落盘可能仍在后台运行：先等它完成再加载状态，避免读到过期状态
         pending = self._pending_finalize.get(sid)

@@ -36,14 +36,13 @@ class Settings(BaseSettings):
     # ── 记忆 ─────────────────────────────────────────
     # KV-cache 友好：窗口内只追加不淘汰；达触发条件时压缩一次，
     # 压缩后 = [system][摘要消息][最近 keep_recent 条]，前缀稳定仅追加
-    short_term_window: int = 100
     # 会话压缩：按「相对模型窗口」触发——单会话当前消息估算 token
     # ≥ context_window_tokens × context_compress_ratio 时，把较旧对话用
     # LLM 压成滚动摘要（独立消息，紧跟 system）。估算基于 estimate_tokens
     # 启发式（非精确），换模型只需调整 window_tokens 即可适配其上下文。
     context_compress_enabled: bool = True
-    context_window_tokens: int = 131072   # 所用模型的上下文窗口（token）
-    context_compress_ratio: float = 0.5   # 触发压缩的窗口占用比例
+    context_window_tokens: int = 262144   # 所用模型的上下文窗口（token），默认 256k
+    context_compress_ratio: float = 0.75  # 触发压缩的窗口占用比例
     context_keep_recent: int = 20
     context_summary_max_chars: int = 2000
     long_term_enabled: bool = False

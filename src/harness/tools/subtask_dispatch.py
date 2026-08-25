@@ -140,7 +140,7 @@ class SubTaskDispatchTool(BaseTool):
             tool_desc = sub_registry.get_tool_descriptions() or "（无可用工具）"
             system_prompt = SUBTASK_SYSTEM_PROMPT.format(tool_descriptions=tool_desc)
 
-            memory = ShortTermMemory(window_size=10)
+            memory = ShortTermMemory()
             memory.add(AgentMessage(role=ChatRole.user, content=description))
 
             # 可用工具数 * 2 + 2：支持同一工具多次调用；无工具时只给一轮作答机会

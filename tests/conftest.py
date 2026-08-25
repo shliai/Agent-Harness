@@ -74,7 +74,6 @@ def settings_override() -> Generator[None, None, None]:
         mock.max_iterations = 10
         mock.temperature = 0.7
         mock.tracing_enabled = True
-        mock.short_term_window = 100
         yield
 
 
