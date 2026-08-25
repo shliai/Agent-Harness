@@ -4,14 +4,19 @@
 
 ## 1. 日志聚合
 
-应用以 JSON 结构化日志输出到 **stdout/stderr**（`LOG_FORMAT=json`），容器化后由采集端接管：
+应用日志**双路输出**：本地可读性（stderr）+ 文件持久化（JSON，按天轮转）：
 
-```
-容器 stdout → Docker logging driver / Filebeat sidecar → Loki | ELK
-```
+- **stderr**：`LOG_FORMAT=json` 输出结构化日志，容器化后由采集端接管：
+  ```
+  容器 stdout/stderr → Docker logging driver / Filebeat sidecar → Loki | ELK
+  ```
+  本地调试用 `LOG_FORMAT=console`。
+- **文件**：`LOG_DIR/harness.log`（默认 `./data/logs`），TimedRotatingFileHandler 按天切割，保留 `LOG_BACKUP_DAYS`（默认 7）天；统一 JSON 格式便于机器回溯/聚合。
 
-- 本地调试用 `LOG_FORMAT=console`
-- 关键检索字段：`logger`（模块）、`session_id`、`level`；错误堆栈在 `exception` 字段
+关键检索字段：`logger`（模块）、`session_id`、`level`；错误堆栈在 `exception` 字段。
+
+- **session_id 关联**：API 层每轮请求注入 `session_id`（ContextVar），同轮内所有日志——包括 `asyncio.create_task` 派生的后台记忆整理任务——自动携带该字段，可按会话过滤排查。
+- **逐次耗时埋点**：每次 LLM 调用（流式/非流式）与工具执行均记录单次耗时（毫秒），`loop` 模块含步骤索引与 token 数，可用于定位慢会话/慢工具。
 - 审计流水独立落盘 `data/audit_logs/*.jsonl`（含 PII 掩码），按 `AUDIT_ROTATE_MB` 轮转，
   建议 Filebeat 单独 tail 到保留策略更长的索引
 

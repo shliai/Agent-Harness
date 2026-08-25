@@ -77,6 +77,27 @@ def _should_extract_turn(user_input: str, answer: str) -> bool:
         return True
     return any(kw in user_input for kw in _INTENT_KEYWORDS)
 
+# 商品意图强制检索（防幻觉护栏）：模型本轮未主动调工具时，命中该正则
+# 即强制回滚直接回答、改为调用 knowledge_retrieval——宁可多查一次，不可凭记忆编造
+_PRODUCT_INTENT_RE = re.compile(
+    r"(?:手机|笔记本|电脑|平板|耳机|手表|手环|相机|音箱|电视|冰箱|洗衣机|空调|"
+    r"充电器|键盘|鼠标|显示器|智能家居|穿戴设备|"
+    r"苹果|华为|小米|荣耀|oppo|vivo|三星|索尼|联想|戴尔|惠普|华硕|大疆|"
+    r"推荐|哪款|型号|参数|配置|比价|对比|性价比|值得买|"
+    r"价格|多少钱|价位|预算|库存|现货|好不好|怎么样)",
+    re.IGNORECASE,
+)
+
+
+def _build_forced_query(user_input: str, wm: WorkingMemory) -> str:
+    """强制检索的 query：用户原话 + 工作记忆中的预算约束（若有）"""
+    query = user_input.strip()
+    if wm.budget_amount is not None:
+        query += f" 预算上限 {int(wm.budget_amount)} 元以内"
+        if wm.budget_category:
+            query += f"（{wm.budget_category}）"
+    return query
+
 SYSTEM_PROMPT_TEMPLATE = """你是专业的电商智能客服助手，名叫小慧。
 
 ## 核心能力
@@ -380,6 +401,26 @@ class ReActLoop:
                     logger.warning("ACTION 解析连续失败，降级为友好提示")
                     yield {"type": "delta_reset", "reason": "retry"}
                     thought = _MALFORMED_FALLBACK_ANSWER
+
+                # 商品意图强制检索（防幻觉护栏）：
+                # 模型本轮未调任何工具、但用户输入命中商品信号时，回滚流式直接回答文本，
+                # 强制走 knowledge_retrieval，保证答案基于知识库而非模型记忆。
+                # 仅 step 0 触发：本轮已查过一次后交由模型自主决策，防止对同一输入反复检索死循环。
+                if (
+                    tool_call is None
+                    and step_index == 0
+                    and "knowledge_retrieval" in self.registry.list_tools()
+                    and _PRODUCT_INTENT_RE.search(validated_input)
+                ):
+                    logger.info(
+                        "会话 %s 商品意图强制检索: %s", sid, validated_input[:40]
+                    )
+                    yield {"type": "delta_reset", "reason": "forced_retrieval"}
+                    tool_call = ToolCall(
+                        tool_name="knowledge_retrieval",
+                        arguments={"query": _build_forced_query(validated_input, wm)},
+                    )
+                    thought = "用户问题涉及具体商品，先调用 knowledge_retrieval 获取权威数据再回答。"
 
                 if tool_call is None:
                     filtered = self.guardrails.check_output(thought, session_id=sid)

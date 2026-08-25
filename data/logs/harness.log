@@ -162,3 +162,40 @@
 {"timestamp": "2026-08-25T06:10:09.472681+00:00", "level": "WARNING", "logger": "harness.core.loop", "message": "[ALERT][BUDGET] 会话 3a1a73d7f9f2 token 已超预算上限：131825/128000", "session_id": "3a1a73d7f9f2"}
 {"timestamp": "2026-08-25T06:10:10.633873+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 1139ms | token=745 | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
 {"timestamp": "2026-08-25T06:10:10.634252+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 4 条事实 (1139 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:12:57.009724+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 30 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:12:57.045594+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 9 条相关历史", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:13:05.308606+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 8262ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:13:05.309093+00:00", "level": "WARNING", "logger": "harness.core.loop", "message": "[ALERT][BUDGET] 会话 3a1a73d7f9f2 token 已超预算上限：147416/128000", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:13:06.031575+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 704ms | token=730 | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:13:06.032078+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 4 条事实 (704 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:14:52.794271+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 3a1a73d7f9f2: 32 条历史消息, 0 个冻结章节", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:14:52.874189+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 9 条相关历史", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:14:55.294672+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 2420ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:14:55.295602+00:00", "level": "WARNING", "logger": "harness.core.loop", "message": "[ALERT][BUDGET] 会话 3a1a73d7f9f2 token 已超预算上限：163237/128000", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:14:55.852444+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "工具 knowledge_retrieval 执行完成 (556 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:15:04.710455+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 8848ms | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:15:05.728318+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 1005ms | token=817 | model=astron-code-latest", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:15:05.728919+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (1006 ms)", "session_id": "3a1a73d7f9f2"}
+{"timestamp": "2026-08-25T06:18:35.840263+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 10 条相关历史", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:37.905371+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 2064ms | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:38.803174+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 889ms | token=438 | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:38.803475+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 3 条事实 (889 ms)", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:51.484165+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 6c096e1e5d79: 2 条历史消息, 0 个冻结章节", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:51.533224+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 10 条相关历史", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:52.721107+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1187ms | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:52.788199+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "工具 knowledge_retrieval 执行完成 (66 ms)", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:55.802040+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 3004ms | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:57.139247+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 1320ms | token=558 | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:18:57.139612+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (1320 ms)", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:25.909125+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 6c096e1e5d79: 6 条历史消息, 0 个冻结章节", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:25.957639+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 10 条相关历史", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:27.273567+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 1315ms | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:27.335961+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "工具 knowledge_retrieval 执行完成 (62 ms)", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:30.811631+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 3469ms | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:32.073990+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 1258ms | token=639 | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:32.074313+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (1258 ms)", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:35.934113+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "已恢复会话 6c096e1e5d79: 10 条历史消息, 0 个冻结章节", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:35.980152+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "长期记忆召回 1 条相关历史", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:40.014627+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 流式完成: 4034ms | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:41.225881+00:00", "level": "INFO", "logger": "harness.llm.openai_compatible", "message": "LLM 响应: 1194ms | token=700 | model=astron-code-latest", "session_id": "6c096e1e5d79"}
+{"timestamp": "2026-08-25T06:19:41.226294+00:00", "level": "INFO", "logger": "harness.core.loop", "message": "轮末抽取 6 条事实 (1194 ms)", "session_id": "6c096e1e5d79"}
