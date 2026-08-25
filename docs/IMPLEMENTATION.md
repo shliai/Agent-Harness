@@ -233,11 +233,11 @@ async def execute_stream(user_input, session_id, user_id):
     # 4. 工作记忆规则抽取 → 注入 system prompt
     # 5. 上下文装配（摘要 → WM → 长期召回 → 窗口消息）
     # 6. for step in range(max_iterations):
+    #     首轮命中商品信号 → 直接执行 knowledge_retrieval 入记忆（防幻觉，无文本闪现）
     #      stream_chat_async() → yield delta 增量
     #      parse_tool_call()
     #      ├─ 有 ACTION → delta_reset → 校验 → 执行工具 → 结果入记忆
     #      ├─ JSON 坏损 → delta_reset → 纠正提示重试（≤2 次）
-    #      ├─ 无 ACTION 且命中商品意图 → 强制 knowledge_retrieval（防幻觉，仅 step0）
     #      └─ 无 ACTION → check_output 脱敏 → 反问检测 → result
     # 7. 收尾：压缩判定 → asave_state → 长期记忆后台写入
     #
@@ -253,7 +253,7 @@ async def execute_stream(user_input, session_id, user_id):
 | 决策 | 理由 |
 |---|---|
 | 单气泡生命周期 | 打字占位、流式增量、最终回答复用同一 DOM 元素，消除多元素切换的状态管理复杂度 |
-| 商品强制检索 | 模型未调工具但输入命中商品信号时，回滚直接回答、强制调 knowledge_retrieval（仅 step0 防死循环）；query 自动合并 WM 预算 |
+| 商品强制检索 | 首轮模型输出前命中商品信号即直接执行 knowledge_retrieval 并注入结果（仅首轮防死循环）；query 自动合并 WM 预算，杜绝幻觉文本闪现 |
 | 脱敏前移 | 先过滤再入记忆，防止敏感信息经上下文回流到下一轮 LLM |
 | 中断落盘 | CancelledError 分支调用 _persist_session，用户停止不丢已生成内容 |
 | finally endTrace | 无论成功/失败/中断都终止推理中状态，杜绝 UI 卡死 |

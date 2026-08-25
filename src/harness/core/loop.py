@@ -360,6 +360,52 @@ class ReActLoop:
             malformed_retries = 0
 
             for step_index in range(self.max_iterations):
+                # 商品意图前置拦截（防幻觉护栏）：
+                # 首轮模型输出前命中商品信号即强制检索并注入结果，
+                # 模型直接基于检索结果作答——避免先流式输出"凭记忆"内容
+                # 再被 delta_reset 回滚（前端会闪现幻觉文本后忽然消失）
+                if (
+                    step_index == 0
+                    and "knowledge_retrieval" in self.registry.list_tools()
+                    and _PRODUCT_INTENT_RE.search(validated_input)
+                ):
+                    logger.info(
+                        "会话 %s 商品意图前置强制检索: %s", sid, validated_input[:40]
+                    )
+                    yield {"type": "delta_reset", "reason": "forced_retrieval"}
+                    forced_call = ToolCall(
+                        tool_name="knowledge_retrieval",
+                        arguments={"query": _build_forced_query(validated_input, wm)},
+                    )
+                    forced_thought = "用户问题涉及具体商品，先调用 knowledge_retrieval 获取权威数据再回答。"
+                    step_result = await self._execute_tool_step(
+                        sid=sid,
+                        step_index=step_index,
+                        system_prompt=system_prompt,
+                        memory=memory,
+                        initial_thought=forced_thought,
+                        initial_call=forced_call,
+                        req_metrics=req_metrics,
+                        chapters=chapters,
+                        state_note=state_note,
+                    )
+                    total_tokens += step_result["extra_tokens"]
+                    self._account_budget(sid, wm, step_result["extra_tokens"])
+                    steps.append(step_result["record"])
+                    self.tracer.record_step(
+                        step_index, step_result["final_thought"],
+                        step_result["tool_call"], step_result["tool_result"], session_id=sid,
+                    )
+                    yield {
+                        "type": "step",
+                        "step_index": step_index,
+                        "thought": step_result["final_thought"],
+                        "tool_call": step_result["tool_call"].model_dump(),
+                        "tool_result": step_result["tool_result"].model_dump(),
+                    }
+                    await asyncio.sleep(0.001)
+                    continue
+
                 messages = self._build_messages(system_prompt, memory, chapters, state_note)
 
                 # token 级流式：增量即时推送前端；若本轮实际是工具规划，
@@ -402,26 +448,7 @@ class ReActLoop:
                     yield {"type": "delta_reset", "reason": "retry"}
                     thought = _MALFORMED_FALLBACK_ANSWER
 
-                # 商品意图强制检索（防幻觉护栏）：
-                # 模型本轮未调任何工具、但用户输入命中商品信号时，回滚流式直接回答文本，
-                # 强制走 knowledge_retrieval，保证答案基于知识库而非模型记忆。
-                # 仅 step 0 触发：本轮已查过一次后交由模型自主决策，防止对同一输入反复检索死循环。
-                if (
-                    tool_call is None
-                    and step_index == 0
-                    and "knowledge_retrieval" in self.registry.list_tools()
-                    and _PRODUCT_INTENT_RE.search(validated_input)
-                ):
-                    logger.info(
-                        "会话 %s 商品意图强制检索: %s", sid, validated_input[:40]
-                    )
-                    yield {"type": "delta_reset", "reason": "forced_retrieval"}
-                    tool_call = ToolCall(
-                        tool_name="knowledge_retrieval",
-                        arguments={"query": _build_forced_query(validated_input, wm)},
-                    )
-                    thought = "用户问题涉及具体商品，先调用 knowledge_retrieval 获取权威数据再回答。"
-
+                # 商品意图已在循环开头前置拦截并强制检索，此处无需重复处理
                 if tool_call is None:
                     filtered = self.guardrails.check_output(thought, session_id=sid)
                     if not filtered.strip():
