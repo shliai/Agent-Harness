@@ -25,6 +25,7 @@ data/memory_store
 data/memory_store_test
 data/tickets
 data/aftersale
+data/logs
 data/eval/report_*.json
 data/eval/badcase_*.jsonl
 
