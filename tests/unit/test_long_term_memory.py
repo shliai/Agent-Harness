@@ -1,422 +1,148 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from harness.memory.long_term import LongTermMemory
+from harness.domain.models import ChatRole
+from harness.core.loop import ReActLoop
+from harness.guardrails.base import GuardrailPipeline
+from harness.memory.conversation_history import ConversationHistory
+from harness.memory.learning import LearningRecord, LearningStore
+from harness.observability.metrics import MetricsCollector
+from harness.observability.tracer import Tracer
+from tests.conftest import MockLLMClient
 
 
-class TestLongTermMemoryDisabled:
-    """禁用状态下的行为：零开销，不加载 ChromaDB"""
+class _FakeSettings:
+    def __init__(self, **kwargs: Any) -> None:
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
-    def test_disabled_by_default(self) -> None:
-        """配置 long_term_enabled=False 时，enabled 应为 False"""
-        with patch("harness.memory.long_term.settings") as mock_settings:
-            mock_settings.long_term_enabled = False
-            mock_settings.long_term_store_path = "./data/memory_store_test"
-            mem = LongTermMemory()
-            assert mem.enabled is False
-            assert mem.collection is None
 
+def _make_store(tmp: Path, **overrides: Any) -> LearningStore:
+    cfg = {
+        "learning_enabled": True,
+        "learning_store_path": str(tmp),
+        "learning_ttl_days": 365,
+        "learning_max_items": 50,
+        "learning_confidence_threshold": 0.0,
+    }
+    cfg.update(overrides)
+    with patch("harness.memory.learning.settings", _FakeSettings(**cfg)):
+        return LearningStore()
+
+
+class TestLearningStoreDisabled:
+    def test_disabled_noop(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path, learning_enabled=False)
+        store.add(LearningRecord(
+            type="preference", key="brand", value="品牌=索尼", ts="2026-01-01T00:00:00"))
+        assert store.load() == []
+        assert store.count() == 0
+
+    def test_disabled_render_empty(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path, learning_enabled=False)
+        assert store.render_for_prompt() == ""
+
+
+class TestLearningStoreEnabled:
+    def test_add_and_load(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path)
+        store.add(LearningRecord(
+            type="preference", key="brand", value="品牌=索尼", ts="2026-01-01T00:00:00"))
+        loaded = store.load()
+        assert len(loaded) == 1
+        assert loaded[0].value == "品牌=索尼"
+        block = store.render_for_prompt(loaded)
+        assert "用户长期画像" in block
+        assert "偏好：品牌=索尼" in block
+
+    def test_correction_overrides_preference(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path)
+        store.add(LearningRecord(
+            type="preference", key="brand", value="品牌=索尼", ts="2026-01-01T00:00:00"))
+        store.add(LearningRecord(
+            type="correction", key="brand", value="品牌=华为", ts="2026-01-02T00:00:00"))
+        loaded = store.load()
+        keys = {(r.type, r.key) for r in loaded}
+        assert ("preference", "brand") not in keys
+        assert ("correction", "brand") in keys
+        assert any(r.value == "品牌=华为" for r in loaded)
+
+    def test_merge_replace_same_key(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path)
+        store.add(LearningRecord(
+            type="preference", key="budget", value="预算上限=3000元", ts="2026-01-01T00:00:00"))
+        store.add(LearningRecord(
+            type="preference", key="budget", value="预算上限=5000元", ts="2026-01-02T00:00:00"))
+        loaded = store.load()
+        assert len(loaded) == 1
+        assert loaded[0].value == "预算上限=5000元"
+
+    def test_ttl_expiry(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path, learning_ttl_days=1)
+        store.add(LearningRecord(
+            type="preference", key="brand", value="品牌=索尼", ts="2000-01-01T00:00:00"))
+        assert store.load() == []
+
+    def test_max_items_cap(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path, learning_max_items=3)
+        for i in range(5):
+            store.add(LearningRecord(
+                type="preference", key=f"k{i}", value=f"v{i}",
+                ts=f"2026-01-0{i + 1}T00:00:00"))
+        assert len(store.load()) == 3
+
+
+def _build_loop(llm: MockLLMClient, store: LearningStore) -> ReActLoop:
+    return ReActLoop(
+        llm=llm,
+        registry=MagicMock(),
+        guardrails=GuardrailPipeline(),
+        tracer=Tracer(enabled=False),
+        metrics=MetricsCollector(),
+        conversation_history=MagicMock(spec=ConversationHistory),
+        max_iterations=3,
+        learning_store=store,
+    )
+
+
+class TestLoopLearning:
     @pytest.mark.asyncio
-    async def test_disabled_add_is_noop(self) -> None:
-        """禁用状态下 add() 应静默返回，不抛异常"""
-        with patch("harness.memory.long_term.settings") as mock_settings:
-            mock_settings.long_term_enabled = False
-            mem = LongTermMemory()
-            await mem.add("你好", "你好！有什么可以帮助您的吗？", "session-1")
+    async def test_learning_injected_and_captured(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path)
+        # 预置一条学习，验证其被注入系统提示词
+        store.add(LearningRecord(
+            type="preference", key="brand", value="品牌=索尼", ts="2026-01-01T00:00:00"))
+        llm = MockLLMClient(response="好的，为您推荐索尼耳机")
+        loop = _build_loop(llm, store)
+        loop.conversation_history.aload_state.return_value = None
 
-    @pytest.mark.asyncio
-    async def test_disabled_search_returns_empty(self) -> None:
-        """禁用状态下 search() 应返回空列表"""
-        with patch("harness.memory.long_term.settings") as mock_settings:
-            mock_settings.long_term_enabled = False
-            mem = LongTermMemory()
-            assert await mem.search("任意查询") == []
-
-    def test_disabled_count_is_zero(self) -> None:
-        """禁用状态下 count() 应返回 0"""
-        with patch("harness.memory.long_term.settings") as mock_settings:
-            mock_settings.long_term_enabled = False
-            mem = LongTermMemory()
-            assert mem.count() == 0
-
-
-class TestLongTermMemoryEnabled:
-    """启用状态下的核心行为：写入、检索、计数"""
-
-    @pytest.fixture
-    def mock_collection(self) -> MagicMock:
-        """Mock ChromaDB Collection，避免加载真实 BGE 模型"""
-        coll = MagicMock()
-        coll.count.return_value = 0
-        return coll
-
-    @pytest.fixture
-    def enabled_memory(self, mock_collection: MagicMock) -> LongTermMemory:
-        """构造一个启用状态、collection 被 mock 的 LongTermMemory"""
-        with patch("harness.memory.long_term.settings") as mock_settings:
-            mock_settings.long_term_enabled = True
-            mock_settings.long_term_store_path = "./data/memory_store_test"
-            mock_settings.long_term_top_k = 3
-            with patch("harness.memory.long_term.get_embed_fn", return_value=None):
-                with patch.object(
-                    LongTermMemory,
-                    "_get_or_create_collection",
-                    return_value=mock_collection,
-                ):
-                    mem = LongTermMemory()
-                    mem.enabled = True
-                    mem.collection = mock_collection
-                    return mem
-
-    def test_enabled_state(self, enabled_memory: LongTermMemory) -> None:
-        """启用后 enabled 为 True，collection 不为 None"""
-        assert enabled_memory.enabled is True
-        assert enabled_memory.collection is not None
-
-    @pytest.mark.asyncio
-    async def test_add_writes_to_collection(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """add() 应调用 collection.add() 一次，写入文档和元数据"""
-        await enabled_memory.add(
-            user_input="查询订单 20240601001",
-            assistant_answer="您的订单已发货，预计明日送达",
-            session_id="session-abc",
-        )
-        mock_collection.add.assert_called_once()
-        call_kwargs = mock_collection.add.call_args.kwargs
-        assert "ids" in call_kwargs
-        assert "documents" in call_kwargs
-        assert "metadatas" in call_kwargs
-        doc = call_kwargs["documents"][0]
-        assert "查询订单 20240601001" in doc
-        assert "您的订单已发货" in doc
-        meta = call_kwargs["metadatas"][0]
-        assert meta["session_id"] == "session-abc"
-
-    @pytest.mark.asyncio
-    async def test_add_empty_input_skipped(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """空 user_input 或空 assistant_answer 不应写入"""
-        await enabled_memory.add("", "回答", "session-1")
-        await enabled_memory.add("问题", "", "session-1")
-        await enabled_memory.add("   ", "回答", "session-1")
-        mock_collection.add.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_add_failure_does_not_raise(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """collection.add 抛异常时不应传播，应静默降级"""
-        mock_collection.add.side_effect = RuntimeError("ChromaDB 写入失败")
-        await enabled_memory.add("问题", "回答", "session-1")
-
-    @pytest.mark.asyncio
-    async def test_search_returns_top_k(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """search() 应返回检索结果，按 distance 升序"""
-        mock_collection.count.return_value = 5
-        mock_collection.query.return_value = {
-            "documents": [["doc1", "doc2", "doc3"]],
-            "metadatas": [[{"session_id": "s1"}, {"session_id": "s2"}, {"session_id": "s3"}]],
-            "distances": [[0.1, 0.2, 0.3]],
-        }
-        results = await enabled_memory.search("查询订单")
-        assert len(results) == 3
-        assert results[0]["document"] == "doc1"
-        assert results[0]["metadata"]["session_id"] == "s1"
-        assert results[0]["distance"] == 0.1
-
-    @pytest.mark.asyncio
-    async def test_search_empty_query_returns_empty(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """空查询应返回空列表，不调用 collection"""
-        assert await enabled_memory.search("") == []
-        assert await enabled_memory.search("   ") == []
-        mock_collection.query.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_search_empty_store_returns_empty(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """记忆库为空（count=0）时应返回空列表"""
-        mock_collection.count.return_value = 0
-        assert await enabled_memory.search("任意查询") == []
-        mock_collection.query.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_search_failure_returns_empty(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """query 抛异常时应返回空列表，不传播"""
-        mock_collection.count.return_value = 5
-        mock_collection.query.side_effect = RuntimeError("查询失败")
-        assert await enabled_memory.search("任意查询") == []
-
-    @pytest.mark.asyncio
-    async def test_search_top_k_clamped_by_count(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """n_results 应为 min(top_k, count)，避免请求超过实际条数"""
-        mock_collection.count.return_value = 2
-        mock_collection.query.return_value = {
-            "documents": [["doc1", "doc2"]],
-            "metadatas": [[{}, {}]],
-            "distances": [[0.1, 0.2]],
-        }
-        await enabled_memory.search("查询", top_k=10)
-        call_kwargs = mock_collection.query.call_args.kwargs
-        assert call_kwargs["n_results"] == 2
-
-    def test_count_returns_collection_count(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """count() 应返回 collection.count() 的值"""
-        mock_collection.count.return_value = 42
-        assert enabled_memory.count() == 42
-
-    def test_count_failure_returns_zero(
-        self, enabled_memory: LongTermMemory, mock_collection: MagicMock
-    ) -> None:
-        """count 抛异常时应返回 0"""
-        mock_collection.count.side_effect = RuntimeError("计数失败")
-        assert enabled_memory.count() == 0
-
-
-class TestLongTermMemoryInitFailure:
-    """初始化失败时的安全降级"""
-
-    def test_init_failure_disables_memory(self) -> None:
-        """ChromaDB 初始化抛异常时，应降级为 enabled=False，不传播异常"""
-        with patch("harness.memory.long_term.settings") as mock_settings:
-            mock_settings.long_term_enabled = True
-            mock_settings.long_term_store_path = "./data/memory_store_test"
-            with patch("harness.memory.long_term.chromadb.PersistentClient") as mock_client:
-                mock_client.side_effect = RuntimeError("ChromaDB 不可用")
-                mem = LongTermMemory()
-                assert mem.enabled is False
-                assert mem.collection is None
-
-
-class TestReActLoopIntegration:
-    """ReActLoop 与长期记忆的集成：注入与写入"""
-
-    @pytest.mark.asyncio
-    async def test_loop_injects_recall_into_prompt(self) -> None:
-        """启用时，ReActLoop 应将检索结果注入 system prompt"""
-        from harness.core.loop import ReActLoop
-        from harness.guardrails.base import GuardrailPipeline
-        from harness.memory.conversation_history import ConversationHistory
-        from harness.observability.metrics import MetricsCollector
-        from harness.observability.tracer import Tracer
-        from tests.conftest import MockLLMClient
-
-        llm = MockLLMClient(response="您好，我已经记得您的需求了。\n- 用户 咨询 手机推荐")
-        long_term = MagicMock()
-        long_term.enabled = True
-        long_term.search = AsyncMock(return_value=[
-            {
-                "document": "用户: 之前买过手机\n助手: 推荐了小米14",
-                "metadata": {"session_id": "old-session"},
-                "distance": 0.1,
-            }
-        ])
-        long_term.add = AsyncMock()
-
-        loop = ReActLoop(
-            llm=llm,
-            registry=MagicMock(),
-            guardrails=GuardrailPipeline(),
-            tracer=Tracer(enabled=False),
-            metrics=MetricsCollector(),
-            conversation_history=MagicMock(spec=ConversationHistory),
-            max_iterations=3,
-            long_term_memory=long_term,
-        )
-        loop.conversation_history.aload_state.return_value = None  # type: ignore[attr-defined]
-
-        result = await loop.execute("我想买手机", session_id="test-sid")
-
-        # 应检索过长期记忆（带 user_id 隔离 + 排除当前会话）
-        long_term.search.assert_called_once_with(
-            "我想买手机", user_id="demo_user", exclude_session_id="test-sid"
-        )
-        # 注入到「状态尾注」消息（对话末尾）应包含「相关历史记忆」
-        # 注意：轮末还有一次事实抽取调用，需取主调用（排除抽取器提示词）
-        from harness.domain.models import ChatRole
-        from harness.core.loop import ReActLoop
-
-        main_calls = [c for c in llm.all_calls
-                      if c and not c[0].content.startswith(ReActLoop.FACT_SYSTEM_PROMPT)]
-        assert main_calls, "应存在主对话调用"
-        note_msgs = [m for m in main_calls[-1]
-                     if m.role == ChatRole.system and m.content.startswith("## 当前任务状态")]
-        assert note_msgs, "应存在状态尾注消息"
-        assert "相关历史记忆" in note_msgs[0].content
-        assert "之前买过手机" in note_msgs[0].content
-        # 完成后应触发写入长期记忆（async create_task）
-        # 等待后台任务完成
+        result = await loop.execute("我喜欢索尼的耳机", session_id="learn-sid")
         await asyncio.sleep(0.05)
-        long_term.add.assert_called_once()
-        call_args = long_term.add.call_args
-        # create_task 调用的是 long_term.add(...), 参数在 call_args.args 或 kwargs
-        assert call_args.kwargs.get("user_input") == "我想买手机" or \
-               (call_args.args and "我想买手机" in call_args.args)
+
+        injected = any(
+            m.role == ChatRole.system and "用户长期画像" in m.content and "品牌=索尼" in m.content
+            for call in llm.all_calls for m in call
+        )
+        assert injected, "系统提示词应注入长期学习画像"
+        assert any(r.type == "preference" and r.key == "brand" for r in store.load())
         assert result.success is True
 
     @pytest.mark.asyncio
-    async def test_loop_skips_recall_when_disabled(self) -> None:
-        """禁用时，ReActLoop 不应调用长期记忆的 search/add"""
-        from harness.core.loop import ReActLoop
-        from harness.guardrails.base import GuardrailPipeline
-        from harness.memory.conversation_history import ConversationHistory
-        from harness.observability.metrics import MetricsCollector
-        from harness.observability.tracer import Tracer
-        from tests.conftest import MockLLMClient
+    async def test_disabled_no_injection(self, tmp_path: Path) -> None:
+        store = _make_store(tmp_path, learning_enabled=False)
+        llm = MockLLMClient(response="你好")
+        loop = _build_loop(llm, store)
+        loop.conversation_history.aload_state.return_value = None
 
-        llm = MockLLMClient(response="直接回答")
-        long_term = MagicMock()
-        long_term.enabled = False
-        long_term.search = AsyncMock(return_value=[])
-        long_term.add = AsyncMock()
-
-        loop = ReActLoop(
-            llm=llm,
-            registry=MagicMock(),
-            guardrails=GuardrailPipeline(),
-            tracer=Tracer(enabled=False),
-            metrics=MetricsCollector(),
-            conversation_history=MagicMock(spec=ConversationHistory),
-            max_iterations=3,
-            long_term_memory=long_term,
+        await loop.execute("你好", session_id="learn-off")
+        injected = any(
+            m.role == ChatRole.system and "用户长期画像" in m.content
+            for call in llm.all_calls for m in call
         )
-        loop.conversation_history.aload_state.return_value = None  # type: ignore[attr-defined]
-
-        await loop.execute("你好", session_id="test-sid")
-
-        long_term.search.assert_not_called()
-        long_term.add.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_loop_skips_add_on_failure(self) -> None:
-        """ReAct 循环失败（如 MaxIterations 超限）时不应写入长期记忆"""
-        from harness.core.loop import ReActLoop
-        from harness.guardrails.base import GuardrailPipeline
-        from harness.memory.conversation_history import ConversationHistory
-        from harness.observability.metrics import MetricsCollector
-        from harness.observability.tracer import Tracer
-        from tests.conftest import MockLLMClient
-
-        llm = MockLLMClient(tool_calls=[
-            {"id": "c1", "name": "nonexistent", "arguments": {}},
-        ])
-        long_term = MagicMock()
-        long_term.enabled = True
-        long_term.search = AsyncMock(return_value=[])
-        long_term.add = AsyncMock()
-
-        registry = MagicMock()
-        from harness.domain.exceptions import ToolNotFoundError
-        registry.get_tool.side_effect = ToolNotFoundError("不存在")
-        registry.get_tool_descriptions.return_value = ""
-        registry.list_tools.return_value = []
-
-        loop = ReActLoop(
-            llm=llm,
-            registry=registry,
-            guardrails=GuardrailPipeline(),
-            tracer=Tracer(enabled=False),
-            metrics=MetricsCollector(),
-            conversation_history=MagicMock(spec=ConversationHistory),
-            max_iterations=2,
-            long_term_memory=long_term,
-        )
-        loop.conversation_history.aload_state.return_value = None  # type: ignore[attr-defined]
-
-        result = await loop.execute("复杂问题", session_id="fail-sid")
-
-        await asyncio.sleep(0.05)
-        long_term.add.assert_not_called()
-        assert result.success is False
-
-
-# ── v0.7.4 更新语义：可变关系替换 / 读时保鲜 ──────────────
-
-import pytest as _pytest
-
-
-class FakeCollection:
-    """按脚本回放 query/get，记录 delete/add 调用"""
-
-    def __init__(self, query_result=None, get_result=None):
-        self._query_result = query_result or {}
-        self._get_result = get_result or {}
-        self.deleted = []
-        self.added = []
-
-    def query(self, query_texts=None, n_results=None, where=None):
-        return self._query_result
-
-    def get(self, where=None, include=None):
-        return self._get_result
-
-    def delete(self, ids=None):
-        self.deleted.extend(ids or [])
-
-    def add(self, ids=None, documents=None, metadatas=None):
-        self.added.extend(zip(ids, documents, metadatas))
-
-    def count(self):
-        return len(self._query_result.get("documents", [[]])[0])
-
-
-def _bare_lt(collection):
-    from harness.memory.long_term import LongTermMemory
-
-    lt = LongTermMemory.__new__(LongTermMemory)
-    lt.enabled = True
-    lt.collection = collection
-    return lt
-
-
-@_pytest.mark.asyncio
-async def test_search_keeps_newest_for_mutable_relation():
-    """同订单两条状态（跨会话旧新并存）→ 只返回最新；不可变关系不受影响"""
-    col = FakeCollection(query_result={
-        "documents": [["订单1 状态 待审核", "订单1 状态 已退款", "用户 偏好 小米品牌"]],
-        "metadatas": [[
-            {"entity_key": "订单1", "relation": "状态", "timestamp": "2026-08-01T10:00:00", "session_id": "s1"},
-            {"entity_key": "订单1", "relation": "状态", "timestamp": "2026-08-20T10:00:00", "session_id": "s2"},
-            {"timestamp": "2026-08-10T10:00:00", "session_id": "s3"},
-        ]],
-        "distances": [[0.10, 0.12, 0.20]],
-    })
-    hits = await _bare_lt(col).search("订单怎么样了")
-    docs = [h["document"] for h in hits]
-    assert docs == ["用户 偏好 小米品牌", "订单1 状态 已退款"]
-
-
-@_pytest.mark.asyncio
-async def test_add_supersedes_stale_mutable_in_same_session():
-    """写时替换：同会话同实体同可变关系的旧记录被删除"""
-    col = FakeCollection(get_result={"ids": ["old-1", "old-2"]})
-    lt = _bare_lt(col)
-    await lt.add(
-        user_input="退款到哪一步了",
-        assistant_answer="已退款",
-        session_id="s1",
-        user_id="u1",
-        document="订单1 状态 已退款",
-    )
-    assert col.deleted == ["old-1", "old-2"]
-    assert len(col.added) == 1
-    _id, doc, meta = col.added[0]
-    assert doc == "订单1 状态 已退款"
-    assert meta["entity_key"] == "订单1" and meta["relation"] == "状态"
+        assert not injected

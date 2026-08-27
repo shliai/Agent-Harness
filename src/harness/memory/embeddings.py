@@ -11,6 +11,7 @@ HF_MODEL_ID = "BAAI/bge-small-zh-v1.5"
 
 import os as _os
 
+
 def _resolve_model_path() -> str:
     if _os.path.isdir(LOCAL_MODEL_DIR) and _os.path.exists(
         _os.path.join(LOCAL_MODEL_DIR, "config.json")
@@ -21,7 +22,7 @@ def _resolve_model_path() -> str:
 MODEL_PATH = _resolve_model_path()
 
 # 全局单例：整个进程共享一个 BGE 嵌入模型实例
-# 避免多个模块（KnowledgeRetrievalTool、LongTermMemory）各自加载模型
+# 避免多个模块（如 KnowledgeRetrievalTool）各自加载模型
 _embed_fn: Any | None = None
 _loaded = False
 

@@ -11,7 +11,7 @@ from harness.guardrails.base import GuardrailPipeline
 from harness.llm.base import AbstractLLMClient
 from harness.llm.factory import LLMFactory
 from harness.memory.conversation_history import ConversationHistory
-from harness.memory.long_term import LongTermMemory
+from harness.memory.learning import LearningStore
 from harness.observability.metrics import MetricsCollector
 from harness.observability.tracer import Tracer
 from harness.tools.subtask_dispatch import SubTaskDispatchTool
@@ -36,7 +36,7 @@ class Agent:
         self.tracer = tracer or Tracer(enabled=settings.tracing_enabled)
         self.metrics = metrics or MetricsCollector()
         self.conversation_history = ConversationHistory()
-        self.long_term_memory = LongTermMemory()
+        self.learning_store = LearningStore()
         self.loop = ReActLoop(
             llm=self.llm,
             cheap_llm=self.cheap_llm,
@@ -46,7 +46,7 @@ class Agent:
             metrics=self.metrics,
             conversation_history=self.conversation_history,
             max_iterations=settings.max_iterations,
-            long_term_memory=self.long_term_memory,
+            learning_store=self.learning_store,
         )
         self.registry.register_tool(
             SubTaskDispatchTool(llm=self.llm, registry=self.registry, guardrails=self.guardrails)

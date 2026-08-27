@@ -41,7 +41,10 @@ class TestQueryEnricher:
 
     def test_max_variants(self):
         out = expand("拍照游戏小屏降噪手机")
-        assert len(out) <= 3
+        # 主查询 + 组合替换变体 + 各同义词单替换变体，上限 5 条
+        assert 2 <= len(out) <= 5
+        # 组合替换变体应存在（多属性 query 的整体改写）
+        assert any("影像" in v and "电竞" in v for v in out)
 
 
 class TestTokenBudget:

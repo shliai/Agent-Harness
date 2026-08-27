@@ -1,6 +1,6 @@
 # Agent Harness 功能实现说明
 
-> 版本：v0.7.4 · 面向开发者的功能实现细节文档
+> 版本：v0.7.7 · 面向开发者的功能实现细节文档
 > 架构总览见 [ARCHITECTURE.md](ARCHITECTURE.md) · 接口定义见 [API.md](API.md)
 
 ---
@@ -32,7 +32,7 @@
   - [记忆体系](#记忆体系)
     - [工作记忆](#工作记忆-working_memory)
     - [短期记忆与会话压缩](#短期记忆与会话压缩)
-    - [长期记忆](#长期记忆-long_term_memory)
+    - [学习机制](#学习机制-learning)
   - [安全护栏](#安全护栏)
     - [输入校验与注入防护](#输入校验与注入防护)
     - [输出脱敏与合规过滤](#输出脱敏与合规过滤)
@@ -232,14 +232,14 @@ async def execute_stream(user_input, session_id, user_id):
     # 3. guardrails.check_input() → 审计留痕
     # 4. 工作记忆规则抽取 → 注入 system prompt
     # 5. 上下文装配（摘要 → WM → 长期召回 → 窗口消息）
-    # 6. for step in range(max_iterations):
-    #     首轮命中商品信号 → 直接执行 knowledge_retrieval 入记忆（防幻觉，无文本闪现）
-    #      stream_chat_async() → yield delta 增量
-    #      parse_tool_call()
-    #      ├─ 有 ACTION → delta_reset → 校验 → 执行工具 → 结果入记忆
-    #      ├─ JSON 坏损 → delta_reset → 纠正提示重试（≤2 次）
-    #      └─ 无 ACTION → check_output 脱敏 → 反问检测 → result
-    # 7. 收尾：压缩判定 → asave_state → 长期记忆后台写入
+# 6. for step in range(max_iterations):  # max_iterations 来自 settings（默认 6）
+#     首轮确定性预拦截：命中商品信号→强制 knowledge_retrieval；命中只读意图规则
+#       （指代追问/计算/政策可行性/转人工/订单物流查询）→ 强制对应只读工具（防幻觉、防漂移，无文本闪现）
+#      stream_chat_async(tools=原生函数定义, tool_call_sink=...) → yield delta 增量
+#      工具调用仅从原生 tool_calls 解析（tool_call_sink / reply.tool_calls），无文本/JSON 解析失败面
+#      ├─ 有 tool_call → delta_reset → 校验 → 执行工具（执行失败由 LLM 修正重试，≤tool_max_retries）→ 结果入记忆
+#      └─ 无 tool_call → 视为最终回答：check_output 脱敏 → 反问检测 → result
+    # 7. 收尾：压缩判定 → asave_state → 学习机制落盘（启用时）
     #
     # 异常分支：
     #   GuardrailError → error 事件
@@ -253,7 +253,7 @@ async def execute_stream(user_input, session_id, user_id):
 | 决策 | 理由 |
 |---|---|
 | 单气泡生命周期 | 打字占位、流式增量、最终回答复用同一 DOM 元素，消除多元素切换的状态管理复杂度 |
-| 商品强制检索 | 首轮模型输出前命中商品信号即直接执行 knowledge_retrieval 并注入结果（仅首轮防死循环）；query 自动合并 WM 预算，杜绝幻觉文本闪现 |
+| 商品强制检索 | 首轮模型输出前做确定性预拦截：命中商品信号即强制 knowledge_retrieval 并注入结果（仅首轮防死循环）；命中只读意图规则（指代追问/计算/政策可行性/转人工/订单物流查询）即强制对应工具，query 自动合并 WM 预算，杜绝幻觉文本闪现与指代漂移 |
 | 脱敏前移 | 先过滤再入记忆，防止敏感信息经上下文回流到下一轮 LLM |
 | 中断落盘 | CancelledError 分支调用 _persist_session，用户停止不丢已生成内容 |
 | finally endTrace | 无论成功/失败/中断都终止推理中状态，杜绝 UI 卡死 |
@@ -404,26 +404,45 @@ class WorkingMemory(BaseModel):
     budget_turn: int | None       # 设定轮次
     order_ids: list[str]           # 提及的订单号（cap 10）
     tracking_nos: list[str]        # 物流单号（cap 10）
-    recent_topics: list[str]       # 近期话题（cap 5）
+    rolling_summary: str = ""      # 轮末折叠摘要 S_t（v0.8.0，≤300字）
     awaiting_slot: str | None      # 澄清等待项
+    user_prefs / user_constraints / user_corrections   # 学习数据源（确定性正则）
+    tokens_used: int               # 会话累计 token（预算口径）
+    budget_warned / budget_alerted: bool   # 预算告警标志（持久化，重启不重复告警）
     updated_turn: int              # 最后更新轮次
 ```
 
 抽取规则（确定性正则，零 LLM 开销）：
 - 预算：区分「明确预算」（预算3000/3999的手机/3k/2000预算）与「临时上限」（5000以下不覆盖既有预算）；用户改口自动更新并记录轮次
-- 订单号：`20\d{9}` 11 位数字模式
+- 订单号：`20\d{9,13}`（13 位新订单号，对齐 OrderQueryTool 白名单）
 - 物流号：`(SF|YT|ZTO|STO|JD|EMS)\d{9,12}`
-- prompt_block() 渲染为「状态尾注」消息（对话末尾、本轮输入之前），含槽位与关键事实
-- 轮末抽取**预筛**（_should_extract_turn）：命中硬实体信号（订单/物流/金额/预算正则）
-  或意图/偏好关键词（喜欢/想要/推荐…）或输入较长（≥40 字）才调 LLM 抽取——
-  纯寒暄/无信息轮直接跳过，省调用与限流配额
-- 抽取路由**小模型优先**（`cheap_llm`，未配置自动回落主模型），经 cheap_semaphore 限并发
-  （防瞬时打满小模型限流触发 429 风暴）；结果合并进 important_facts 并结构化写入长期记忆
-- 更新语义：状态/进度等可变关系同实体同关系 → WM 原地替换；长期库一事实一记录（entity_key 元数据），写时替换 + 读时保鲜（跨会话只留最新）
-- 垃圾防线：抽取为空/寒暄输入/失败轮 → 跳过长期写入；仅 LLM 异常时写确定性兜底文档
+- prompt_block() 渲染为「状态尾注」消息（对话末尾、本轮输入之前），含槽位；`prompt_block(for_archive=True)` 供压缩烘焙——只渲染跨周期仍生效的硬实体（预算/单号），进行时态信息作废不进档案
+- **用户信号抽取（长期学习机制的数据源）**：`WorkingMemory.update_from_input` 同时用确定性正则捕获用户偏好/约束/纠正（显式偏好标记 + 品牌/品类识别、过敏/材质硬约束、「不是 X 是 Y」纠正），约束以 `key=value` 编码存储，纠正会覆盖同 key 偏好。**无 LLM 自由抽取**，零额外延迟
+- **长期学习落盘**：轮末 `ReActLoop._finalize` 直接读取 `wm.learning_signals()`，按 `(type,key)` 合并写入 JSON（`LearningStore`，`./data/learning_store/learning.json`）；寒暄轮/失败轮不写，写进去的一定是确定性正确的，不制造垃圾
+- **召回**：`LearningStore.render_for_prompt()` 全量渲染进系统提示词的「用户长期画像」段落（单用户、无向量、无每轮嵌入）
 - 压缩事件时整块烘入冻结章节后 reset_for_new_cycle() 清零开新周期
 
-### 短期记忆与章节压缩（v0.7.4 LSM 式）
+### 折叠式滚动摘要 rolling_summary（v0.8.0）
+
+周期内"对话进展"记忆——回答「按之前说的办 / 为什么跟之前说的不一样」的依据：
+
+```
+轮末 _finalize（后台任务）:
+  门控: 寒暄(_TRIVIAL_INPUT_RE) / 失败轮 / 回答 <12 字 → 跳过
+        cheap_llm 未配置 → 跳过
+  输入: 【旧进展】S_{t-1} + 【用户】输入[:500] + 【客服】回答[:800]
+    ↓ FOLD_SYSTEM_PROMPT（固定三行契约【诉求】【进展】【未决】，数字逐字沿用）
+  S_t = 输出截断至 300 字 → wm.rolling_summary = S_t
+  失败 → 沿用旧值（宁旧勿缺）
+```
+
+- **折叠而非追加**：每轮覆盖旧摘要，永远有界，不吃窗口
+- **权威声明**：提示词明确「数值以任务状态槽位为准，摘要只叙述」，正则槽位管事实、小模型只管叙事
+- **持久化零新代码**：`wm.to_dict()` 整对象随会话落盘往返
+- **不导出学习画像**：会话内叙事跨会话无复用价值，`learning_signals()` 不含它
+- 注入位置：状态尾注「对话进展（摘要）」行（KV-cache 断点之后，零前缀失效）
+
+### 短期记忆与章节压缩（v0.7.4 LSM 式 + v0.8.0 裁剪与接续）
 
 ShortTermMemory 只追加设计：
 - `get_context()` / `all_messages()`：纯 list 追加，无滑动淘汰（淘汰会打穿 KV cache 前缀）
@@ -431,12 +450,15 @@ ShortTermMemory 只追加设计：
 
 章节压缩流程（loop._persist_session）：
 ```
-单会话消息估算 token >= CONTEXT_WINDOW_TOKENS × CONTEXT_COMPRESS_RATIO?
-  ├─ 是 → 本周期旧消息调 LLM 章节摘要（不合并旧章节，零级联损耗）
-  │       成功 → 组装冻结章节【第N阶段】摘要+WM快照 → chapters.append()
-  │            → WM reset_for_new_cycle() 清零开新周期
+单会话当前窗口消息估算 token >= CONTEXT_WINDOW_TOKENS × CONTEXT_COMPRESS_RATIO?
+  ├─ 是 → 本周期旧消息调 LLM 章节摘要（优先 cheap_llm，失败降级主模型；
+  │       不合并旧章节，零级联损耗；喂入上一章[:800]作衔接参照保持实体锚点）
+  │       成功 → 组装冻结章节【第N阶段】摘要 + WM硬实体快照
+  │            （prompt_block(for_archive=True)：只归档预算/单号，
+  │              摘要叙事由本章节自带，不重复存两份）
+  │            → chapters.append() → WM reset_for_new_cycle() 清零开新周期
   │            → 落盘 {messages: 最近 keep_recent 条, chapters: 追加后全量}
-  │       失败 → 落盘完整历史（降级保数据）
+  │       失败两级都败 → 落盘完整历史（降级保数据）
   └─ 否 → 直接落盘全部
 ```
 触发阈值按「相对模型窗口」估算（`estimate_tokens` 启发式，非精确计数）：
@@ -445,9 +467,9 @@ ShortTermMemory 只追加设计：
 上下文组装 = [system 人设+工具] + [system 章节×k] + [历史(只追加)] + [system 状态尾注=当期WM+跨会话召回] + [本轮输入]。
 稳定期纯追加 → KV cache 零失效；压缩事件仅历史区位移一次。
 
-### 长期记忆 long_term_memory
+### 学习机制 learning
 
-ChromaDB collection `agent_long_term_memory`（cosine 空间），按 user_id 过滤 + 距离阈值截断。
+单用户长期画像（`learning.py`）：轮末 `ReActLoop._finalize` 直接读取 `WorkingMemory.learning_signals()` 的确定性信号（偏好/约束/纠正），以 `(type,key)` 合并写入 JSON 文件（`./data/learning_store/learning.json`）。**默认 `enabled=False`**（需配置 `LEARNING_ENABLED=true` 开启）；无向量、无 LLM 自由抽取，捕获恒为确定性结构化记录，不制造垃圾数据。召回时 `LearningStore.render_for_prompt()` 全量渲染进系统提示词（单用户数据量小）。
 
 ---
 
@@ -457,19 +479,23 @@ ChromaDB collection `agent_long_term_memory`（cosine 空间），按 user_id �
 
 InputValidator：空值 / 4096 上限 / 控制字符 `[\x00-\x08\x0b\x0c\x0e-\x1f]`。
 
-InjectionGuard：5 组中英文注入特征正则匹配，命中即拒绝并审计留痕。可通过 `PROMPT_INJECTION_BLOCK=false` 关闭。
+InjectionGuard：中英文注入特征正则匹配，命中即拒绝并审计留痕。可通过 `PROMPT_INJECTION_BLOCK=false` 关闭。
 
 ### 输出脱敏与合规过滤
 
-OutputFilter：5 组敏感信息模式掩码为 ***（身份证18位含X/15位/手机号/银行卡/API Key）。先于入库执行。
+OutputFilter：敏感信息模式掩码为 ***（身份证18位含X/15位/手机号/银行卡/API Key）。**仅在命中时返回脱敏文本并追加提示，未命中返回 None 透传**——修复了旧版恒返回字符串导致跳过 SystemPromptGuard 与 ComplianceFilter 的缺陷。先于入库执行。
 
 ComplianceFilter：绝对化承诺检测（百分百能退/保证到账等）追加「以官方政策为准」提示；违禁词 * 替换。
+
+SystemPromptGuard（输出层新增）：用系统提示词特异指纹（人设首句 / 内部章节标题）检测泄露，命中即重写为标准拒答——确定性兜底，不依赖模型自觉。
 
 ### 限流与审计
 
 RateLimiter：滑动窗口 + per-session_id 隔离桶。达到上限返回剩余等待秒数。
 
 AuditLogger：JSONL 追加写入，content_preview 写入前过 mask_sensitive() 掩码。按 AUDIT_ROTATE_MB 大小轮转为 .N.jsonl 序号文件。拦截事件由流水线回调 record_blocked() 补记。
+
+> 流水线顺序（api.py 装配）：InputValidator → InjectionGuard → OutputFilter → ComplianceFilter → SystemPromptGuard → RateLimiter → AuditLogger；任一拦截即短路，AuditLogger 置于末位统一补记。
 
 ---
 

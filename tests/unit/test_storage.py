@@ -108,13 +108,32 @@ class TestVectorSync:
 
 
 class TestAdminAuth:
-    def test_require_admin(self) -> None:
+    def test_require_admin(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from fastapi import HTTPException
 
+        from harness.config import settings
         from harness.web.api import require_admin
 
-        require_admin("demo-admin-token")  # 默认 token 通过
+        monkeypatch.setattr(settings, "admin_token", "t-secret-123")
+        require_admin("t-secret-123")  # 配置的 token 通过
         with pytest.raises(HTTPException):
             require_admin(None)
         with pytest.raises(HTTPException):
             require_admin("wrong")
+
+    def test_require_admin_fail_closed_when_unconfigured(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """ADMIN_TOKEN 未配置时无论传入什么都拒绝（无默认凭据）"""
+        from fastapi import HTTPException
+
+        from harness.config import settings
+        from harness.web.api import require_admin
+
+        monkeypatch.setattr(settings, "admin_token", "")
+        with pytest.raises(HTTPException):
+            require_admin(None)
+        with pytest.raises(HTTPException):
+            require_admin("")
+        with pytest.raises(HTTPException):
+            require_admin("demo-admin-token")

@@ -231,6 +231,9 @@ class SubTaskDispatchTool(BaseTool):
         """
         from harness.config import settings
 
+        # 修正重试路径同样携带原生 tools 载荷（与首轮调用保持一致）
+        tools = registry.get_openai_tools()
+
         tool_call = initial_call
         retry_count = 0
 

@@ -1,6 +1,6 @@
 # Agent Harness API 文档
 
-> 版本：v0.7.4 · 更新日期：2026-08-25
+> 版本：v0.7.7 · 更新日期：2026-08-27
 
 ## 基础信息
 
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | GET | `/` | Web 控制台页面 | - |
 | GET | `/health` | 健康检查（含组件状态） | - |
-| GET | `/api/tools` | 工具清单（10 个） | - |
+| GET | `/api/tools` | 工具清单（9 个） | - |
 | GET | `/api/metrics` | 进程级聚合指标 + 最近追踪 | - |
 | POST | `/api/chat` | 对话（SSE 流式 / JSON） | - |
 | POST | `/api/session/clear` | 清空会话 | - |
@@ -45,12 +45,12 @@
 ```json
 {
   "status": "ok",
-  "version": "0.7.4",
+  "version": "0.7.7",
   "components": {
     "knowledge_base_documents": 400,
-    "long_term_memory_enabled": true,
-    "long_term_memory_records": 0,
-    "tools": 10
+    "learning_enabled": false,
+    "learning_records": 0,
+    "tools": 9
   }
 }
 ```
@@ -63,7 +63,7 @@
 |---|---|---|---|
 | message | string | 是 | 用户消息（1-4096 字符） |
 | session_id | string | 否 | 会话 ID；缺省自动生成并经 meta 事件返回 |
-| user_id | string | 否 | 用户身份：决定订单归属校验、我的订单、售后归属、长期记忆隔离；缺省 `demo_user` |
+| user_id | string | 否 | 用户身份：决定订单归属校验、我的订单、售后归属；缺省为空，后端以 `demo_user` 作为默认用户身份处理（学习机制为单用户，不按 user_id 隔离） |
 | stream | boolean | 否 | 默认 true |
 
 **同会话并发约束**：同一 session_id 同时仅允许一个进行中请求，
@@ -78,7 +78,7 @@ data: {"type":"meta","session_id":"abc123"}
 data: {"type":"delta","content":"您好"}
 
 # 该轮实为工具规划 → 回滚已推送的临时文本
-data: {"type":"delta_reset"}
+data: {"type":"delta_reset"}   # 可选携带 reason: {"type":"delta_reset","reason":"..."}
 
 # 每完成一步推送（Thought / Action / Observation）
 data: {"type":"step","step_index":0,"thought":"需要查订单",
@@ -129,8 +129,8 @@ data: [DONE]
 {
   "session_id": "abc123",
   "title": "查询订单",
-  "summary": "早期对话的滚动摘要...",
-  "working_memory": {"budget_amount": 3000.0, "order_ids": ["..."], "awaiting_slot": null},
+  "user_id": "demo_user",
+  "working_memory": {"budget_amount": 3000.0, "order_ids": ["..."], "rolling_summary": "【诉求】...【进展】...【未决】...", "awaiting_slot": null},
   "traces": [{"ts": "...", "user": "查订单", "steps": [{"thought": "...", "tool_call": {...}}]}],
   "messages": [{"role": "user", "content": "...", "timestamp": "..."}],
   "updated_at": "..."
@@ -140,9 +140,8 @@ data: [DONE]
 | 字段 | 说明 |
 |---|---|
 | user_id | 会话归属者；携带 X-User-Id 访问他人会话将返回 403 |
-| summary | 超窗历史经 LLM 压缩的滚动摘要（未触发压缩时为空） |
-| working_memory | 结构化槽位：预算(金额/品类/轮次)、订单号、物流号、近期话题、澄清等待项 |
-| traces | 最近 8 轮推理轨迹（Thought/Action/Observation） |
+| working_memory | 结构化槽位：预算(金额/品类/轮次)、订单号、物流号、滚动摘要(rolling_summary,≤300字折叠摘要)、澄清等待项 |
+| traces | 推理轨迹（Thought/Action/Observation） |
 
 ### PUT `/api/sessions/{id}`
 

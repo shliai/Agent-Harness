@@ -1,6 +1,6 @@
 # Agent Harness 用户使用指南
 
-> 面向最终用户的操作手册 · v0.7.4
+> 面向最终用户的操作手册 · v0.7.7
 
 ## 快速开始
 
@@ -88,7 +88,7 @@ docker compose up -d
 
 ## 运营管理面板
 
-点击顶栏「管理」打开运营面板。首次使用需输入管理员 Token（默认 `demo-admin-token`，见 `.env` 的 `ADMIN_TOKEN`）。
+点击顶栏「管理」打开运营面板。首次使用需输入管理员 Token（默认 `demo-admin-token`，见 `.env` 的 `ADMIN_TOKEN`）。**该 Token 为演示默认值，部署到生产环境前务必修改，否则任何人都能进入运营面板。**
 
 ### 商品库 Tab
 

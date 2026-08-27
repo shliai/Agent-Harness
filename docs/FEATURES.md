@@ -1,6 +1,6 @@
 # Agent Harness 功能说明文档
 
-> 版本：v0.7.4 · 架构详情见 [ARCHITECTURE.md](ARCHITECTURE.md) · 接口规范见 [API.md](API.md)
+> 版本：v0.7.7 · 架构详情见 [ARCHITECTURE.md](ARCHITECTURE.md) · 接口规范见 [API.md](API.md)
 
 ## 系统定位
 
@@ -17,8 +17,9 @@
 每轮对话按 thought → tool_call → observation 循环执行（OpenAI 原生 function calling，模型结构化输出 `tool_calls`），直到 LLM 认为信息足够输出最终回答，或达到最大迭代次数（默认 6 步）。
 
 - **流式输出**：回答以 token 级增量实时推送到前端
-- **失败重试**：工具执行失败时自动让 LLM 修正参数重试
-- **结构化调用**：工具调用由推理服务端保证 `tool_calls` 结构合法，无文本协议解析失败面；上游瞬时错误由 LLM 客户端指数退避重试兜底
+- **失败重试**：工具执行失败时自动让 LLM 修正参数重试（上限 `tool_max_retries`）
+- **结构化调用**：工具调用采用 OpenAI 原生 function calling，模型结构化输出 `tool_calls`，由推理服务端保证结构合法，**无文本/JSON 解析失败面**；上游瞬时错误由 LLM 客户端指数退避重试兜底
+- **确定性工具预拦截**：首轮模型输出前，命中商品信号即强制 `knowledge_retrieval` 防幻觉；命中指代追问/计算/政策可行性/投诉转人工/订单物流查询等规则即强制对应只读工具（见 2.1 防幻觉护栏）
 - **中断保护**：用户停止或断网时已生成的部分内容落盘保存
 - **空回复兜底**：LLM 返回空内容时生成友好提示而非空气泡
 
@@ -36,7 +37,7 @@
 | 工具说明 | 从 Registry 动态生成的工具描述 |
 | 冻结章节 | 超窗对话压缩为不可变章节（含当期 WM 快照），旧章节永不改写、缓存不失效 |
 | 工作记忆 | 结构化槽位（预算/订单号/物流号/话题）+ LLM 实体事实，确定性规则抽取 |
-| 长期记忆 | ChromaDB+BGE 语义召回的相关历史片段 |
+| 学习机制（长期记忆） | 轮末确定性捕获偏好/约束/纠正，JSON 持久，全量注入系统提示词（单用户、无向量） |
 | 消息窗口 | 原始消息只追加（无滑动淘汰，达 token 触发阈值后压缩裁剪） |
 
 > **小模型旁路**：事实抽取、检索重排等旁路低风险调用可配置 `OPENAI_SMALL_MODEL` 走低成本
@@ -65,9 +66,14 @@
 | 自校正 | 向量距离超阈值时自动放宽价格条件二次召回 |
 | 在售过滤 | 下架商品即使向量残留也不会被召回 |
 
-> **防幻觉护栏**：ReAct 循环在**首轮模型输出之前**检测商品信号（品类/品牌/推荐/价格/预算等），
-> 命中即直接执行 `knowledge_retrieval` 并把结果注入上下文，模型首轮作答即基于知识库而非模型记忆，
-> 避免「先流式输出幻觉文本再回滚」造成前端闪现。
+> **防幻觉护栏**：ReAct 循环在**首轮模型输出之前**做确定性预拦截，命中即直接执行对应工具并把结果注入上下文，避免「先流式输出幻觉文本再回滚」造成前端闪现：
+> - 商品信号（品类/品牌/推荐/价格/预算等）→ 强制 `knowledge_retrieval`，模型首轮作答即基于知识库而非模型记忆；
+> - 指代追问/进度问法（结合工作记忆中的订单号、物流单）→ 强制 `order_query` / `logistics_query` / `after_sale_query`；
+> - 计算表达式或明确要求计算 → 强制 `calculator`；
+> - 投诉/赔偿/转人工 → 强制 `transfer_human`；
+> - 政策可行性（能否退换/保修/价保/发票等）→ 强制 `policy_query`；
+> - 查本人订单列表（不记得单号）→ 强制 `order_list`。
+> 写操作（如 `after_sale_apply`）永远交由模型按协议执行，预拦截只覆盖无副作用的只读工具。
 
 ### 2.2 订单查询 `order_query` / `order_list`
 
@@ -116,25 +122,27 @@ AST 白名单求值，支持四则运算、幂运算（限制指数规模）、�
 
 | 层 | 模块 | 数据源 | 特点 |
 |---|---|---|---|
-| 工作记忆 | working_memory.py | 规则抽取用户输入 | 结构化槽位：预算(金额/品类/轮次)、订单号、物流号、近期话题、澄清等待项。确定性零开销 |
+| 工作记忆 | working_memory.py | 规则抽取用户输入 | 结构化槽位：预算(金额/品类/轮次)、订单号、物流号、滚动摘要、澄清等待项。确定性零开销 |
+| 折叠摘要（滚动） | working_memory.rolling_summary + loop._finalize | cheap_llm 折叠「旧进展+本轮问答」 | ≤300 字有界覆盖式更新；门控跳过寒暄/短回答；失败沿用旧值；注入状态尾注，回答"按之前说的办" |
 | 短期记忆 | short_term.py | 对话消息 | 只追加列表（不滑动淘汰，避免打穿 KV cache 前缀）；达触发阈值时显式压缩 |
-| 会话压缩 | loop 内置 | 消息估算 token ≥ 窗口×比例 | LLM 章节式滚动摘要（≤ CONTEXT_SUMMARY_MAX_CHARS 字），冻结章节追加+WM快照；保留预算/单号/结论/未决诉求 |
-| 长期记忆 | long_term.py | ChromaDB + BGE | 跨会话语义召回，user_id 隔离，距离阈值过滤，后台异步写入 |
+| 会话压缩 | loop 内置 | 消息估算 token ≥ 窗口×比例 | LLM 章节式滚动摘要（≤ CONTEXT_SUMMARY_MAX_CHARS 字），冻结章节追加+WM硬实体快照(for_archive)；优先走小模型；喂上一章保持跨章锚点；保留预算/单号/结论/未决诉求 |
+| 学习机制 | learning.py + working_memory.py | 规则抽取 + JSON | 轮末读取工作记忆确定性信号（偏好/约束/纠正）→ JSON 持久 → 全量注入系统提示词；单用户、无向量、无 LLM 自由抽取 |
 
 ---
 
 ## 四、安全护栏
 
-流水线顺序执行，任一拦截即短路并写入审计日志（passed/blocked 全留痕）：
+流水线顺序执行（输入侧 → 输出侧 → 审计），任一拦截即短路并写入审计日志（passed/blocked 全留痕）：
 
-| 护栏 | 拦截范围 | 行为 |
-|---|---|---|
-| InputValidator | 空值 / 超长 / 控制字符 | 拒绝请求 |
-| InjectionGuard | 中英文 Prompt 注入特征 | 拒绝请求（可关） |
-| OutputFilter | PII 掩码（身份证含X/手机号/银行卡/API Key） | 替换为 *** 并追加提示 |
-| ComplianceFilter | 绝对化承诺（百分百能退等） | 追加合规提示并告警 |
-| RateLimiter | 按会话限频（60次/分钟） | 返回等待时间 |
-| AuditLogger | 全事件审计留痕 | JSONL 文件，按 AUDIT_ROTATE_MB 轮转 |
+| 护栏 | 阶段 | 拦截范围 | 行为 |
+|---|---|---|---|
+| InputValidator | 输入 | 空值 / 超长 / 控制字符 | 拒绝请求 |
+| InjectionGuard | 输入 | 中英文 Prompt 注入特征 | 拒绝请求（可关 `PROMPT_INJECTION_BLOCK`） |
+| OutputFilter | 输出 | PII 掩码（身份证含X/手机号/银行卡/API Key） | 命中替换为 *** 并追加提示；无命中返回 None 透传（已修复旧版恒返回字符串导致跳过后续护栏的缺陷） |
+| ComplianceFilter | 输出 | 绝对化承诺（百分百能退等） | 追加合规提示并告警 |
+| SystemPromptGuard | 输出 | 系统提示词泄露（指纹命中人设首句/内部章节标题） | 重写为标准拒答（确定性兜底，不依赖模型自觉） |
+| RateLimiter | 输出 | 按会话限频（60次/分钟） | 返回等待时间 |
+| AuditLogger | 收尾 | 全事件审计留痕 | JSONL 文件，按 AUDIT_ROTATE_MB 轮转；拦截事件由流水线回调补记 |
 
 **额外保护**：
 - 订单归属校验（他人订单不可查）
@@ -147,7 +155,7 @@ AST 白名单求值，支持四则运算、幂运算（限制指数规模）、�
 
 ## 五、评测体系
 
-五层评测框架（`scripts/eval.py`），用例定义于 `data/eval/golden_set.jsonl`：
+多层评测框架（`scripts/eval.py`），用例定义于 `data/eval/golden_set.jsonl`，覆盖 retrieval / budget / robustness / memory / wm_flow / routing / tooluse / gen / workflow / fault / security 等维度（以下为部分关键层）：
 
 | 层 | 指标 | 方式 |
 |---|---|---|
@@ -155,13 +163,21 @@ AST 白名单求值，支持四则运算、幂运算（限制指数规模）、�
 | budget | 超预算数（零容忍）/ top1 接近度 | 离线 |
 | routing | 工具路由命中率 | --live（消耗真实 tokens） |
 | robustness | 幂炸弹秒拒 / 代码注入 / PII 脱敏 / 限流隔离 / 路径穿越 | 离线 |
-| memory | 长期记忆语义召回命中 | 离线 |
+| memory | 学习画像注入条数（启用时） | 离线 |
 
 辅助脚本：`scripts/export_badcase.py` 从审计日志和失败轨迹导出 badcase 候选。
 
 ---
 
-## 六、部署
+## 六、管理与可观测性
+
+- **管理 REST API（FastAPI）**：商品库增删改查与向量索引联动、售后审核（通过/驳回/完成打款）、会话管理；需管理员 Token 鉴权，前端管理面板对接。
+- **可观测性**：进程级与请求级 `MetricsCollector`（LLM 调用次数 / Token 消耗 / 工具分布）、`Tracer` 推理轨迹（存入会话状态供前端回放）、JSON/console 双通道日志按大小轮转。
+- **健康检查 `/health`**：暴露长期记忆开关与条数、知识库商品数等系统状态。
+
+---
+
+## 七、部署
 
 ```bash
 # 本地开发

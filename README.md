@@ -1,6 +1,6 @@
 # Agent Harness
 
-基于 ReAct 模式的电商智能客服 Agent 运行时——自研循环引擎、四层记忆体系、六道安全护栏与五层评测框架，不依赖 LangChain 等框架。
+基于 ReAct 模式的电商智能客服 Agent 运行时——自研循环引擎、四层记忆体系、七道安全护栏与五层评测框架，不依赖 LangChain 等框架。
 
 ## 快速开始
 
@@ -22,8 +22,9 @@ pip install -e .
 cp .env.example .env
 # 编辑 .env，填入你的 API Key：
 #   OPENAI_API_KEY=sk-xxx
-#   OPENAI_API_URL=https://api.openai.com/v1   # 或智谱/DeepSeek 等
-#   OPENAI_MODEL=gpt-4o-mini
+#   OPENAI_API_URL=https://api.moonshot.cn/v1   # 或 OpenAI/智谱/DeepSeek 等 v1 兼容网关
+#   OPENAI_MODEL=kimi-k2-0905-preview           # 默认 256k 窗口模型（与压缩阈值对齐）
+#   换模型时同步修改 CONTEXT_WINDOW_TOKENS = 该模型真实上下文窗口
 #   （可选）OPENAI_SMALL_MODEL=deepseek-chat    # 事实抽取/重排走小模型，省成本
 
 # ③ 初始化数据 + 启动（BGE 嵌入模型已内置本地，离线加载）
@@ -83,8 +84,8 @@ docker compose up -d
 | 售后服务 | 退货换货申请（状态机）· 退款测算（券不退+满减扣回）· 进度查询 |
 | 政策问答 | 结构化条款库 · 强制引用编号 · 未命中引导转人工 |
 | 转人工 | 工单创建 · 排队确认话术 |
-| 安全护栏 | 注入拦截 · PII 掩码 · 承诺合规 · 会话限频 · 审计轮转 |
-| 记忆体系 | 短期窗口(只追加+token触发压缩) · 冻结章节(LSM式压缩归档) · 工作记忆(规则槽位+LLM实体事实) · ChromaDB长期记忆(结构化+TTL维护) |
+| 安全护栏 | 输入校验 · 注入拦截 · 系统提示词防泄露 · PII 掩码 · 承诺合规 · 会话限频 · 审计轮转 |
+| 记忆体系 | 短期窗口(只追加+token触发压缩) · 冻结章节(LSM式压缩归档,只存硬实体+小模型摘要) · 工作记忆(规则槽位) · 轮末折叠式滚动摘要(cheap_llm,≤300字) · 学习机制(轮末读工作记忆确定性信号→JSON→注入系统提示词，默认关闭) |
 
 完整功能矩阵见 [docs/FEATURES.md](docs/FEATURES.md)。
 
@@ -96,7 +97,7 @@ src/harness/
 ├── llm/            OpenAI v1 兼容客户端
 ├── tools/          10 个工具
 ├── memory/         四层记忆
-├── guardrails/     六道安全护栏
+├── guardrails/     七道安全护栏
 ├── storage/        SQLite + 向量同步
 ├── observability/  日志/指标/追踪
 ├── domain/         Pydantic 数据模型
@@ -107,14 +108,14 @@ scripts/            init_db / eval / export_badcase
 data/seed/          400 商品 + 260 订单 + 200 物流种子数据
 data/policies.json  10 条官方政策条款
 data/eval/          108 条评测用例（14 层）
-tests/              177 个测试用例
+tests/              173 个测试用例
 docs/               10 份文档
 ```
 
 ## 测试与评测
 
 ```bash
-pytest tests/ -v                    # 177 个测试
+pytest tests/ -v                    # 173 个测试
 python scripts/eval.py              # L0 离线确定性（55/55 PASS，CI 闸门）
 python scripts/eval.py --mode L1    # 完整评测：L0 + 在线十层（含参数正确性/容错行为/安全对齐/跨会话隔离）
 python scripts/eval.py --mode L1 --runs 3   # 在线层跑 3 次：输出复现率与 flaky 用例
@@ -134,7 +135,7 @@ python scripts/eval.py --mode L1 --runs 3   # 在线层跑 3 次：输出复现�
 | [接口文档](docs/API.md) | REST/SSE 端点规范 |
 | [运维手册](docs/OPERATIONS.md) | 日志聚合、指标告警、灰度发布、密钥管理 |
 | [评测报告](docs/EVALUATION.md) | 五层评测方法论与详细结果 |
-| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.7.4 演进史 |
+| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.8.0 演进史 |
 
 ## 技术栈
 

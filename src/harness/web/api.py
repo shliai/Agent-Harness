@@ -46,8 +46,32 @@ def _new_session_id() -> str:
     import uuid
 
     return uuid.uuid4().hex[:12]
-# 同一会话串行化：原子写保证文件不损坏，但并发读改写仍会互相覆盖，这里加锁
+# 同一会话串行化：原子写保证文件不损坏，但并发读改写仍会互相覆盖，这里加锁。
+# 语义统一为「忙即拒绝」：locked 检查与获取之间没有让渡点（无竞争的 acquire
+# 同步完成），要么拿到锁、要么返回 None 由调用方回 429（绝不排队等待）。
 _session_locks: dict[str, asyncio.Lock] = {}
+
+
+async def _claim_session_lock(session_id: str) -> asyncio.Lock | None:
+    """尝试占用会话锁：会话正被处理时返回 None（调用方应拒绝请求）"""
+    lock = _session_locks.setdefault(session_id, asyncio.Lock())
+    if lock.locked():
+        return None
+    # 无竞争路径同步完成、不让出事件循环，锁定状态对后续请求立即可见
+    await lock.acquire()
+    return lock
+
+
+def _release_session_lock(session_id: str, lock: asyncio.Lock) -> None:
+    """释放并清理空闲锁，防止 _session_locks 随会话数无限增长。
+
+    仅当锁未被持有、且字典仍指向同一对象时移除；若新请求刚经 setdefault
+    拿到同一把锁并已锁定，则跳过清理。"""
+    if lock.locked():
+        lock.release()
+    if not lock.locked() and _session_locks.get(session_id) is lock:
+        _session_locks.pop(session_id, None)
+
 # 管理接口独立限流：每 Token 每分钟 30 次（进程内；多实例换 Redis）
 _admin_limiter = RateLimiter(max_requests=30, window_seconds=60)
 
@@ -218,7 +242,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="Agent Harness API",
-        version="0.7.4",
+        version="0.8.0",
         description="智能体运行时外壳 — Web API",
     )
 
@@ -234,6 +258,12 @@ def create_app() -> FastAPI:
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    if not settings.admin_token:
+        logger.warning(
+            "ADMIN_TOKEN 未配置：商品/售后管理端 API 已全部禁用（fail-closed）。"
+            "需要使用请在 .env 中显式设置 ADMIN_TOKEN。"
+        )
 
     # 启动时主动初始化 Agent，避免首次请求等待工具注册和 ChromaDB 初始化
     warmup_agent()
@@ -260,14 +290,14 @@ def create_app() -> FastAPI:
                 pass
         return {
             "status": "ok",
-            "version": "0.7.4",
+            "version": "0.8.0",
             "model": settings.openai_model,
             "components": {
                 "knowledge_base_documents": kb_count,
-                "long_term_memory_enabled": bool(
-                    agent.long_term_memory and agent.long_term_memory.enabled
+                "learning_enabled": bool(
+                    agent.learning_store and agent.learning_store.enabled
                 ),
-                "long_term_memory_records": agent.long_term_memory.count(),
+                "learning_records": agent.learning_store.count(),
                 "tools": len(agent.registry.list_tools()),
             },
         }
@@ -419,10 +449,6 @@ def create_app() -> FastAPI:
         if req.user_id and existing_owner and req.user_id != existing_owner:
             raise HTTPException(status_code=403, detail="无权向该会话写入")
 
-        lock = _session_locks.setdefault(session_id, asyncio.Lock())
-        if lock.locked():
-            raise HTTPException(status_code=429, detail="当前会话有请求正在处理，请稍候")
-
         if req.stream:
             return StreamingResponse(
                 _stream_chat(agent, req.message, session_id, user_id=req.user_id),
@@ -434,8 +460,14 @@ def create_app() -> FastAPI:
                 },
             )
 
-        async with lock:
+        # 非流式：忙即 429（与流式路径语义一致），锁用完即清理
+        lock = await _claim_session_lock(session_id)
+        if lock is None:
+            raise HTTPException(status_code=429, detail="当前会话有请求正在处理，请稍候")
+        try:
             result = await agent.run(req.message, session_id=session_id, user_id=req.user_id)
+        finally:
+            _release_session_lock(session_id, lock)
         return ChatResponse(
             answer=result.answer,
             session_id=session_id,
@@ -564,54 +596,57 @@ async def _stream_chat(
     自动携带 session_id；生成器关闭/退出时统一清理。
     """
     set_session_id(session_id)
+    lock: asyncio.Lock | None = None
     try:
         yield f"data: {json.dumps({'type': 'meta', 'session_id': session_id}, ensure_ascii=False)}\n\n"
 
-        lock = _session_locks.setdefault(session_id, asyncio.Lock())
-        if lock.locked():
+        # 忙即拒绝（与非流式路径语义一致），锁用完即清理
+        lock = await _claim_session_lock(session_id)
+        if lock is None:
             yield f"data: {json.dumps({'type': 'error', 'message': '当前会话有请求正在处理，请稍候'}, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
             return
 
         try:
-            async with lock:
-                async for event in agent.loop.execute_stream(
-                    message, session_id=session_id, user_id=user_id
-                ):
-                    etype = event.get("type")
-                    if etype == "step":
-                        payload: dict[str, Any] = {
-                            "type": "step",
-                            "step_index": event.get("step_index"),
-                        }
-                        if event.get("thought"):
-                            payload["thought"] = event["thought"]
-                        if event.get("tool_call"):
-                            payload["tool_call"] = event["tool_call"]
-                        if event.get("tool_result"):
-                            payload["tool_result"] = event["tool_result"]
-                        if event.get("final"):
-                            payload["final"] = True
-                        yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
-                    elif etype == "delta":
-                        yield f"data: {json.dumps({'type': 'delta', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
-                    elif etype == "delta_reset":
-                        reason = event.get("reason", "")
-                        yield ('data: {"type": "delta_reset", "reason": "%s"}\n\n' % reason) if reason else 'data: {"type": "delta_reset"}\n\n'
-                    elif etype == "answer_replace":
-                        yield f"data: {json.dumps({'type': 'answer_replace', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
-                    elif etype == "result":
-                        yield f"data: {json.dumps({'type': 'result', 'answer': event['answer'], 'total_duration_ms': event['total_duration_ms'], 'total_steps': event['total_steps'], 'total_tokens': event.get('total_tokens', 0), 'success': event['success']}, ensure_ascii=False)}\n\n"
-                    elif etype == "error":
-                        err_result = event.get("result")
-                        answer = err_result.answer if err_result else event.get("message", "")
-                        yield f"data: {json.dumps({'type': 'error', 'message': answer}, ensure_ascii=False)}\n\n"
+            async for event in agent.loop.execute_stream(
+                message, session_id=session_id, user_id=user_id
+            ):
+                etype = event.get("type")
+                if etype == "step":
+                    payload: dict[str, Any] = {
+                        "type": "step",
+                        "step_index": event.get("step_index"),
+                    }
+                    if event.get("thought"):
+                        payload["thought"] = event["thought"]
+                    if event.get("tool_call"):
+                        payload["tool_call"] = event["tool_call"]
+                    if event.get("tool_result"):
+                        payload["tool_result"] = event["tool_result"]
+                    if event.get("final"):
+                        payload["final"] = True
+                    yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+                elif etype == "delta":
+                    yield f"data: {json.dumps({'type': 'delta', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
+                elif etype == "delta_reset":
+                    reason = event.get("reason", "")
+                    yield ('data: {"type": "delta_reset", "reason": "%s"}\n\n' % reason) if reason else 'data: {"type": "delta_reset"}\n\n'
+                elif etype == "answer_replace":
+                    yield f"data: {json.dumps({'type': 'answer_replace', 'content': event.get('content', '')}, ensure_ascii=False)}\n\n"
+                elif etype == "result":
+                    yield f"data: {json.dumps({'type': 'result', 'answer': event['answer'], 'total_duration_ms': event['total_duration_ms'], 'total_steps': event['total_steps'], 'total_tokens': event.get('total_tokens', 0), 'success': event['success']}, ensure_ascii=False)}\n\n"
+                elif etype == "error":
+                    err_result = event.get("result")
+                    answer = err_result.answer if err_result else event.get("message", "")
+                    yield f"data: {json.dumps({'type': 'error', 'message': answer}, ensure_ascii=False)}\n\n"
         except Exception as e:
             logger.exception("流式响应异常")
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
 
         yield "data: [DONE]\n\n"
     finally:
+        if lock is not None:
+            _release_session_lock(session_id, lock)
         set_session_id(None)
 
 

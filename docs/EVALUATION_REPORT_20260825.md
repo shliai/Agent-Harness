@@ -1,3 +1,5 @@
+> 历史快照说明：本文档为 2026-08-25 的点对点评测归档记录，结论与数据均为当时状态，仅供查阅。最新评测体系与结论见 `docs/EVALUATION.md`，实时报告见 `data/eval/report_*.json`。
+
 # Agent 完整评测报告与打分（L0 + L1）
 
 > 评测日期：2026-08-25 15:45 · 模式：`--mode L1`（含全部 L0 层）
@@ -218,3 +220,7 @@ python scripts/eval.py --layers gen,guardrail  # 精确挑层
 ```
 
 > 本次两个后台 Bug（ChromaDB None 元数据、小模型 ASCII 头）已于本会话修复并验证（详见 `docs/EVALUATION.md` §四）。
+
+---
+
+> **架构核对注记（非历史修订）**：截至 2026-08-25，本报告所测系统采用基于文本/JSON 的 `ACTION` 工具调用解析协议；当前系统已移除该文本协议，仅采用**原生 OpenAI function calling**（结构化 `tool_calls`，不再解析文本中的 ACTION JSON）。此外，当前系统新增了 `SystemPromptGuard`（输出层拦截系统提示词泄露，见 `src/harness/guardrails/system_prompt_guard.py`），而本报告 2026-08-25 的鲁棒性用例集未覆盖该护栏。以上仅为帮助读者区分当时与当前架构，未改动任何历史结论与数据。

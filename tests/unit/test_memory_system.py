@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from harness.domain.models import AgentMessage, ChatRole
+from harness.core.loop import ReActLoop
 from harness.llm.base import LLMReply
 from harness.memory.conversation_history import ConversationHistory
 from harness.memory.short_term import ShortTermMemory
@@ -186,14 +187,12 @@ class TestChapterMemory:
             order_ids=["20240601001"], tracking_nos=["SF1234567890"],
             tokens_used=4567, updated_turn=9,
         )
-        wm.add_fact("用户 偏好 小米品牌")
         wm.set_awaiting("具体型号")
 
         wm.reset_for_new_cycle()
 
         assert wm.budget_amount is None
         assert wm.order_ids == [] and wm.tracking_nos == []
-        assert wm.important_facts == []
         assert wm.awaiting_slot is None
         assert wm.tokens_used == 4567          # 会话级计数器保留
         assert wm.updated_turn == 9
@@ -263,20 +262,6 @@ class TestChapterMemory:
 
 
 
-    def test_add_fact_dedup_no_cap(self) -> None:
-        """事实登记：近似去重；不设上限（工作记忆随会话存续，事实是会话资产）"""
-        wm = WorkingMemory()
-        assert wm.add_fact("用户 偏好 小米品牌") is True
-        assert wm.add_fact("用户 偏好 小米品牌") is False          # 完全重复
-        assert wm.add_fact("用户 偏好 小米品牌系列") is False      # 包含关系视为重复
-        for i in range(30):
-            assert wm.add_fact(f"事实{i}-状态-{i}") is True
-        assert len(wm.important_facts) == 31                      # 全量保留（1+30）
-        # 渲染端也全量输出
-        block = wm.prompt_block()
-        for i in (0, 15, 29):
-            assert f"事实{i}-状态-{i}" in block
-
     @pytest.mark.asyncio
     async def test_working_memory_isolated_per_session(self) -> None:
         """工作记忆按会话隔离：不同 session 的预算/事实互不可见"""
@@ -310,93 +295,31 @@ class TestChapterMemory:
         b_note = next(m for m in turn_b_msgs if m.role == ChatRole.system and m.content.startswith("## 当前任务状态"))
         assert "8000" in b_note.content and "3000" not in b_note.content
 
-    def test_add_fact_mutable_relation_replaces(self) -> None:
-        """可变关系（状态/进度）：同实体同关系新值原地替换旧值；不可变关系共存"""
-        wm = WorkingMemory()
-        wm.add_fact("订单20240601001 状态 待审核")
-        assert wm.add_fact("订单20240601001 状态 已退款") is True
-        assert wm.important_facts == ["订单20240601001 状态 已退款"]  # 旧状态被替换
-        assert wm.add_fact("用户 偏好 小米品牌") is True
-        assert wm.add_fact("用户 偏好 华为品牌") is True              # 不同偏好共存
-        assert len(wm.important_facts) == 3
+    def test_extract_preferences(self) -> None:
+        """显式偏好标记 + 品牌/品类识别（确定性）"""
+        from harness.memory.working_memory import extract_user_prefs as extract_preferences
+        assert extract_preferences("我喜欢索尼耳机") == [("category", "品类=耳机"), ("brand", "品牌=索尼")]
+        assert extract_preferences("我偏好买华为手机") == [
+            ("category", "品类=手机"), ("brand", "品牌=华为")]
+        assert extract_preferences("今天天气不错") == []
 
-    def test_prompt_block_renders_facts(self) -> None:
-        wm = WorkingMemory()
-        wm.add_fact("用户 偏好 小米品牌")
-        block = wm.prompt_block()
-        assert "关键事实" in block and "小米品牌" in block
+    def test_extract_constraints(self) -> None:
+        from harness.memory.working_memory import extract_user_constraints as extract_constraints
+        assert extract_constraints("我对镍过敏") == [("allergy", "对镍过敏")]
+        assert extract_constraints("请避开真皮材质") == [("material", "避开真皮材质")]
+        assert extract_constraints("随便看看") == []
 
-    @pytest.mark.asyncio
-    async def test_extract_turn_facts_structure_guard(self) -> None:
-        """抽取解析：仅接受带关系分隔符的结构化行，闲聊回复不误收"""
-        from harness.core.loop import ReActLoop
+    def test_extract_correction(self) -> None:
+        from harness.memory.working_memory import extract_user_corrections as extract_correction
+        assert extract_correction("不是华为，是苹果") == ("brand", "品牌=苹果")
+        assert extract_correction("我要的是索尼") == ("brand", "品牌=索尼")
+        assert extract_correction("你好") is None
 
-        class FakeLLM:
-            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
-                return LLMReply(content="- 用户 偏好 华为品牌\n好的呀\n- 订单20240601001 状态 已退货")
-
-        inst = SimpleNamespace(llm=FakeLLM())
-        facts, failed = await ReActLoop._extract_turn_facts(inst, "想买手机", "已为您推荐华为")  # type: ignore[arg-type]
-        assert failed is False
-        assert facts == ["用户 偏好 华为品牌", "订单20240601001 状态 已退货"]
-
-    @pytest.mark.asyncio
-    async def test_extract_empty_means_skip_not_fallback(self) -> None:
-        """抽取成功但无可抽事实 → failed=False（调用方据此跳过入库而非走兜底）"""
-        from harness.core.loop import ReActLoop
-
-        class ChattyLLM:
-            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
-                return LLMReply(content="好的呀，这个简单！")
-
-        facts, failed = await ReActLoop._extract_turn_facts(
-            SimpleNamespace(llm=ChattyLLM()), "你好呀", "您好，有什么可以帮您？"
-        )  # type: ignore[arg-type]
-        assert facts == [] and failed is False
-
-    def test_deterministic_doc_format(self) -> None:
-        from harness.core.loop import ReActLoop
-
-        wm = WorkingMemory()
-        wm.budget_amount = 3000.0
-        wm.budget_category = "手机"
-        wm.order_ids = ["20240601001"]
-        doc = ReActLoop._deterministic_doc("预算3000买手机\n谢谢", "为您推荐了小米14 2999元 很不错", wm)
-        assert doc.startswith("[诉求] 预算3000买手机")
-        assert "[实体] 订单:20240601001；预算:3000元(手机)" in doc
-        assert "[结论]" in doc
-
-
-class TestExtractPrefilter:
-    """轮末抽取预筛：硬实体信号 / 意图偏好关键词 / 输入长度 → 才调小模型"""
-
-    def test_hard_entity_signal_triggers(self) -> None:
-        from harness.core.loop import _should_extract_turn
-
-        assert _should_extract_turn("订单20240601001到哪了", "已查询，运输中。") is True   # 订单号
-        assert _should_extract_turn("SF1234567890查物流", "已查询。") is True              # 物流号
-        assert _should_extract_turn("3000元以内买手机", "推荐如下。") is True              # 金额
-        assert _should_extract_turn("预算5000买个笔记本", "推荐如下。") is True            # 预算
-
-    def test_intent_keyword_triggers(self) -> None:
-        from harness.core.loop import _should_extract_turn
-
-        assert _should_extract_turn("我想买个拍照好的手机", "推荐小米14。") is True
-        assert _should_extract_turn("比较喜欢华为品牌", "好的。") is True
-        assert _should_extract_turn("帮我看看有没有黑色的", "有的。") is True
-
-    def test_long_input_triggers(self) -> None:
-        from harness.core.loop import _should_extract_turn
-
-        long_input = "我之前买的那个耳机左耳没声音了，想问问能不能保修，另外还想顺便了解一下以旧换新怎么操作"
-        assert _should_extract_turn(long_input, "可以的。") is True
-
-    def test_trivial_short_input_skips(self) -> None:
-        from harness.core.loop import _should_extract_turn
-
-        assert _should_extract_turn("好的", "还有什么可以帮您？") is False
-        assert _should_extract_turn("换颜色", "换哪种颜色？") is False
-        assert _should_extract_turn("嗯嗯", "好的。") is False
+    def test_trivial_input_skips_learning(self) -> None:
+        """寒暄输入不触发学习捕获"""
+        from harness.core.loop import _TRIVIAL_INPUT_RE
+        assert _TRIVIAL_INPUT_RE.match("你好")
+        assert not _TRIVIAL_INPUT_RE.match("我想买个拍照好的手机")
 
 
 
@@ -520,3 +443,170 @@ class TestExtractPrefilter:
              cfg.settings.context_keep_recent) = original
 
         assert not llm.summarize_called or saved["count"] > 8  # 未压缩 → 全量落盘
+
+
+# ── v0.8.0 上下文工程：滚动摘要 / 归档裁剪 / 记忆层级 ──────
+
+class _FoldAwareLLM(StreamFromChat):
+    """chat_async 同时识别章节摘要与折叠摘要两种 system 提示词"""
+
+    def __init__(self) -> None:
+        self.fold_calls: list[list[AgentMessage]] = []
+        self.fold_called = False
+
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+        from harness.core.loop import FOLD_SYSTEM_PROMPT, ReActLoop
+
+        if any(m.content.startswith(ReActLoop.SUMMARY_SYSTEM_PROMPT) for m in messages):
+            return LLMReply(content="阶段摘要")
+        if any(m.content.startswith(FOLD_SYSTEM_PROMPT) for m in messages):
+            self.fold_calls.append(list(messages))
+            self.fold_called = True
+            return LLMReply(content="【诉求】买手机【进展】已推荐【未决】待用户选择")
+        return LLMReply(content="好的，已了解您的需求，为您找到了几款合适的产品。")
+
+
+class _LongAnswerLLM(_SummaryLLM):
+    """非摘要请求时输出超过折叠门控长度阈值的正常回答"""
+
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+        from harness.core.loop import ReActLoop
+
+        if any(m.content.startswith(ReActLoop.SUMMARY_SYSTEM_PROMPT) for m in messages):
+            return await super().chat_async(messages, temperature=temperature)
+        return LLMReply(content="好的，已根据预算3000元为您筛选出三款拍照优秀的手机，附对比与推荐理由。")
+
+
+class TestRollingSummary:
+    """轮末折叠式滚动摘要：cheap_llm 折叠「旧进展+本轮问答」，失败沿用旧值"""
+
+    @pytest.mark.asyncio
+    async def test_first_turn_folds_and_persists(self) -> None:
+        llm = _LongAnswerLLM()
+        cheap = _FoldAwareLLM()
+        loop = _make_loop(llm, cheap_llm=cheap)
+        saved: dict = {}
+
+        async def fake_aread_raw(sid):
+            return None
+
+        async def fake_asave(sid, msgs, summary=None, working_memory=None,
+                             traces=None, user_id=None, chapters=None):
+            saved["wm"] = working_memory or {}
+
+        loop.conversation_history.aload_state = fake_aread_raw
+        loop.conversation_history.asave_state = fake_asave
+
+        await loop.execute("预算3000帮我推荐一个拍照好的手机，最好说说优缺点",
+                           session_id="fold-1")
+        assert cheap.fold_called, "有实质内容的首轮应调用折叠"
+        assert "【诉求】" in saved["wm"].get("rolling_summary", "")
+
+    @pytest.mark.asyncio
+    async def test_second_fold_carries_previous_summary(self) -> None:
+        llm = _LongAnswerLLM()
+        cheap = _FoldAwareLLM()
+        loop = _make_loop(llm, cheap_llm=cheap)
+        states: dict[str, dict] = {}
+
+        async def fake_aread_raw(sid):
+            return states.get(sid)
+
+        async def fake_asave(sid, msgs, summary=None, working_memory=None,
+                             traces=None, user_id=None, chapters=None):
+            states[sid] = {"working_memory": working_memory or {}}
+
+        loop.conversation_history.aload_state = fake_aread_raw
+        loop.conversation_history.asave_state = fake_asave
+
+        await loop.execute("预算3000帮我推荐一款拍照好的手机并对比参数", session_id="fold-2")
+        old_cheap_calls = len(cheap.fold_calls)
+        await loop.execute("那第二款的续航怎么样？再详细讲讲", session_id="fold-2")
+        assert len(cheap.fold_calls) == old_cheap_calls + 1
+        fold_user_msg = cheap.fold_calls[-1][1].content
+        assert "【旧进展】【诉求】买手机" in fold_user_msg, "第二轮折叠应携带旧进展"
+
+    @pytest.mark.asyncio
+    async def test_trivial_input_skips_fold(self) -> None:
+        llm = _SummaryLLM()
+        cheap = _FoldAwareLLM()
+        loop = _make_loop(llm, cheap_llm=cheap)
+
+        async def fake_aread_raw(sid):
+            return None
+
+        async def fake_asave(sid, msgs, summary=None, working_memory=None,
+                             traces=None, user_id=None, chapters=None):
+            pass
+
+        loop.conversation_history.aload_state = fake_aread_raw
+        loop.conversation_history.asave_state = fake_asave
+
+        await loop.execute("你好", session_id="fold-3")
+        assert not cheap.fold_called, "寒暄输入不调折叠"
+
+    @pytest.mark.asyncio
+    async def test_fold_failure_keeps_old_summary(self) -> None:
+        class _BrokenCheap(StreamFromChat):
+            async def chat_async(self, messages, **kwargs):
+                raise RuntimeError("cheap down")
+
+        llm = _LongAnswerLLM()
+        cheap = _BrokenCheap()
+        loop = _make_loop(llm, cheap_llm=cheap)
+        states: dict[str, dict] = {
+            "fold-4": {"working_memory": {"rolling_summary": "旧的可靠进展"}}
+        }
+
+        async def fake_aread_raw(sid):
+            return states.get(sid)
+
+        async def fake_asave(sid, msgs, summary=None, working_memory=None,
+                             traces=None, user_id=None, chapters=None):
+            states[sid] = {"working_memory": working_memory or {}}
+
+        loop.conversation_history.aload_state = fake_aread_raw
+        loop.conversation_history.asave_state = fake_asave
+
+        await loop.execute("预算3000帮我推荐一款拍照好的手机并详细对比", session_id="fold-4")
+        assert states["fold-4"]["working_memory"].get("rolling_summary") == "旧的可靠进展"
+
+
+class TestArchiveTrimming:
+    """归档裁剪：烘焙快照只含硬实体槽位；recent_topics 已删除"""
+
+    def test_recent_topics_removed(self) -> None:
+        wm = WorkingMemory()
+        assert not hasattr(wm, "recent_topics")
+
+    def test_archive_block_excludes_transients(self) -> None:
+        wm = WorkingMemory(budget_amount=3000.0)
+        wm.set_awaiting("订单号")
+        wm.rolling_summary = "进行中的叙事"
+
+        live = wm.prompt_block()
+        archive = wm.prompt_block(for_archive=True)
+
+        assert "对话进展（摘要）" in live and "等待用户提供" in live
+        assert "3000" in archive
+        assert "对话进展" not in archive and "等待用户提供" not in archive
+
+
+class TestMemoryHierarchyPrompt:
+    """记忆层级交待：提示词教模型读章节；章节前缀带 N/M"""
+
+    def test_system_prompt_contains_hierarchy_rules(self) -> None:
+        from harness.core.loop import SYSTEM_PROMPT_TEMPLATE
+        assert "记忆层级" in SYSTEM_PROMPT_TEMPLATE
+        assert "第N阶段" in SYSTEM_PROMPT_TEMPLATE
+        assert "越近的章节越优先" in SYSTEM_PROMPT_TEMPLATE
+
+    def test_chapter_prefix_numbered(self) -> None:
+        memory = ShortTermMemory()
+        memory.add(AgentMessage(role=ChatRole.user, content="最新"))
+        msgs = ReActLoop._build_messages(
+            "人设X", memory, chapters=["章一内容", "章二内容"])
+        chapter_msgs = [m for m in msgs if "历史记忆章节" in m.content]
+        assert len(chapter_msgs) == 2
+        assert "第1/2段" in chapter_msgs[0].content
+        assert "第2/2段" in chapter_msgs[1].content

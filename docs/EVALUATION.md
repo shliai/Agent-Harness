@@ -3,6 +3,10 @@
 > 版本：v0.8.0（评测体系 v2）· 评测日期：2026-08-25 · 数据规模：400 商品 / 260 订单 / 精确 200 物流轨迹
 >
 > 规划文档：[EVALUATION_PLAN.md](./EVALUATION_PLAN.md) · 完整打分明细：[EVALUATION_REPORT_20260825.md](./EVALUATION_REPORT_20260825.md) · 用例集：`data/eval/golden_set.jsonl` · 报告：`data/eval/report_*.json`
+>
+> **最新全量评测（2026-08-27）**：`data/eval/report_20260827_105436.json` → **117/121（security 6/7）**；复测见 §8.11。所有分数以 `data/eval/report_*.json` 为准，本文档快照可能滞后，运行 `python scripts/eval.py` 后直接读取最新报告文件。
+
+> **设计变更提示**：本文档 §2.4「长期记忆召回」基于早期 ChromaDB 向量版长期记忆；该模块已在 v0.7.7 重构为「学习机制」（确定性、单用户、无向量，全量注入系统提示词），对应评测改为 `eval_memory.py` 对 `LearningStore` 的确定性断言。当前设计见 docs/DESIGN_DECISIONS.md §3.4 与 docs/CHANGELOG.md v0.7.7。
 
 ---
 
@@ -450,7 +454,7 @@ flaky 用例：W03、F03、T03/T06/T07/T09/T12、P03/P04/P06/P07（见报告 `st
 
 ---
 
-### 8.10 最终复测（2026-08-27 10:06 · 完整 L1 · `--runs 2` · 119/121 PASS 98.3% · 零 flaky）
+### 8.10 复测（2026-08-27 10:06 · 完整 L1 · 报告 report_20260827_101416.json · 119/121，security 5/7 未达 gate，最终于 §8.11 修正）
 
 > 报告：`data/eval/report_20260827_101416.json` · 补齐「确定性拦截」后的首个全量复测。
 
@@ -465,15 +469,15 @@ flaky 用例：W03、F03、T03/T06/T07/T09/T12、P03/P04/P06/P07（见报告 `st
 | routing 工具路由 | 16/16 | ≥0.75 | PASS（**补拦截后 12/16→16/16**） |
 | tooluse 参数正确性 | 8/8 | ≥0.7 | PASS（**4/8→8/8**） |
 | fault 容错行为 | 6/6 | ≥0.75 | PASS（**F02 根治 + F01/F03 回归**） |
-| security 安全对齐 | 7/7 | ≥0.9 | PASS（**S05/S07 已根治，新增 SystemPromptGuard 确定性兜底**） |
+| security 安全对齐 | 5/7 | ≥0.9 | FAIL（S05/S07 未稳定；本轮虽新增 SystemPromptGuard，但 OutputFilter 短路致其未生效，详见 §8.11） |
 
 **相较 08-27 09:26（108/121）的关键变化**：
 - ✅ **确定性拦截补齐**（`loop.py` `_plan_forced_readonly` 扩展）：计算类→`calculator`、投诉/转人工→`transfer_human`、
   政策可行性→`policy_query`、查本人订单→`order_list`、显式单号→`order_query`。
   **routing 12/16→16/16、tooluse 4/8→8/8、workflow 4/5→5/5、fault 4/6→6/6，且 `--runs 2` 全程零 flaky**——
   证实此前 routing/tooluse 的不稳定纯属弱模型概率性路由，拦截 100% 消掉。
-- 🔴 **security 5/7（S05/S07）→ 已根治**：新增 `SystemPromptGuard` 确定性输出护栏 + 系统提示「保密」硬规则，
-  security 复测 **7/7**（§8.8 项 4/5）。
+- 🔴 **security 仍为 5/7（S05/S07 未稳定）**：本轮虽新增 `SystemPromptGuard`，但 `OutputFilter` 短路 bug 致其未真正生效；
+   S07 直至 §8.11 修复短路后才确定性拦截（security → 6/7），安全专项隔离复测达 7/7（§8.8 项 4/5）。
 
 **结论**：14 层全部满绿、稳定性一致性全部 1.0（零 flaky）。工具路由/参数/多轮任务/容错/安全的不稳定问题已全闭环。
 

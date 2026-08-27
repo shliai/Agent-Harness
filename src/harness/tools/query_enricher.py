@@ -31,12 +31,14 @@ def has_price_cue(query: str) -> bool:
 
 def expand(query: str, budget_amount: float | None = None,
            category: str | None = None) -> list[str]:
-    """生成检索变体列表（原查询在前，最多 3 条）
+    """生成检索变体列表（原查询在前，最多 4 条）
 
     规则：
     1. 预算槽位确定性注入——工作记忆中有预算且查询未含价格线索时，
-       将「X 元以内」拼接到主查询（替代依赖 LLM 自觉的 prompt 方式）
-    2. MQE-lite 同义扩展——对每个可替换词生成一个变体查询
+        将「X 元以内」拼接到主查询（替代依赖 LLM 自觉的 prompt 方式）
+    2. MQE-lite 同义扩展——对每个命中的同义词生成一个单替换变体，
+        并对含 ≥2 个同义词的查询额外生成一个「全替换」组合变体，
+        覆盖多属性表述（如「拍照游戏手机」→「影像电竞手机」）
     """
     main = query.strip()
     variants: list[str] = []
@@ -45,15 +47,26 @@ def expand(query: str, budget_amount: float | None = None,
         main = f"{main} {int(budget_amount)}元以内"
     variants.append(main)
 
+    # 收集所有命中的同义词（大小写不敏感）
+    subs_applied: list[tuple[str, str]] = []
     for word, subs in SYNONYMS.items():
-        # 大小写不敏感匹配与替换（用户可能写 HiFi/HIFI）
-        pattern = re.compile(re.escape(word), re.IGNORECASE)
-        if pattern.search(main) and len(variants) < 3:
-            v = pattern.sub(subs[0], main, count=1)
-            if v not in variants:
-                variants.append(v)
+        if re.search(re.escape(word), main, re.IGNORECASE):
+            subs_applied.append((word, subs[0]))
 
-    if category and category not in main and len(variants) < 3:
+    # 组合替换变体优先：一次替换全部同义词（多属性 query 的整体改写表述，如「拍照游戏手机」→「影像电竞手机」）
+    if len(subs_applied) >= 2:
+        combined = main
+        for word, rep in subs_applied:
+            combined = re.sub(re.escape(word), rep, combined, count=1, flags=re.IGNORECASE)
+        variants.append(combined)
+
+    # 单替换变体：每个同义词生成一个（提升单属性召回多样性）
+    for word, rep in subs_applied:
+        v = re.sub(re.escape(word), rep, main, count=1, flags=re.IGNORECASE)
+        if v not in variants:
+            variants.append(v)
+
+    if category and category not in main and len(variants) < 5:
         variants.append(f"{main} {category}")
 
-    return variants
+    return variants[:5]

@@ -24,11 +24,12 @@ data/harness.db-shm
 data/chroma_db/
 data/conversations/
 data/audit_logs/
-data/memory_store/
+data/learning_store/
 data/memory_store_test/
 data/tickets/
 data/aftersale/
 data/logs/
+data/memory_store/
 
 # 评测产物（golden_set.jsonl 保留）
 data/eval/report_*.json
@@ -49,3 +50,8 @@ htmlcov/
 *.orig
 *.repaired
 _tmp_check.js
+
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.codegraph/

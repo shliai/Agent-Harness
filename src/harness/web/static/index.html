@@ -958,7 +958,7 @@ async function send(){
           case "delta_reset":
 
             full="";
-            b.innerHTML=(ev.reason==="retry"?'<div style="color:var(--tx3);font-size:11.5px;padding:4px 0">⏳ 重新组织回答…</div>':ev.reason==="forced_retrieval"?'<div style="color:var(--tx3);font-size:11.5px;padding:4px 0">🔍 正在检索商品…</div>':"")+'<span class="cur"></span>';
+            b.innerHTML=(ev.reason==="retry"||ev.reason==="tool_retry"?'<div style="color:var(--tx3);font-size:11.5px;padding:4px 0">⏳ 数据异常，正在修正重试…</div>':ev.reason==="forced_retrieval"?'<div style="color:var(--tx3);font-size:11.5px;padding:4px 0">🔍 正在检索商品…</div>':"")+'<span class="cur"></span>';
             break;
 
           case "answer_replace":

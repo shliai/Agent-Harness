@@ -195,9 +195,10 @@ class TestOutputFilterIdCardX:
 
         f = OutputFilter()
 
-        masked = f.check({"type": "output", "content": "订单20240601001已发货"})
+        result = f.check({"type": "output", "content": "订单20240601001已发货"})
 
-        assert "20240601001" in masked  # 11 位订单号不应误伤
+        # 无敏感信息 → 返回 None（透传），订单号保留不被误伤
+        assert result is None or "20240601001" in result
 
 
 

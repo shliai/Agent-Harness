@@ -17,9 +17,9 @@ def build_eval_agent():
     from harness.web.api import _build_agent
 
     agent = _build_agent()
-    ltm = getattr(agent, "long_term_memory", None)
-    if ltm is not None:
-        ltm.enabled = False
+    store = getattr(agent, "learning_store", None)
+    if store is not None:
+        store.enabled = False
     return agent
 
 

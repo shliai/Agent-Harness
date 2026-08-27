@@ -12,25 +12,16 @@ from chromadb.config import Settings as ChromaSettings
 
 from harness.config import settings
 from harness.domain.exceptions import ToolExecutionError
+from harness.domain.query_parsing import KNOWN_CATEGORIES, extract_filters
 from harness.llm import reranker
 from harness.memory.embeddings import get_embed_fn
 from harness.tools.query_enricher import expand as expand_query
+from harness.storage.vector_sync import ENRICH_SEP
 from harness.tools.base import BaseTool, ToolSpec
 
 logger = logging.getLogger("harness.tools.knowledge_retrieval")
 
 COLLECTION_NAME = "ecommerce_knowledge"
-
-KNOWN_CATEGORIES = {
-    "手机": "手机",
-    "笔记本": "笔记本",
-    "电脑": "笔记本",
-    "耳机": "耳机",
-    "平板": "平板",
-    "穿戴": "穿戴",
-    "手表": "穿戴",
-    "手环": "穿戴",
-}
 
 # RRF 常数（业界标准值）：抑制排名靠后文档的贡献，避免分数被头部文档垄断
 RRF_K = 60
@@ -171,62 +162,8 @@ class KnowledgeRetrievalTool(BaseTool):
 
     @staticmethod
     def _extract_filters(raw_query: str) -> dict[str, Any]:
-        # 中文数量词归一化：
-        # 1) "1万5" / "2万8" → 15000 / 28000（口语）
-        # 2) "1万"/"2.5万" → 数字展开
-        # 3) 裸 "万元以上/以内" → 10000 元（隐含 1 万）——必须先于数字展开，
-        #    否则 "1万以内" 会在裸替换后被拼成 "110000元以内"（bug）
-        raw_query = re.sub(
-            r"(\d+(?:\.\d+)?)万(\d)(?![\d])",
-            lambda m: str(round(float(m.group(1)) * 10000 + int(m.group(2)) * 1000)),
-            raw_query,
-        )
-        raw_query = re.sub(r"(\d+(?:\.\d+)?)\s*万", lambda m: str(round(float(m.group(1)) * 10000)), raw_query)
-        raw_query = re.sub(r"万元?以上", "10000元以上", raw_query)
-        raw_query = re.sub(r"万元?[以内下]+", "10000元以内", raw_query)
-        query = raw_query
-        filters: dict[str, Any] = {}
-
-        m = re.search(r"(\d+(?:\.\d+)?)\s*(?:元|块)?\s*以[下内]", query)
-        if m:
-            filters["price_max"] = float(m.group(1))
-
-        m = re.search(r"(\d+(?:\.\d+)?)\s*[~-到至]\s*(\d+(?:\.\d+)?)\s*(?:元|块)", query)
-        if m:
-            filters["price_min"] = float(m.group(1))
-            filters["price_max"] = float(m.group(2))
-
-        m = re.search(r"(\d+(?:\.\d+)?)\s*(?:元|块)?\s*以上", query)
-        if m:
-            filters["price_min"] = float(m.group(1))
-
-        # k/千 单位：3k / 3千 → 3000
-        if "price_max" not in filters and "price_min" not in filters:
-            m = re.search(r"(\d+(?:\.\d+)?)\s*[kK千]", query)
-            if m:
-                value = float(m.group(1)) * 1000
-                if 100 <= value <= 999999:
-                    filters["price_max"] = value
-
-        # 精确预算表达：3999的手机 / 预算3999 / 3000块的 / 2000预算
-        # 理解为"预算 X 元"，按价格上限 X 处理（允许检索到 ≤X 的商品）
-        if "price_max" not in filters and "price_min" not in filters:
-            m = re.search(
-                r"(?:预算[^\d]{0,4}(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:元|块)?\s*的|(\d+(?:\.\d+)?)\s*预算)",
-                query,
-            )
-            if m:
-                budget = float(next(g for g in m.groups() if g))
-                # 只对合理的 3C 预算生效（100-99999 元），避免误匹配型号数字
-                if 100 <= budget <= 99999:
-                    filters["price_max"] = budget
-
-        for keyword, cat in KNOWN_CATEGORIES.items():
-            if keyword in query:
-                filters["category"] = cat
-                break
-
-        return filters
+        """过滤条件抽取（实现在 domain.query_parsing，此处委托保持兼容）"""
+        return extract_filters(raw_query)
 
     @staticmethod
     def _build_where(filters: dict[str, Any]) -> dict[str, Any]:
@@ -256,7 +193,9 @@ class KnowledgeRetrievalTool(BaseTool):
         brand = metadata.get("brand", "")
         prefix = f"[¥{price}] " if price is not None else ""
         cat_tag = f" ({brand} {category})".rstrip() if (brand or category) else ""
-        text = document if len(document) <= 400 else document[:400] + "…"
+        # 剥离检索富化后缀（仅用于召回的关键词，不影响对用户展示）
+        display_doc = document.split(ENRICH_SEP)[0]
+        text = display_doc if len(display_doc) <= 400 else display_doc[:400] + "…"
         stock = metadata.get("stock")
         stock_txt = ""
         try:
@@ -292,7 +231,8 @@ class KnowledgeRetrievalTool(BaseTool):
             from harness.tools.context import current_budget
 
             budget = current_budget.get()
-            variants = [v for v in expand_query(user_query, budget) if v != user_query][:2]
+            category = next((c for kw, c in KNOWN_CATEGORIES.items() if kw in user_query), None)
+            variants = [v for v in expand_query(user_query, budget, category) if v != user_query][:3]
             seen = {c["document"] for c in candidates}
             for v in variants:
                 try:
