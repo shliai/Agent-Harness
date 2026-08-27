@@ -80,7 +80,7 @@ def calc_refund(order: dict, refund_qty: int) -> dict:
 class AfterSaleApplyTool(BaseTool):
     spec = ToolSpec(
         name="after_sale_apply",
-        description="为用户提交退货/换货申请（仅限本人订单，且订单已发货/配送中/已完成）。返回售后单号与后续流程说明",
+        description="为用户**提交**退货/换货申请（仅限本人订单，且订单已发货/配送中/已完成）。返回售后单号与后续流程说明。**注意：本工具仅用于发起新申请；查询已有售后进度请用 after_sale_query；退换政策咨询请用 policy_query。**",
         parameters={
             "type": "object",
             "properties": {
@@ -188,7 +188,7 @@ class AfterSaleApplyTool(BaseTool):
 class AfterSaleQueryTool(BaseTool):
     spec = ToolSpec(
         name="after_sale_query",
-        description="查询当前用户的售后申请列表及各单状态进度",
+        description="查询当前用户**已提交**的售后申请列表及各单状态进度。**仅用于查进度；退换货是否可行等政策问题请调用 policy_query；发起新申请请用 after_sale_apply。**",
         parameters={"type": "object", "properties": {}, "required": []},
     )
 

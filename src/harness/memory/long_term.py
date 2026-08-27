@@ -244,7 +244,7 @@ class LongTermMemory:
     # ── 维护：TTL / 近重复合并 / 孤儿清除 / 容量熔断 ──────
 
     _HIGH_VALUE_RE = re.compile(
-        r"20\d{9}|\b(SF|YT|ZTO|STO|JD|EMS)\d{9,12}\b|承诺|\d{3,}元", re.IGNORECASE
+        r"20\d{9,13}|\b(SF|YT|ZTO|STO|JD|EMS)\d{9,12}\b|承诺|\d{3,}元", re.IGNORECASE
     )
 
     @classmethod

@@ -77,7 +77,7 @@ docker compose up -d
 
 | 模块 | 能力 |
 |---|---|
-| 循环引擎 | 自研 ReAct · token 流式 · 失败修正重试 · 坏 JSON 自愈 · 中断落盘 |
+| 循环引擎 | 自研 ReAct · **原生 function calling** · token 流式 · 失败修正重试 · 中断落盘 |
 | 商品检索 | 向量+BM25 RRF 融合 · 中文分词 · 价格/品类/库存过滤 · 预算接近度加权 |
 | 订单管理 | 归属校验 · 列表查询 · 枚举风控熔断 |
 | 售后服务 | 退货换货申请（状态机）· 退款测算（券不退+满减扣回）· 进度查询 |
@@ -106,17 +106,18 @@ src/harness/
 scripts/            init_db / eval / export_badcase
 data/seed/          400 商品 + 260 订单 + 200 物流种子数据
 data/policies.json  10 条官方政策条款
-data/eval/          36 条评测用例
-tests/              176 个测试用例
+data/eval/          108 条评测用例（14 层）
+tests/              177 个测试用例
 docs/               10 份文档
 ```
 
 ## 测试与评测
 
 ```bash
-pytest tests/ -v                    # 176 个测试
-python scripts/eval.py              # 五层离线评测（28/28 PASS）
-python scripts/eval.py --live       # 含在线路由评测（消耗真实 tokens）
+pytest tests/ -v                    # 177 个测试
+python scripts/eval.py              # L0 离线确定性（55/55 PASS，CI 闸门）
+python scripts/eval.py --mode L1    # 完整评测：L0 + 在线十层（含参数正确性/容错行为/安全对齐/跨会话隔离）
+python scripts/eval.py --mode L1 --runs 3   # 在线层跑 3 次：输出复现率与 flaky 用例
 ```
 
 详细结果见 [docs/EVALUATION.md](docs/EVALUATION.md)。

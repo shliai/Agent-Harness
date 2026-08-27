@@ -88,7 +88,7 @@ class MyOrdersTool(BaseTool):
 
     spec = ToolSpec(
         name="order_list",
-        description="查询当前用户的订单列表（最近下单优先），用于用户不记得订单号时先列出订单再选择",
+        description="查询当前用户的订单列表（最近下单优先）。当用户问'我买过什么'/'我的订单'/'买过哪些'/'不记得订单号'等、需要先列出订单再选择时调用。",
         parameters={
             "type": "object",
             "properties": {

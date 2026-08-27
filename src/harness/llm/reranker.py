@@ -56,9 +56,12 @@ async def rerank(query: str, candidates: list[dict]) -> list[dict]:
     ]
     prompt = (
         "你是电商检索重排器。根据用户需求，对以下商品按相关度从高到低排序。\n"
+        "判定优先级：①品类与需求一致 ②满足用户点名的属性/用途（如拍照、降噪、头戴）"
+        " ③价格贴合用户预算 ④其余\n"
         f"用户需求：{query}\n\n商品列表：\n" + "\n".join(lines) +
         "\n\n只输出按相关度从高到低排序的商品 id（形如 product_123），每行一个，"
-        "不要解释、不要序号、不要重复。"
+        "不要解释、不要序号、不要增删或改写任何 id；"
+        "列表必须覆盖全部给定商品。"
     )
     try:
         from harness.domain.models import AgentMessage, ChatRole

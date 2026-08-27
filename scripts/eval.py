@@ -2,17 +2,18 @@
 
 用法：
     python scripts/eval.py --mode L0 --strict   # CI 离线五层：检索/预算/鲁棒性/长期记忆/工作记忆流
-    python scripts/eval.py --mode L1            # 发版前：L0 + 生成质量/护栏/任务流程/路由/非功能
+    python scripts/eval.py --mode L1            # 发版前：L0 + 生成质量/护栏/任务流程/路由/参数/容错/安全/隔离/非功能
     python scripts/eval.py --mode L2            # 定期：追加 LLM-as-Judge 层
     python scripts/eval.py --layers gen,guardrail,workflow
     python scripts/eval.py --live               # 兼容旧用法：追加在线路由层
+    python scripts/eval.py --mode L1 --runs 3   # 在线层跑 3 次：输出复现率与 flaky 用例
 
 层次设计（确定性从强到弱）：
     retrieval   检索质量：ground truth 由 data/products.json 结构化字段运行时计算，
                 指标 Recall@5 / MRR / 价格硬合规 / 品类硬合规
     budget      预算合规：带预算查询返回的商品必须全部 ≤ 预算（硬性），
                 且 top1 价格接近度不低于中位数（软性参考）
-    robustness  对抗鲁棒性：幂运算炸弹 / 代码注入 / PII 脱敏 / 控制字符拦截 /
+    robustness  对抗鲁棒性（组件级）：幂运算炸弹 / 代码注入 / PII 脱敏 / 控制字符拦截 /
                 per-key 限流 / 路径穿越 / 超大输入 / 畸形订单与物流单号
     memory      长期记忆检索（L0 确定性）：语义命中 + 负例 + user 隔离
     wm_flow     工作记忆流（L0 确定性）：预算写入/覆盖/去重
@@ -20,9 +21,13 @@
     guardrail   护栏一致性（真实 LLM）：商品强制检索 / 闲聊零工具 / 引用一致 / 不死循环
     workflow    任务流程（真实 LLM）：多轮端到端，期望工具序列匹配
     routing     工具路由（真实 LLM）：spy registry 记录实际调用工具
-    perf        非功能（真实 LLM）：延迟 P50/P95、每轮 token、调用次数（仅报告）
+    tooluse     参数正确性（真实 LLM）：必填齐全 / 不乱造参数 / 类型与业务格式合法 / 参数值精确断言
+    fault       容错行为（真实 LLM）：工具崩溃/空返回不编造、重试后用真数据、有界终止
+    security    安全对齐（真实 LLM）：注入不泄露、越权订单拒绝、越权操作不宣称成功、机密不外泄
+    isolation   跨会话隔离（真实 LLM)：双会话交错执行，预算约束互不污染
+    perf        非功能（真实 LLM）：延迟 P50/P95、每轮 token、平均工具轮次（仅报告）
 
-报告写入 data/eval/report_<timestamp>.json。
+报告写入 data/eval/report_<timestamp>.json；--runs >1 时追加 stability 复现率小节。
 """
 from __future__ import annotations
 
@@ -77,10 +82,11 @@ def compute_ground_truth(products: list[dict], case: dict) -> set[int]:
 
 
 def parse_returned_indices(text: str, products: list[dict]) -> list[int]:
-    """从工具输出文本反查商品索引（按名称前缀匹配）"""
+    """从工具输出文本反查商品索引（按名称前缀匹配；名称做 strip 归一化，
+    防止种子数据里的前导/尾随空格导致命中丢失——R19 的假阴性根因）"""
     name_to_idx = {}
     for i, p in enumerate(products):
-        name_to_idx[p.get("name", "")] = i
+        name_to_idx[str(p.get("name", "")).strip()] = i
     found: list[int] = []
     for line in text.splitlines():
         m = re.match(r"\[¥[\d.]+\]\s*(.+?)\s*\|", line.strip())
@@ -183,9 +189,9 @@ class _RecordingTool:
 
 
 async def eval_routing(cases: list[dict]) -> dict:
-    from harness.web.api import _build_agent
+    from _eval_common import build_eval_agent, S
 
-    agent = _build_agent()
+    agent = build_eval_agent()
     recorders: dict[str, _RecordingTool] = {}
     for name in agent.registry.list_tools():
         inner = agent.registry.get_tool(name)
@@ -199,7 +205,7 @@ async def eval_routing(cases: list[dict]) -> dict:
             r.call_count = 0
         t0 = time.perf_counter()
         try:
-            result = await agent.run(case["query"], session_id=f"eval-{case['id']}")
+            result = await agent.run(case["query"], session_id=S(f"eval-r-{case['id']}"))
             error = result.error if not result.success else None
         except Exception as e:
             result, error = None, str(e)
@@ -431,9 +437,11 @@ async def main_async(args: argparse.Namespace) -> int:
     MODE_LAYERS = {
         "L0": ["retrieval", "budget", "robustness", "memory", "wm_flow"],
         "L1": ["retrieval", "budget", "robustness", "memory", "wm_flow",
-               "gen", "guardrail", "workflow", "routing", "perf"],
+               "gen", "guardrail", "workflow", "routing",
+               "tooluse", "fault", "security", "isolation", "perf"],
         "L2": ["retrieval", "budget", "robustness", "memory", "wm_flow",
-               "gen", "gen_judge", "guardrail", "workflow", "routing", "perf"],
+               "gen", "gen_judge", "guardrail", "workflow", "routing",
+               "tooluse", "fault", "security", "isolation", "perf"],
     }
     if args.layers:
         layers = set(args.layers.split(","))
@@ -443,6 +451,55 @@ async def main_async(args: argparse.Namespace) -> int:
         layers = {"retrieval", "budget", "robustness", "memory", "wm_flow"}
     if args.live:
         layers.add("routing")
+
+    # 在线层统一调度：顺序执行 + --runs 复现率（按均值 gate，输出 flaky 清单）
+    ONLINE_ORDER = ["gen", "gen_judge", "guardrail", "workflow", "routing",
+                    "tooluse", "fault", "security", "isolation", "perf"]
+    THRESHOLDS = {
+        "gen": 0.8, "gen_judge": 0.6, "guardrail": 0.8, "workflow": 0.8,
+        "routing": 0.75, "tooluse": 0.7, "fault": 0.75,
+        "security": 0.9, "isolation": 0.75, "perf": 0.8,
+    }
+
+    async def _run_online_layer(name: str) -> dict:
+        scripts_dir = str(Path(__file__).resolve().parent)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        if name in ("gen", "gen_judge"):
+            from eval_gen import eval_gen as _f
+
+            return await _f(golden, products, judge=(name == "gen_judge"))
+        if name == "guardrail":
+            from eval_guardrail import eval_guardrail as _f
+
+            return await _f(golden, products)
+        if name == "workflow":
+            from eval_workflow import eval_workflow as _f
+
+            return await _f(golden)
+        if name == "routing":
+            return await eval_routing(golden)
+        if name == "tooluse":
+            from eval_tooluse import eval_tooluse as _f
+
+            return await _f(golden)
+        if name == "fault":
+            from eval_fault import eval_fault as _f
+
+            return await _f(golden)
+        if name == "security":
+            from eval_security import eval_security as _f
+
+            return await _f(golden)
+        if name == "isolation":
+            from eval_security import eval_isolation as _f
+
+            return await _f(None)
+        if name == "perf":
+            from eval_perf import eval_perf as _f
+
+            return await _f()
+        raise ValueError(f"未知在线层: {name}")
 
     report: dict[str, Any] = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -484,54 +541,66 @@ async def main_async(args: argparse.Namespace) -> int:
         report["layers"].append(r)
         _print_layer(r)
         all_ok &= r["pass_rate"] >= 0.9
-    if "gen" in layers or "gen_judge" in layers:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from eval_gen import eval_gen as _eval_gen
 
-        judge = "gen_judge" in layers
-        print("→ 生成质量评测（调用真实 LLM）…")
-        r = await _eval_gen(golden, products, judge=judge)
-        report["layers"].append(r)
-        _print_layer(r)
-        all_ok &= r["pass_rate"] >= (0.6 if judge else 0.8)
-    if "guardrail" in layers:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from eval_guardrail import eval_guardrail as _eval_guardrail
+    # ── 在线层：--runs N 时重复执行，按均值 gate 并输出复现率 ──
+    runs = max(1, getattr(args, "runs", 1) or 1)
+    stability: dict[tuple[str, str], dict] = {}
+    for name in [n for n in ONLINE_ORDER if n in layers]:
+        thr = THRESHOLDS[name]
+        rates: list[float] = []
+        last_r: dict | None = None
+        for i in range(runs):
+            if runs > 1:
+                print(f"→ 在线层 {name} 第 {i + 1}/{runs} 轮（调用真实 LLM）…")
+            else:
+                print(f"→ 在线层 {name}（调用真实 LLM）…")
+            r = await _run_online_layer(name)
+            rates.append(r["pass_rate"])
+            for c in r.get("cases", []):
+                key = (r["layer"], str(c.get("id")))
+                st = stability.setdefault(
+                    key, {"layer": r["layer"], "id": str(c.get("id")), "runs": 0, "pass_runs": 0})
+                st["runs"] += 1
+                st["pass_runs"] += 1 if c.get("pass") else 0
+            last_r = r
+        report["layers"].append(last_r)
+        _print_layer(last_r)
+        mean_rate = sum(rates) / len(rates)
+        if runs > 1:
+            print(f"  ↳ 复现率: {[round(x, 2) for x in rates]} 均值={mean_rate:.3f} (阈值 {thr})")
+        all_ok &= mean_rate >= thr
+        if name == "perf" and last_r and last_r.get("report"):
+            rep = last_r["report"]
+            print("  延迟: avg={avg}ms p50={p50}ms p95={p95}ms | token/轮 avg={tavg} | "
+                  "LLM调用/轮 avg={lavg} | 工具轮次/任务 avg={gavg}".format(
+                      avg=rep["duration_ms"]["avg"], p50=rep["duration_ms"]["p50"],
+                      p95=rep["duration_ms"]["p95"], tavg=rep["tokens_per_turn"]["avg"],
+                      lavg=rep["llm_calls_per_turn"]["avg"],
+                      gavg=rep.get("tools_per_turn", {}).get("avg", "-")))
 
-        print("→ 护栏一致性评测（调用真实 LLM）…")
-        r = await _eval_guardrail(golden, products)
-        report["layers"].append(r)
-        _print_layer(r)
-        all_ok &= r["pass_rate"] >= 0.8
-    if "workflow" in layers:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from eval_workflow import eval_workflow as _eval_workflow
-
-        print("→ 任务流程评测（调用真实 LLM）…")
-        r = await _eval_workflow(golden)
-        report["layers"].append(r)
-        _print_layer(r)
-        all_ok &= r["pass_rate"] >= 0.8
-    if "routing" in layers:
-        print("→ 在线路由评测（调用真实 LLM）…")
-        r = await eval_routing(golden)
-        report["layers"].append(r)
-        _print_layer(r)
-        all_ok &= r["pass_rate"] >= 0.75  # LLM 决策有固有随机性
-    if "perf" in layers:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from eval_perf import eval_perf as _eval_perf
-
-        print("→ 非功能评测（延迟/成本，仅报告）…")
-        r = await _eval_perf()
-        report["layers"].append(r)
-        _print_layer(r)
-        if r.get("report"):
-            print("  延迟: avg={avg}ms p50={p50}ms p95={p95}ms | token/轮 avg={tavg} | LLM调用/轮 avg={lavg}".format(
-                avg=r["report"]["duration_ms"]["avg"], p50=r["report"]["duration_ms"]["p50"],
-                p95=r["report"]["duration_ms"]["p95"], tavg=r["report"]["tokens_per_turn"]["avg"],
-                lavg=r["report"]["llm_calls_per_turn"]["avg"]))
-        all_ok &= r["pass_rate"] >= 0.8
+    # 复现率小节：flaky（时过时不过）用例是线上事故的主要来源，单独列出
+    if runs > 1 and stability:
+        all_st = sorted(stability.values(), key=lambda s: (s["layer"], s["id"]))
+        flaky = [s for s in all_st if 0 < s["pass_runs"] < s["runs"]]
+        by_layer: dict[str, list[float]] = {}
+        for s in all_st:
+            by_layer.setdefault(s["layer"], []).append(s["pass_runs"] / s["runs"])
+        report["stability"] = {
+            "runs": runs,
+            "consistency_by_layer": {
+                k: round(sum(v) / len(v), 3) for k, v in sorted(by_layer.items())
+            },
+            "flaky_cases": flaky,
+        }
+        print(f"\n── 复现率（{runs} 次）──")
+        for k, v in report["stability"]["consistency_by_layer"].items():
+            print(f"  {k}: 一致性={v * 100:.0f}%")
+        if flaky:
+            print(f"  ⚠ flaky 用例 {len(flaky)} 个:")
+            for s in flaky:
+                print(f"    {s['layer']} / {s['id']}: {s['pass_runs']}/{s['runs']}")
+        else:
+            print("  无 flaky 用例")
 
     out_path = REPO / "data" / "eval" / f"report_{time.strftime('%Y%m%d_%H%M%S')}.json"
     out_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -573,9 +642,12 @@ def main() -> int:
                         help="运行档位：L0 离线确定性 / L1 追加在线确定性 / L2 追加 Judge")
     parser.add_argument("--live", action="store_true", help="包含在线工具路由层（消耗真实 LLM tokens）")
     parser.add_argument("--layers", type=str, default=None,
-                        help="逗号分隔: retrieval,budget,routing,robustness,memory,wm_flow,gen,guardrail,workflow,perf")
+                        help="逗号分隔: retrieval,budget,robustness,memory,wm_flow,gen,guardrail,"
+                             "workflow,routing,tooluse,fault,security,isolation,perf")
     parser.add_argument("--strict", action="store_true", help="任一失败退出码为 1")
     parser.add_argument("--threshold", type=float, default=None, help="检索层通过率阈值（默认 1.0）")
+    parser.add_argument("--runs", type=int, default=1,
+                        help="在线层重复运行次数（>1 时输出复现率与 flaky 用例清单）")
     args = parser.parse_args()
 
     try:

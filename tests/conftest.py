@@ -13,23 +13,34 @@ from harness.tools.base import BaseTool, ToolSpec
 
 
 class MockLLMClient(AbstractLLMClient):
-    def __init__(self, response: str = "测试回复") -> None:
+    def __init__(self, response: str = "测试回复",
+                 tool_calls: list[dict] | None = None) -> None:
         self.response = response
+        # 原生 function calling：设置后每次调用都返回该结构化工具调用
+        self.tool_calls = tool_calls or []
         self.last_messages: list[AgentMessage] = []
         self.all_calls: list[list[AgentMessage]] = []
 
     async def chat_async(
-        self, messages: list[AgentMessage], temperature: float | None = None
+        self, messages: list[AgentMessage], temperature: float | None = None,
+        tools: list[dict] | None = None, tool_call_sink: dict | None = None,
     ) -> LLMReply:
         self.last_messages = messages
         self.all_calls.append(list(messages))
-        return LLMReply(content=self.response, total_tokens=len(self.response) // 4)
+        if tool_call_sink is not None and self.tool_calls:
+            tool_call_sink["tool_calls"] = self.tool_calls
+        return LLMReply(content=self.response,
+                        total_tokens=len(self.response) // 4,
+                        tool_calls=self.tool_calls)
 
     async def stream_chat_async(
-        self, messages: list[AgentMessage], temperature: float | None = None
+        self, messages: list[AgentMessage], temperature: float | None = None,
+        tools: list[dict] | None = None, tool_call_sink: dict | None = None,
     ) -> AsyncGenerator[str, None]:
         self.last_messages = messages
         self.all_calls.append(list(messages))
+        if tool_call_sink is not None and self.tool_calls:
+            tool_call_sink["tool_calls"] = self.tool_calls
         yield self.response
 
 

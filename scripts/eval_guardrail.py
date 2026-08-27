@@ -26,14 +26,14 @@ def _invoked_sequence(steps: list[Any]) -> list[str]:
 
 
 async def eval_guardrail(cases: list[dict], products: list[dict] | None = None) -> dict:
-    from harness.web.api import _build_agent
+    from _eval_common import build_eval_agent, S
 
-    agent = _build_agent()
+    agent = build_eval_agent()
     results = []
     for case in [c for c in cases if c["layer"] == "guardrail"]:
         query = case["query"]
         try:
-            result = await agent.run(query, session_id=f"eval-ga-{case['id']}")
+            result = await agent.run(query, session_id=S(f"eval-ga-{case['id']}"))
             answer = result.answer or ""
             error = result.error if not result.success else None
         except Exception as e:
@@ -50,10 +50,17 @@ async def eval_guardrail(cases: list[dict], products: list[dict] | None = None) 
         first_tool = case.get("first_tool")
 
         # 1. 商品信号 → 期望工具命中；闲聊 → 零工具
-        if expect_none:
+        #    accept_any：多种行为均可接受的边界用例（如营业时间：零工具/查政策皆合理），
+        #    任一备选工具集满足子集匹配即通过；含空集 = 允许零工具
+        accept_any = case.get("accept_any")
+        if accept_any is not None:
+            expect_tools_ok = any(
+                set(alt or []).issubset(set(invoked)) for alt in accept_any
+            )
+        elif expect_none:
             expect_tools_ok = not invoked
         else:
-            expect_tools_ok = expected.issubset(invoked)
+            expect_tools_ok = expected.issubset(set(invoked))
         first_tool_ok = True
         if first_tool and invoked:
             first_tool_ok = invoked[0] in expected

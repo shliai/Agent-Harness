@@ -326,6 +326,12 @@ class KnowledgeRetrievalTool(BaseTool):
                 f"{user_query}" + (f"（预算{int(budget)}元）" if budget else ""), ranked
             )
 
+            # 意图分层兜底：LLM 重排只看语义相关度，不知道意图词硬约束，
+            # 会把描述雷同的通用款排到细分子类（如头戴式）之前。
+            # 按 _hits 稳定降序：满命中意图的商品整体前置，同层内保留重排器相对顺序；
+            # 全部为 0 命中时排序退化为恒等（稳定），无副作用。
+            ranked.sort(key=lambda c: -c.get("_hits", 0))
+
             top = ranked[: settings.retrieval_top_k]
 
             lines = []
@@ -437,14 +443,23 @@ class KnowledgeRetrievalTool(BaseTool):
         # 否则预算接近度加权会压过 RRF，导致"手环"把小米手环挤到 OPPO Watch 之后。
         from harness.tools.query_enricher import SYNONYMS
 
-        intent_words = [w for w in SYNONYMS if w in user_query]
+        # 意图词匹配大小写不敏感：用户写「HiFi」/「hifi」均需命中词表
+        q_lower = user_query.lower()
+        intent_words = [w for w in SYNONYMS if w.lower() in q_lower]
         cat_word = next((kw for kw in KNOWN_CATEGORIES if kw in user_query), None)
         if cat_word and cat_word not in intent_words:
             intent_words.append(cat_word)
         if intent_words:
             for cand in candidates:
-                hay = cand["document"]
-                cand["_hits"] = sum(1 for w in intent_words if w in hay)
+                # 命中范围 = 文档 + 品牌品类元数据：部分商品文档不含字面
+                # 「耳机/头戴」（如 Bose），仅靠文本会漏判意图命中
+                meta = cand["metadata"] or {}
+                hay = " ".join([
+                    str(cand.get("document", "")),
+                    str(meta.get("brand", "")),
+                    str(meta.get("category", "")),
+                ]).lower()
+                cand["_hits"] = sum(1 for w in intent_words if w.lower() in hay)
 
         price_max = KnowledgeRetrievalTool._extract_filters(user_query).get("price_max")
 

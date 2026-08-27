@@ -34,14 +34,14 @@ def _parse_retrieval_results(steps: list[Any]) -> tuple[list[str], list[dict]]:
 
 
 async def eval_gen(cases: list[dict], products: list[dict], judge: bool = False) -> dict:
-    from harness.web.api import _build_agent
+    from _eval_common import build_eval_agent, S
     from eval import compute_ground_truth
 
-    agent = _build_agent()
+    agent = build_eval_agent()
     results = []
     for case in [c for c in cases if c["layer"] == "gen"]:
         try:
-            result = await agent.run(case["query"], session_id=f"eval-{case['id']}")
+            result = await agent.run(case["query"], session_id=S(f"eval-g-{case['id']}"))
             answer = result.answer or ""
             error = result.error if not result.success else None
         except Exception as e:
@@ -120,14 +120,20 @@ async def _judge(query: str, retrieval: str, answer: str) -> tuple[int, int]:
 
     llm = LLMFactory.create_cheap()
     prompt = (
-        "你是电商客服回答质量的评测员。请按 1-5 分评分。\n"
+        "你是电商客服回答质量的评审员。依据「知识库检索结果」这一唯一事实来源，"
+        "对「客服回答」独立评分。\n"
         f"用户问题：{query}\n\n"
         f"知识库检索结果：{retrieval[:2000] if retrieval else '（未检索）'}\n\n"
         f"客服回答：{answer[:2000]}\n\n"
-        "评分标准：\n"
-        "1. Answer Relevance：回答是否切题、是否直接解决用户问题（不跑题、无冗余）\n"
-        "2. Completeness：是否覆盖用户关心的核心信息（如价格/型号/参数/有无库存）\n"
-        "只输出两行数字，例如：\nrelevance: 4\ncompleteness: 5"
+        "评分锚点（两维均为 1-5 整数）：\n"
+        "[relevance 相关性] 5=直接解决所问且无跑题；3=沾边但有冗余或部分偏题；"
+        "1=答非所问/模板套话\n"
+        "[completeness 完备性] 5=覆盖用户关心的全部关键信息（价格/型号/参数/库存等）；"
+        "3=只答了一半；1=几乎没给有效信息\n"
+        "评分纪律：\n"
+        "- 回答中出现检索结果里不存在的型号/编号/价格 → relevance 与 completeness 均记 1（幻觉零容忍）\n"
+        "- 不因回答礼貌冗长加分；检索结果为空且回答如实说明无匹配 → 两维均记 4\n"
+        "- 只输出两行，格式如下：\nrelevance: <数字>\ncompleteness: <数字>"
     )
     try:
         reply = await llm.chat_async([AgentMessage(role=ChatRole.user, content=prompt)])

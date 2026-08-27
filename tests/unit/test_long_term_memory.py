@@ -314,7 +314,9 @@ class TestReActLoopIntegration:
         from harness.observability.tracer import Tracer
         from tests.conftest import MockLLMClient
 
-        llm = MockLLMClient(response='THOUGHT: 需要工具\nACTION: {"tool":"nonexistent","arguments":{}}')
+        llm = MockLLMClient(tool_calls=[
+            {"id": "c1", "name": "nonexistent", "arguments": {}},
+        ])
         long_term = MagicMock()
         long_term.enabled = True
         long_term.search = AsyncMock(return_value=[])

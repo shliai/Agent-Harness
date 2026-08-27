@@ -12,8 +12,9 @@ from harness.memory.working_memory import WorkingMemory
 class StreamFromChat:
     """为只实现了 chat_async 的脚本 LLM 补齐流式接口（整段作为单个 delta）"""
 
-    async def stream_chat_async(self, messages, temperature=None):
-        reply = await self.chat_async(messages, temperature=temperature)
+    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+        reply = await self.chat_async(messages, temperature=temperature,
+                                      tools=tools, tool_call_sink=tool_call_sink)
         yield reply.content
 
 
@@ -80,7 +81,7 @@ class TestClarification:
         from harness.observability.tracer import Tracer
 
         class AskLLM(StreamFromChat):
-            async def chat_async(self, messages, temperature=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
                 return LLMReply(content="请问您要查询哪个订单呢？麻烦提供一下订单号。")
 
         loop = ReActLoop(

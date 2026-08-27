@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger("harness.memory.working_memory")
 
-_ORDER_ID_RE = re.compile(r"(?<!\d)20\d{9}(?!\d)")
+# 订单号：与 OrderQueryTool 白名单对齐，11-15 位（种子/生产均为 2026 起的 13 位编号）
+_ORDER_ID_RE = re.compile(r"(?<!\d)20\d{9,13}(?!\d)")
 _TRACKING_RE = re.compile(
     r"(?i)(?<![A-Z0-9])(SF|YT|ZTO|STO|JD|EMS)\d{9,12}(?!\d)"
 )

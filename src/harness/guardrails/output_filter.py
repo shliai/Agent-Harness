@@ -37,5 +37,6 @@ class OutputFilter(BaseGuardrail):
 
         if text != original:
             text += "\n\n（注意：以上回复已自动屏蔽敏感信息）"
+            return text
 
-        return text
+        return None

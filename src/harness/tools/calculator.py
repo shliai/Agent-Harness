@@ -82,7 +82,7 @@ class CalculatorTool(BaseTool):
 
     spec = ToolSpec(
         name="calculator",
-        description="执行数学计算，支持加减乘除、整除、取余、幂运算和括号",
+        description="执行数学计算，支持加减乘除、整除、取余、幂运算和括号。**涉及金额、折扣、优惠、总价或任何含数字的表达式计算时，必须调用本工具，不要自行心算。**",
         parameters={
             "type": "object",
             "properties": {

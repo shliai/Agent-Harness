@@ -30,7 +30,7 @@ class PolicyQueryTool(BaseTool):
 
     spec = ToolSpec(
         name="policy_query",
-        description="查询平台官方政策：七天无理由退货、质量问题退换、退款时效、保修、价保、发票、配送时效、换货流程、物流赔付、账户安全等。凡涉及政策条款的问题必须先调用本工具",
+        description="查询平台官方政策：七天无理由退货、质量问题退换、退款时效、保修、价保、发票、配送时效、换货流程、物流赔付、账户安全等。凡涉及政策条款、'能否退/能否换/是否支持'等可行性问题必须先调用本工具。**仅提供政策条文；具体订单的售后进度请用 after_sale_query，发起申请请用 after_sale_apply。**",
         parameters={
             "type": "object",
             "properties": {

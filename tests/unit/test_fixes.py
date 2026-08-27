@@ -34,8 +34,9 @@ from harness.llm.base import LLMReply
 class StreamFromChat:
     """为只实现了 chat_async 的脚本 LLM 补齐流式接口（整段作为单个 delta）"""
 
-    async def stream_chat_async(self, messages, temperature=None):
-        reply = await self.chat_async(messages, temperature=temperature)
+    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+        reply = await self.chat_async(messages, temperature=temperature,
+                                      tools=tools, tool_call_sink=tool_call_sink)
         yield reply.content
 
 
@@ -450,7 +451,7 @@ class _ScriptedSubtaskLLM:
 
 
 
-    async def chat_async(self, messages, temperature=None):
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
 
         from harness.domain.models import ChatRole
 
@@ -460,13 +461,15 @@ class _ScriptedSubtaskLLM:
 
         if self.calls == 1:
 
-            return LLMReply(
+            call = {"id": "c1", "name": "order_query",
 
-                content='THOUGHT: 先查订单\nACTION: {"tool": "order_query", '
+                    "arguments": {"order_id": "20240601001"}}
 
-                        '"arguments": {"order_id": "20240601001"}}'
+            if tool_call_sink is not None:
 
-            )
+                tool_call_sink["tool_calls"] = [call]
+
+            return LLMReply(content="先查订单", tool_calls=[call])
 
         self.second_round_messages = messages
 
@@ -538,17 +541,17 @@ class TestSubtaskControlFlow:
 
                 self.calls = 0
 
-
-
-            async def chat_async(self, messages, temperature=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
 
                 self.calls += 1
 
                 return LLMReply(
 
-                    content='THOUGHT: 分发\nACTION: {"tool": "subtask_dispatch", '
+                    content='',
 
-                            '"arguments": {"tasks": []}}'
+                    tool_calls=[{"id": "c1", "name": "subtask_dispatch",
+
+                                 "arguments": {"tasks": []}}],
 
                 )
 
@@ -628,9 +631,9 @@ class TestLoopRobustness:
 
     @pytest.mark.asyncio
 
-    async def test_malformed_action_gets_retry_not_raw_answer(self) -> None:
+    async def test_bad_native_args_get_retry_not_raw_answer(self) -> None:
 
-        """ACTION JSON 写错时，应要求重试而不是把原文当答案给用户"""
+        """native 参数缺失（必填校验失败）时，应走修正重试而不是把错误给用户"""
 
         from harness.core.registry import Registry
 
@@ -646,21 +649,29 @@ class TestLoopRobustness:
 
 
 
-            async def chat_async(self, messages, temperature=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
 
                 self.calls += 1
 
                 if self.calls == 1:
 
-                    return LLMReply(content='THOUGHT: 查询\nACTION: {tool: mock_tool}')  # 坏 JSON
+                    call = {"id": "c1", "name": "mock_tool", "arguments": {}}  # 缺必填 input
+
+                    if tool_call_sink is not None:
+
+                        tool_call_sink["tool_calls"] = [call]
+
+                    return LLMReply(content="查询", tool_calls=[call])
 
                 if self.calls == 2:
 
-                    return LLMReply(
+                    call = {"id": "c2", "name": "mock_tool", "arguments": {"input": "ok"}}
 
-                        content='THOUGHT: 修正\nACTION: {"tool": "mock_tool", "arguments": {"input": "ok"}}'
+                    if tool_call_sink is not None:
 
-                    )
+                        tool_call_sink["tool_calls"] = [call]
+
+                    return LLMReply(content="修正", tool_calls=[call])
 
                 return LLMReply(content="这是最终回答")
 
@@ -704,7 +715,7 @@ class TestLoopRobustness:
 
         class PIILLM(StreamFromChat):
 
-            async def chat_async(self, messages, temperature=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
 
                 captured["messages"] = messages
 

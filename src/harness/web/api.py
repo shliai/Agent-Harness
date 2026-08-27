@@ -25,6 +25,7 @@ from harness.guardrails.injection_guard import InjectionGuard
 from harness.guardrails.input_validator import InputValidator
 from harness.guardrails.compliance_filter import ComplianceFilter
 from harness.guardrails.output_filter import OutputFilter
+from harness.guardrails.system_prompt_guard import SystemPromptGuard
 from harness.guardrails.rate_limiter import RateLimiter
 from harness.observability.logger import set_session_id
 from harness.tools.calculator import CalculatorTool
@@ -88,6 +89,7 @@ def _build_agent() -> Agent:
     guardrails.add(InjectionGuard())
     guardrails.add(OutputFilter())
     guardrails.add(ComplianceFilter())
+    guardrails.add(SystemPromptGuard())  # 输出层拦截系统提示词泄露（确定性兜底）
     guardrails.add(RateLimiter(
         max_requests=settings.rate_limit_max_requests,
         window_seconds=settings.rate_limit_window_seconds,

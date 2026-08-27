@@ -14,7 +14,7 @@ from typing import Any
 # 代表性负载：检索推荐 / 订单查询 / 闲聊 / 比价 / 计算
 PERF_QUERIES = [
     ("budget-phone", "预算3000以内推荐一款拍照手机"),
-    ("order-status", "查询订单20240601001的状态"),
+    ("order-status", "查询订单2026082300001的状态"),
     ("chitchat", "你好"),
     ("headphone", "2000元以内的降噪耳机哪个好"),
     ("calc", "帮我算一下(120+80)*3"),
@@ -35,14 +35,14 @@ def _tool_count(steps: list[Any]) -> int:
 
 
 async def eval_perf() -> dict:
-    from harness.web.api import _build_agent
+    from _eval_common import build_eval_agent, S
 
-    agent = _build_agent()
+    agent = build_eval_agent()
     samples = []
     for name, query in PERF_QUERIES:
         t0 = time.perf_counter()
         try:
-            result = await agent.run(query, session_id=f"eval-perf-{name}")
+            result = await agent.run(query, session_id=S(f"eval-perf-{name}"))
             duration_ms = result.total_duration_ms or (time.perf_counter() - t0) * 1000
             tokens = result.total_tokens or 0
             llm_calls = len(result.steps) or 1
@@ -62,6 +62,7 @@ async def eval_perf() -> dict:
     durations = sorted(s["duration_ms"] for s in samples)
     tokens_list = sorted(s["tokens"] for s in samples)
     llm_calls = sorted(s["llm_calls"] for s in samples)
+    tools_list = sorted(float(s["tools"]) for s in samples)
     n = len(samples)
     failures = [s for s in samples if s["error"]]
 
@@ -85,6 +86,11 @@ async def eval_perf() -> dict:
             "llm_calls_per_turn": {
                 "avg": round(sum(s["llm_calls"] for s in samples) / n, 2) if n else 0.0,
                 "p95": round(_percentile(llm_calls, 0.95), 2),
+            },
+            # 维度6 成本效率：平均工具轮次——轮次越多成本越高、端到端越慢
+            "tools_per_turn": {
+                "avg": round(sum(float(s["tools"]) for s in samples) / n, 2) if n else 0.0,
+                "p95": round(_percentile(tools_list, 0.95), 2),
             },
         },
     }

@@ -17,16 +17,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("harness.tools.subtask_dispatch")
 
-SUBTASK_SYSTEM_PROMPT = """你是智能体助手，请完成以下子任务。
-可使用以下工具：{tool_descriptions}
+SUBTASK_SYSTEM_PROMPT = """你是子任务执行器，只负责完成下述这一个子任务。
+可用工具以本次请求携带的 tools 定义为准。
 
-请根据任务需要调用合适的工具。调用格式：
+执行规则：
+1. 每次调用前用一句话说明要做什么；收到结果后判断是否已足够完成任务；
+2. 信息足够时立即输出**结论**：直接给答案与关键数据（单号/状态/金额），
+   不要寒暄、不要复述任务、不要说"我将继续"；
+3. 工具连续 2 次失败或缺少必要条件：如实输出「无法完成 + 原因 + 已尝试什么」，
+   **绝不编造数据充数**；
+4. 只使用分配给你的工具，不要假设存在其他能力。
 
-THOUGHT: 分析
-ACTION: {{"tool": "工具名", "arguments": {{"key": "value"}}}}
-
-收到工具返回后，继续分析是否需要调用其他工具。
-如果已获得足够信息，直接回答结果。"""
+【子任务】{description}"""
 
 # 禁止子任务递归调用的工具名列表
 _FORBIDDEN_SUBTOOLS = {"subtask_dispatch"}
@@ -35,10 +37,10 @@ _FORBIDDEN_SUBTOOLS = {"subtask_dispatch"}
 class SubTaskDispatchTool(BaseTool):
     """子任务分发：为每个子任务构建隔离的注册中心与记忆，逐个执行并汇总
 
-    执行模型：外层 for 循环每轮 = 一次 LLM 决策；
-    - 输出 ACTION → 校验/执行工具 → 结果写入子任务记忆 → 进入下一轮
-    - 无 ACTION   → 视为子任务最终结论，结束该子任务
-    - 超过迭代上限 → 标记未完成
+    执行模型：外层 for 循环每轮 = 一次 LLM 决策（原生 function calling）；
+    - 返回结构化 tool_calls → 校验/执行工具 → 结果写入子任务记忆 → 下一轮
+    - 无工具调用       → 视为子任务最终结论，结束该子任务
+    - 超过迭代上限     → 标记未完成
     """
 
     spec = ToolSpec(
@@ -79,25 +81,6 @@ class SubTaskDispatchTool(BaseTool):
         self._parent_registry = registry
         self._guardrails = guardrails
 
-    @staticmethod
-    def _parse_tool_call(text: str) -> ToolCall | None:
-        match = re.search(r"ACTION:\s*", text)
-        if not match:
-            return None
-        decoder = json.JSONDecoder()
-        start = match.end()
-        try:
-            obj, _ = decoder.raw_decode(text, start)
-            return ToolCall(
-                tool_name=obj.get("tool", obj.get("name", "")),
-                arguments=obj.get("arguments", {}),
-            )
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.warning(
-                "子任务解析工具调用失败: %s | text=%s", e, text[match.end():match.end() + 80]
-            )
-            return None
-
     def _mask(self, text: str) -> str:
         if self._guardrails is not None:
             try:
@@ -137,8 +120,8 @@ class SubTaskDispatchTool(BaseTool):
                 except Exception:
                     logger.warning("子任务 %s 缺少工具 %s", task_id, name)
 
-            tool_desc = sub_registry.get_tool_descriptions() or "（无可用工具）"
-            system_prompt = SUBTASK_SYSTEM_PROMPT.format(tool_descriptions=tool_desc)
+            # 工具清单由 tools 载荷原生携带；子任务描述注入提示词
+            system_prompt = SUBTASK_SYSTEM_PROMPT.format(description=description)
 
             memory = ShortTermMemory()
             memory.add(AgentMessage(role=ChatRole.user, content=description))
@@ -170,15 +153,28 @@ class SubTaskDispatchTool(BaseTool):
     ) -> str:
         from harness.config import settings
 
+        # 原生 function calling：子注册中心的工具转 OpenAI schema
+        tools = registry.get_openai_tools()
+
         for step in range(max_iterations):
             messages = [
                 AgentMessage(role=ChatRole.system, content=system_prompt),
                 *memory.get_context(),
             ]
-
-            reply = await self._llm.chat_async(messages, temperature=settings.temperature)
+            tc_sink: dict = {}
+            reply = await self._llm.chat_async(
+                messages, temperature=settings.temperature,
+                tools=tools or None, tool_call_sink=tc_sink if tools else None,
+            )
             thought = reply.content
-            tool_call = self._parse_tool_call(thought)
+
+            native_calls = (tc_sink.get("tool_calls") if tools else None) \
+                or reply.tool_calls
+            tool_call: ToolCall | None = None
+            if native_calls:
+                nc = native_calls[0]
+                thought = thought or f"调用工具 {nc['name']}"
+                tool_call = ToolCall(tool_name=nc["name"], arguments=nc["arguments"])
 
             # 无工具调用 → 子任务完成，返回最终结论
             if tool_call is None:
@@ -285,9 +281,20 @@ class SubTaskDispatchTool(BaseTool):
                     AgentMessage(role=ChatRole.system, content=system_prompt),
                     *memory.get_context(),
                 ]
-                reply = await self._llm.chat_async(messages, temperature=settings.temperature)
+                tc_sink2: dict = {}
+                reply = await self._llm.chat_async(
+                    messages, temperature=settings.temperature,
+                    tools=tools or None, tool_call_sink=tc_sink2 if tools else None,
+                )
                 thought = reply.content
-                new_call = self._parse_tool_call(thought)
+                native_calls = (tc_sink2.get("tool_calls") if tools else None) \
+                    or reply.tool_calls
+                if native_calls:
+                    nc = native_calls[0]
+                    thought = thought or f"调用工具 {nc['name']}"
+                    new_call = ToolCall(tool_name=nc["name"], arguments=nc["arguments"])
+                else:
+                    new_call = None
                 if new_call is None:
                     logger.info("子任务 %s 工具失败后 LLM 给出结论: %s", task_id, thought[:80])
                     memory.add(AgentMessage(role=ChatRole.assistant, content=thought))

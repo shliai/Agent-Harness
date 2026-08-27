@@ -34,24 +34,44 @@ class FlakyTool(BaseTool):
 
 
 class StatefulMockLLM(AbstractLLMClient):
-    """按顺序返回预设的回复列表"""
-    def __init__(self, responses: list[str]) -> None:
+    """按顺序返回预设回复：str=最终回答文本；dict=原生结构化工具调用"""
+
+    def __init__(self, responses: list) -> None:
         self.responses = responses
         self.call_count = 0
 
-    def _next_reply(self) -> str:
+    def _next_reply(self):
         i = self.call_count
         self.call_count += 1
         return self.responses[i] if i < len(self.responses) else self.responses[-1]
 
-    async def chat_async(self, messages: list[AgentMessage], temperature: float | None = None):
+    async def chat_async(
+        self, messages: list[AgentMessage], temperature: float | None = None,
+        tools: list[dict] | None = None, tool_call_sink: dict | None = None,
+    ):
         from harness.llm.base import LLMReply
 
-        content = self._next_reply()
-        return LLMReply(content=content, total_tokens=len(content) // 4)
+        item = self._next_reply()
+        if isinstance(item, dict):
+            if tool_call_sink is not None:
+                tool_call_sink["tool_calls"] = [item]
+            return LLMReply(content="", total_tokens=8, tool_calls=[item])
+        return LLMReply(content=item, total_tokens=len(item) // 4)
 
-    async def stream_chat_async(self, messages: list[AgentMessage], temperature: float | None = None):
-        yield self._next_reply()
+    async def stream_chat_async(
+        self, messages: list[AgentMessage], temperature: float | None = None,
+        tools: list[dict] | None = None, tool_call_sink: dict | None = None,
+    ):
+        item = self._next_reply()
+        if isinstance(item, dict):
+            if tool_call_sink is not None:
+                tool_call_sink["tool_calls"] = [item]
+            return
+        yield item
+
+
+def _native_call(tool: str, **arguments: str) -> dict:
+    return {"id": f"c_{tool}", "name": tool, "arguments": arguments}
 
 
 class TestAgentLoop:
@@ -62,10 +82,9 @@ class TestAgentLoop:
         registry = Registry()
         registry.register_tool(flaky)
 
-        tool_call = 'THOUGHT: 查一下\nACTION: {"tool": "flaky_tool", "arguments": {"input": "x"}}'
         mock_llm = StatefulMockLLM([
-            tool_call,
-            tool_call,
+            _native_call("flaky_tool", input="x"),
+            _native_call("flaky_tool", input="x"),
             "查好了，结果在这里",
         ])
         agent = Agent(llm=mock_llm, registry=registry)
@@ -82,11 +101,10 @@ class TestAgentLoop:
         registry = Registry()
         registry.register_tool(flaky)
 
-        tool_call = 'THOUGHT: 查一下\nACTION: {"tool": "flaky_tool", "arguments": {"input": "x"}}'
         mock_llm = StatefulMockLLM([
-            tool_call,
-            tool_call,
-            tool_call,
+            _native_call("flaky_tool", input="x"),
+            _native_call("flaky_tool", input="x"),
+            _native_call("flaky_tool", input="x"),
             "抱歉查不到",
         ])
         agent = Agent(llm=mock_llm, registry=registry)
@@ -105,9 +123,9 @@ class TestAgentLoop:
 
     @pytest.mark.asyncio
     async def test_tool_call_and_response(self) -> None:
-        mock_llm = MockLLMClient(
-            response='THOUGHT: 用户需要查询信息\nACTION: {"tool": "mock_tool", "arguments": {"input": "test"}}'
-        )
+        mock_llm = MockLLMClient(tool_calls=[
+            {"id": "c1", "name": "mock_tool", "arguments": {"input": "test"}},
+        ])
         registry = Registry()
         registry.register_tool(MockTool(response="知识库返回的结果"))
 
@@ -144,7 +162,9 @@ class TestAgentLoop:
     @pytest.mark.asyncio
     async def test_subtask_dispatch_execution(self) -> None:
         mock_llm = StatefulMockLLM([
-            'THOUGHT: 需要先查订单和物流\nACTION: {"tool": "subtask_dispatch", "arguments": {"tasks": [{"id": "t1", "description": "查天气", "tools": ["mock_tool"]}]}}',
+            _native_call("subtask_dispatch", tasks=[
+                {"id": "t1", "description": "查天气", "tools": ["mock_tool"]},
+            ]),
             "子任务结果: 今天晴天",
         ])
         registry = Registry()

@@ -35,14 +35,17 @@ class OpenAICompatibleClient(AbstractLLMClient):
     # ── 非流式（异步） ──────────────────────────────────
 
     async def chat_async(
-        self, messages: list[AgentMessage], temperature: float | None = None
+        self, messages: list[AgentMessage], temperature: float | None = None,
+        tools: list[dict] | None = None, tool_call_sink: dict | None = None,
     ) -> LLMReply:
         t0 = time.perf_counter()
         try:
-            payload = self._payload(messages, temperature)
+            payload = self._payload(messages, temperature, tools)
             resp = await self._post_with_retry(payload)
             resp.raise_for_status()
             reply = self._parse_reply(resp.json(), elapsed_ms=(time.perf_counter() - t0) * 1000)
+            if tool_call_sink is not None and reply.tool_calls:
+                tool_call_sink["tool_calls"] = reply.tool_calls
             return reply
         except httpx.HTTPStatusError as e:
             raise LLMError(f"HTTP {e.response.status_code}: {e.response.text[:200]}") from e
@@ -58,11 +61,13 @@ class OpenAICompatibleClient(AbstractLLMClient):
     # ── 流式（异步） ────────────────────────────────────
 
     async def stream_chat_async(
-        self, messages: list[AgentMessage], temperature: float | None = None
+        self, messages: list[AgentMessage], temperature: float | None = None,
+        tools: list[dict] | None = None, tool_call_sink: dict | None = None,
     ) -> AsyncGenerator[str, None]:
         t0 = time.perf_counter()
+        tc_acc: dict[int, dict] = {}  # index → {id,name,arguments} 分片累积
         try:
-            payload = self._payload(messages, temperature)
+            payload = self._payload(messages, temperature, tools)
             payload["stream"] = True
             if settings.stream_include_usage:
                 # OpenAI v1 扩展：最后一个 chunk 携带 usage；不支持的供应商会忽略该字段
@@ -71,27 +76,40 @@ class OpenAICompatibleClient(AbstractLLMClient):
                 "POST", self._chat_url, headers=self._headers(), json=payload
             ) as resp:
                 resp.raise_for_status()
-                async for delta in self._aiter_sse(resp.aiter_lines()):
+                async for delta in self._aiter_sse(resp.aiter_lines(), tc_acc):
                     yield delta
         except Exception as e:
             raise LLMError(f"异步流式调用失败: {e}") from e
         finally:
+            # 结构化工具调用：流结束后把累积分片装配进 sink（文本协议模式下恒为空）
+            assembled = _assemble_tool_calls(tc_acc)
+            if assembled and tool_call_sink is not None:
+                tool_call_sink["tool_calls"] = assembled
             # 逐次耗时：流式生成结束（或客户端中断）后记录
             logger.info(
-                "LLM 流式完成: %.0fms | model=%s",
-                (time.perf_counter() - t0) * 1000, self.model,
+                "LLM 流式完成: %.0fms | model=%s | native_tools=%d",
+                (time.perf_counter() - t0) * 1000, self.model, len(assembled),
             )
 
-    # ── 内部工具方法 ───────────────────────────────────
+    # ── 内部工具方法 ──────────────────────────────────
 
-    def _payload(self, messages: list[AgentMessage], temperature: float | None) -> dict:
-        return {
+    def _payload(
+        self, messages: list[AgentMessage], temperature: float | None,
+        tools: list[dict] | None = None,
+    ) -> dict:
+        payload = {
             "model": self.model,
             "messages": [m.to_llm_format() for m in messages],
             "temperature": _resolve_temperature(temperature),
             "max_tokens": settings.max_tokens,
             "stream": False,
         }
+        if tools:
+            # 原生 function calling：tool_choice=auto 由模型自主决定是否调用；
+            # 不支持 tools 的端点会返回 4xx，由调用方的降级逻辑处理
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
+        return payload
 
     def _parse_reply(self, data: dict, elapsed_ms: float) -> LLMReply:
         choices = data.get("choices")
@@ -100,13 +118,18 @@ class OpenAICompatibleClient(AbstractLLMClient):
 
         usage = data.get("usage", {})
         total_tokens = int(usage.get("total_tokens", 0))
-        answer = (choices[0].get("message") or {}).get("content", "").strip()
+        message = choices[0].get("message") or {}
+        answer = (message.get("content") or "").strip()
+
+        raw_calls = message.get("tool_calls") or []
+        tool_calls = [_normalize_tool_call(tc) for tc in raw_calls]
 
         logger.info(
-            "LLM 响应: %.0fms | token=%d | model=%s", elapsed_ms, total_tokens, self.model
+            "LLM 响应: %.0fms | token=%d | model=%s | tool_calls=%d",
+            elapsed_ms, total_tokens, self.model, len(tool_calls),
         )
         logger.debug("LLM 回答: %s...", answer[:60])
-        return LLMReply(content=answer, total_tokens=total_tokens)
+        return LLMReply(content=answer, total_tokens=total_tokens, tool_calls=tool_calls)
 
     @staticmethod
     def _iter_sync_sse(lines) -> Generator[str, None, None]:
@@ -120,8 +143,7 @@ class OpenAICompatibleClient(AbstractLLMClient):
             if delta:
                 yield delta
 
-    @staticmethod
-    async def _aiter_sse(lines) -> AsyncGenerator[str, None]:
+    async def _aiter_sse(self, lines, tc_acc: dict[int, dict]) -> AsyncGenerator[str, None]:
         async for line in lines:
             if not line.startswith("data: "):
                 continue
@@ -129,6 +151,7 @@ class OpenAICompatibleClient(AbstractLLMClient):
             if chunk == "[DONE]":
                 break
             _sink_usage(chunk)
+            _accumulate_tool_call_chunk(chunk, tc_acc)
             delta = _extract_delta(chunk)
             if delta:
                 yield delta
@@ -205,3 +228,55 @@ def _extract_delta(chunk: str) -> str:
         return data.get("choices", [{}])[0].get("delta", {}).get("content", "")
     except (json.JSONDecodeError, IndexError, KeyError, TypeError):
         return ""
+
+
+def _accumulate_tool_call_chunk(chunk: str, tc_acc: dict[int, dict]) -> None:
+    """累积流式 delta.tool_calls 分片：首片带 id/name，后续片追加 arguments 字符串"""
+    try:
+        data = json.loads(chunk)
+        for tc in data.get("choices", [{}])[0].get("delta", {}).get("tool_calls") or []:
+            idx = int(tc.get("index", 0))
+            slot = tc_acc.setdefault(idx, {"id": "", "name": "", "arguments": ""})
+            if tc.get("id"):
+                slot["id"] = tc["id"]
+            fn = tc.get("function") or {}
+            if fn.get("name"):
+                slot["name"] = fn["name"]
+            if fn.get("arguments"):
+                slot["arguments"] += fn["arguments"]
+    except (json.JSONDecodeError, IndexError, KeyError, TypeError, ValueError):
+        return
+
+
+def _assemble_tool_calls(tc_acc: dict[int, dict]) -> list[dict]:
+    """把分片装配成 [{name, arguments(dict)}]；arguments 解析失败保留原始字符串"""
+    out: list[dict] = []
+    for idx in sorted(tc_acc):
+        slot = tc_acc[idx]
+        if not slot.get("name"):
+            continue
+        raw = slot.get("arguments") or "{}"
+        try:
+            args = json.loads(raw)
+            if not isinstance(args, dict):
+                args = {"_raw": raw}
+        except json.JSONDecodeError:
+            args = {"_raw": raw}
+        out.append({"id": slot.get("id", ""), "name": slot["name"], "arguments": args})
+    return out
+
+
+def _normalize_tool_call(tc: dict) -> dict:
+    """非流式 message.tool_calls → {id, name, arguments(dict)}；容错脏数据"""
+    fn = tc.get("function") or {}
+    raw = fn.get("arguments")
+    if isinstance(raw, dict):
+        args = raw
+    else:
+        try:
+            args = json.loads(raw or "{}")
+            if not isinstance(args, dict):
+                args = {"_raw": str(raw)}
+        except (json.JSONDecodeError, TypeError):
+            args = {"_raw": str(raw)}
+    return {"id": tc.get("id", ""), "name": fn.get("name", ""), "arguments": args}

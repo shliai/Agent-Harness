@@ -13,6 +13,12 @@ SYNONYMS: dict[str, list[str]] = {
     "性价比": ["实惠"],
     "降噪": ["消噪"],
     "办公": ["商务", "生产力"],
+    # R17/R19 弱项补充：细分品类词（BGE-small 对英文缩写/细分子类语义偏弱，
+    # 依赖同义变体多路召回头戴/HiFi 类商品）
+    "hifi": ["高保真", "音质"],
+    "头戴": ["耳罩", "包耳"],
+    "影音": ["观影", "追剧"],
+    "手环": ["智能手环", "穿戴"],
 }
 
 _NUM_RE = re.compile(r"\d{3,}")
@@ -40,8 +46,10 @@ def expand(query: str, budget_amount: float | None = None,
     variants.append(main)
 
     for word, subs in SYNONYMS.items():
-        if word in main and len(variants) < 3:
-            v = main.replace(word, subs[0], 1)
+        # 大小写不敏感匹配与替换（用户可能写 HiFi/HIFI）
+        pattern = re.compile(re.escape(word), re.IGNORECASE)
+        if pattern.search(main) and len(variants) < 3:
+            v = pattern.sub(subs[0], main, count=1)
             if v not in variants:
                 variants.append(v)
 

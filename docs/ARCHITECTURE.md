@@ -23,7 +23,7 @@ Agent = LLM（推理内核）+ Harness（调度外壳）
 │       LLM 工厂 + Registry(10工具) + GuardrailPipeline + 记忆       │
 ├──────────────────────────────────────────────────────────────────┤
 │                  ReAct 循环引擎 (core/loop.py)                     │
-│   token流式 → 解析 ACTION → 工具执行(修正重试) → 脱敏 → 持久化      │
+│   token流式 → 原生function calling → 工具执行(修正重试) → 脱敏 → 持久化  │
 ├───────┬──────────┬──────────┬──────────┬──────────┬─────────────┤
 │ 工具层 │  记忆层   │  护栏层   │  观测层   │  存储层   │   LLM 层    │
 │tools/ │ memory/  │guardrails│observ-   │ storage/ │ llm/        │

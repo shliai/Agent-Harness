@@ -16,8 +16,9 @@ from harness.memory.working_memory import WorkingMemory
 class StreamFromChat:
     """为只实现了 chat_async 的脚本 LLM 补齐流式接口（整段作为单个 delta）"""
 
-    async def stream_chat_async(self, messages, temperature=None):
-        reply = await self.chat_async(messages, temperature=temperature)
+    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+        reply = await self.chat_async(messages, temperature=temperature,
+                                      tools=tools, tool_call_sink=tool_call_sink)
         yield reply.content
 
 
@@ -148,7 +149,7 @@ class _SummaryLLM(StreamFromChat):
         self.calls: list[list[AgentMessage]] = []
         self.summarize_called = False
 
-    async def chat_async(self, messages, temperature=None):
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
         self.calls.append(list(messages))
         from harness.core.loop import ReActLoop
 
@@ -331,7 +332,7 @@ class TestChapterMemory:
         from harness.core.loop import ReActLoop
 
         class FakeLLM:
-            async def chat_async(self, messages, temperature=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
                 return LLMReply(content="- 用户 偏好 华为品牌\n好的呀\n- 订单20240601001 状态 已退货")
 
         inst = SimpleNamespace(llm=FakeLLM())
@@ -345,7 +346,7 @@ class TestChapterMemory:
         from harness.core.loop import ReActLoop
 
         class ChattyLLM:
-            async def chat_async(self, messages, temperature=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
                 return LLMReply(content="好的呀，这个简单！")
 
         facts, failed = await ReActLoop._extract_turn_facts(
@@ -485,7 +486,7 @@ class TestExtractPrefilter:
         """LLM 摘要失败 → 降级保留完整历史，绝不丢数据"""
 
         class BrokenSummaryLLM(_SummaryLLM):
-            async def chat_async(self, messages, temperature=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
                 from harness.core.loop import ReActLoop
 
                 if any(m.content.startswith(ReActLoop.SUMMARY_SYSTEM_PROMPT) for m in messages):
