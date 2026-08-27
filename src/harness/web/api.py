@@ -131,7 +131,7 @@ def get_agent() -> Agent:
 
 
 def warmup_agent() -> None:
-    """服务启动时主动初始化 Agent，把工具注册和 ChromaDB 初始化提前到启动阶段。"""
+    """服务启动时主动初始化 Agent，把工具注册与学习记忆装配提前到启动阶段。"""
     global _agent
     if _agent is None:
         _agent = _build_agent()

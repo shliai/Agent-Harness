@@ -116,8 +116,8 @@ docs/               10 份文档
 
 ```bash
 pytest tests/ -v                    # 173 个测试
-python scripts/eval.py              # L0 离线确定性（55/55 PASS，CI 闸门）
-python scripts/eval.py --mode L1    # 完整评测：L0 + 在线十层（含参数正确性/容错行为/安全对齐/跨会话隔离）
+python scripts/eval.py              # L0 离线确定性（51/51 PASS，CI 闸门）
+python scripts/eval.py --mode L1    # 完整评测：L0 五层确定性 + 在线九层（含参数正确性/容错行为/安全对齐/跨会话隔离）
 python scripts/eval.py --mode L1 --runs 3   # 在线层跑 3 次：输出复现率与 flaky 用例
 ```
 
@@ -134,8 +134,8 @@ python scripts/eval.py --mode L1 --runs 3   # 在线层跑 3 次：输出复现�
 | [设计决策](docs/DESIGN_DECISIONS.md) | 为什么这样做、放弃了什么替代方案 |
 | [接口文档](docs/API.md) | REST/SSE 端点规范 |
 | [运维手册](docs/OPERATIONS.md) | 日志聚合、指标告警、灰度发布、密钥管理 |
-| [评测报告](docs/EVALUATION.md) | 五层评测方法论与详细结果 |
-| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.8.0 演进史 |
+| [评测报告](docs/EVALUATION.md) | 多层评测方法论与详细结果（历史归档见 EVALUATION_HISTORY.md） |
+| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.8.1 演进史 |
 
 ## 技术栈
 

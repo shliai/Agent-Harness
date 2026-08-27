@@ -1,5 +1,22 @@
 # Agent Harness 更新日志
 
+## [v0.8.1] - 2026-08-27
+
+**评测体系与文档对齐：评测结果重写 + 历史归档 + 学习机制评测定版**。
+
+### 评测结果重写（docs/EVALUATION.md）
+- 重写 `docs/EVALUATION.md` 为「当前结果导向」：以 2026-08-27 16:57 全量 `L1 --runs 3`（109/117，L0 51/51）为统一基线，单列稳定性（一致性 0.94–1.0、3 个 flaky）与已知局限
+- 旧版 ChromaDB 记忆评测、早期单跑快照、评测基础设施排障实录、改进闭环与历次复测对比全部移至 **`docs/EVALUATION_HISTORY.md`** 归档，消除 EVALUATION.md 内的过期数字与矛盾结论
+- `memory` 层评测正式定版为 `eval_memory.py` 对 `LearningStore` 的确定性断言（LM01–04，4/4）：正向导出召回 / 同 key 纠正覆盖 / 合并去重 / 单用户单文件落盘——不依赖 LLM、不依赖向量库
+
+### 评测脚本修正
+- `scripts/eval_memory.py`：原用例断言 ChromaDB 语义召回（已随 v0.7.7 删除），重写为学习机制确定性测试；修复 LM02 用例用「华为牌」→「苹果」纠正覆盖的 key 判定（中文 `品牌` 而非 `brand`）
+- `scripts/_eval_common.py` / `src/harness/web/api.py`：修正遗留 docstring（「ChromaDB 初始化」→ 学习记忆装配）
+- 全量单测 173 通过；L0 `--strict` 51/51；L1 `--runs 3` 在线层全部过 gate
+
+### 设计变更提示
+- EVALUATION.md 顶部固化「学习机制是当前设计」提示，指向 DESIGN_DECISIONS.md §3.4 与 CHANGELOG v0.7.7
+
 ## [v0.8.0] - 2026-08-27
 
 **上下文工程升级：轮末折叠式滚动摘要 + 归档裁剪 + 记忆层级交待 + 压缩链路降本**。此前的并发/安全修复（单例竞态、锁语义、fail-closed 管理端）一并包含在本版本。
@@ -43,7 +60,7 @@
 
 ## [v0.7.7] - 2026-08-27
 
-**安全与正确性加固：输出护栏短路修复 + SystemPromptGuard + 确定性前置拦截 + RAG 索引富化 + LLM 重排器**。最新全量评测见 docs/EVALUATION.md §8.11（117/121，security 6/7，report_20260827_105436.json）。
+**安全与正确性加固：输出护栏短路修复 + SystemPromptGuard + 确定性前置拦截 + RAG 索引富化 + LLM 重排器**。最新全量评测见 docs/EVALUATION.md（学习机制设计，L1 `--runs 3` 109/117，report_20260827_171020.json）；历史快照与排障实录见 docs/EVALUATION_HISTORY.md。
 
 ### 长期记忆重构为「学习机制」（确定性、单用户、无向量）
 - 删除 `src/harness/memory/long_term.py`（ChromaDB + BGE 语义召回），改为 `src/harness/memory/learning.py`：轮末 `ReActLoop._finalize` 直接读取 `WorkingMemory.learning_signals()` 的确定性信号（偏好/约束/纠正）→ JSON 文件（`./data/learning_store/learning.json`）→ 全量注入系统提示词

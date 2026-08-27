@@ -163,7 +163,7 @@ AST 白名单求值，支持四则运算、幂运算（限制指数规模）、�
 | budget | 超预算数（零容忍）/ top1 接近度 | 离线 |
 | routing | 工具路由命中率 | --live（消耗真实 tokens） |
 | robustness | 幂炸弹秒拒 / 代码注入 / PII 脱敏 / 限流隔离 / 路径穿越 | 离线 |
-| memory | 学习画像注入条数（启用时） | 离线 |
+| memory | 学习机制（LearningStore）确定性信号：偏好/约束/纠正导出召回·同key纠正覆盖 | 离线 |
 
 辅助脚本：`scripts/export_badcase.py` 从审计日志和失败轨迹导出 badcase 候选。
 
