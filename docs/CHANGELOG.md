@@ -1,5 +1,34 @@
 # Agent Harness 更新日志
 
+## [v0.8.2] - 2026-08-28
+
+**任务列表式 ReAct 循环（v2）：每轮强制工具列表 + plan/respond 终态 + 人审任务清单**。
+
+### 循环结构重构（core/loop.py）
+- **每轮强制非空工具列表**：模型调用统一带 `tool_choice="required"`（配置 `agent_tool_choice`，默认 `required`），从结构上消除「模型不调用工具直接闲聊/空转」的回归面（此前偶发输出「请稍等」类占位文本）
+- **三模式分发**：每轮工具调用按类型分流为 `plan`(PROPOSE) / 领域工具(EXECUTE) / `respond`(ANSWER)
+  - `plan`：仅提案任务清单 + 抛给用户的问题，**不执行**任何工具，把 `pending_plan` 写入工作记忆，结束本轮等待用户确认
+  - 领域工具：顺序执行，结果回写工作记忆，下一轮继续推理（保留轮内顺序纠错）
+  - `respond`：终态信号，用其 `content` 收尾；若同一轮混有领域工具 + `respond`，先执行工具再用 `respond` 收尾（修复「只回复不执行」的丢工具 bug）
+- **新增拦截型工具**：`tools/plan.py`(`PlanTool`, PROPOSE) 与 `tools/respond.py`(`RespondTool`, ANSWER)，`run` 永不真正执行，由循环在调度前拦截；已注册进 `web/api.py`（评测 `build_eval_agent` 同样获得）
+- **工作记忆**：`working_memory.py` 新增 `pending_plan` 字段 + `set_pending_plan`/`clear_pending_plan`，并在 `prompt_block` 注入「已提案任务清单、用户已回复」提示，驱动下一轮进入执行模式
+- **轮次分组**：`StepRecord` 新增 `round_index`，同一轮的多工具调用归组展示
+- **系统提示词**：新增「工具调用约束」一节，规定「每轮必须产出工具列表」「plan 先提案待确认 / respond 收尾」的用法
+
+### 安全兜底与配置
+- `agent_tool_budget=20`：单轮工具调用上限，超限友好提示
+- `agent_stuck_threshold=3`：连续 `plan` 无进展累积计数熔断，避免死循环
+- **端点不识别 required 的兜底**：若网关忽略 `required` 返回纯文本，循环判定为终态回答（不崩溃）
+- LLM 客户端 `openai_compatible.py`：`_payload`/`chat_async`/`stream_chat_async` 透传 `tool_choice`
+
+### 前端（web/static/index.html）
+- `addStep`：把 `plan` 渲染为「提案提问」卡片、`respond` 渲染为「回复」，两者隐藏原始 tool_call JSON，仅向用户展示语义内容
+
+### 评测体系同步
+- `scripts/_eval_common.py`：新增 `NON_DOMAIN_TOOLS` + `domain_invoked(steps)`，从 routing/guardrail/workflow/tooluse/security 的「已调用工具」判定中排除 `plan`/`respond`（它们是控制流，不计入领域工具命中）
+- 新增确定性 `scripts/eval_hitl.py`：脚本化 LLM 断言 PROPOSE→等待→EXECUTE→ANSWER 全流程，已注册进 `ONLINE_ORDER`、`MODE_LAYERS`(L1/L2)、dispatch 与 `THRESHOLDS["hitl"]=1.0`
+- 单测 173 → **176**：`FakeLLM` 支持 `tool_choice` 传参与「单轮多工具调用」，`conftest.MockLLMClient` 与集成 `StatefulMockLLM` 同步接受 `tool_choice`；新增 `test_respond_finalizes_answer` / `test_plan_proposes_and_awaits_user` / `test_multiple_tool_calls_execute_in_one_round`
+
 ## [v0.8.1] - 2026-08-27
 
 **评测体系与文档对齐：评测结果重写 + 历史归档 + 学习机制评测定版**。

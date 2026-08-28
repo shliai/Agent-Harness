@@ -235,10 +235,14 @@ async def execute_stream(user_input, session_id, user_id):
 # 6. for step in range(max_iterations):  # max_iterations 来自 settings（默认 6）
 #     首轮确定性预拦截：命中商品信号→强制 knowledge_retrieval；命中只读意图规则
 #       （指代追问/计算/政策可行性/转人工/订单物流查询）→ 强制对应只读工具（防幻觉、防漂移，无文本闪现）
-#      stream_chat_async(tools=原生函数定义, tool_call_sink=...) → yield delta 增量
+#     stream_chat_async(tools=原生函数定义, tool_choice="required"(agent_tool_choice),
+#                       tool_call_sink=...) → yield delta 增量
 #      工具调用仅从原生 tool_calls 解析（tool_call_sink / reply.tool_calls），无文本/JSON 解析失败面
-#      ├─ 有 tool_call → delta_reset → 校验 → 执行工具（执行失败由 LLM 修正重试，≤tool_max_retries）→ 结果入记忆
-#      └─ 无 tool_call → 视为最终回答：check_output 脱敏 → 反问检测 → result
+#      每轮工具调用按类型走三模式分发（v0.8.2 任务列表式循环）：
+#      ├─ plan      → PROPOSE：仅提案任务清单+向用户提问，写入 wm.pending_plan，本轮回合不执行工具，等待确认
+#      ├─ 领域工具   → EXECUTE：顺序执行（失败由 LLM 修正重试 ≤tool_max_retries），结果入记忆；若同轮含 respond 则先执行再收尾
+#      └─ respond   → ANSWER：以 content 终态收尾（check_output 脱敏 → 反问检测 → result）；无 tool_call 纯文本回退为终态
+#      安全熔断：单轮工具数超 agent_tool_budget(20) / 连续 plan 无进展超 agent_stuck_threshold(3) → 友好提示终止
     # 7. 收尾：压缩判定 → asave_state → 学习机制落盘（启用时）
     #
     # 异常分支：
@@ -253,7 +257,11 @@ async def execute_stream(user_input, session_id, user_id):
 | 决策 | 理由 |
 |---|---|
 | 单气泡生命周期 | 打字占位、流式增量、最终回答复用同一 DOM 元素，消除多元素切换的状态管理复杂度 |
+| 每轮强制工具列表 | 模型调用统一 `tool_choice="required"`，从结构上消除「模型不调用工具直接闲聊/空转」回归面；端点不识别时回退「纯文本即终态」不崩溃 |
+| 任务列表式三模式 | `plan`(提案待确认) / 领域工具(执行) / `respond`(终态) 三类分流：先提案→用户确认→执行→收尾，实现人审任务清单而非静默盲跑；`plan`/`respond` 为拦截型控制流工具（`run` 不真正执行），不计入领域工具命中 |
+| 单轮多工具顺序执行 | 同一轮多个领域工具调用顺序执行并即时回写记忆，保留轮内顺序纠错；混有 `respond` 时先执行工具再收尾，避免丢工具 |
 | 商品强制检索 | 首轮模型输出前做确定性预拦截：命中商品信号即强制 knowledge_retrieval 并注入结果（仅首轮防死循环）；命中只读意图规则（指代追问/计算/政策可行性/转人工/订单物流查询）即强制对应工具，query 自动合并 WM 预算，杜绝幻觉文本闪现与指代漂移 |
+| 安全熔断 | `agent_tool_budget`(单轮工具上限) 防 runaway；`agent_stuck_threshold`(连续 plan 无进展) 防死循环；超限/超阈值给友好提示而非无限转圈 |
 | 脱敏前移 | 先过滤再入记忆，防止敏感信息经上下文回流到下一轮 LLM |
 | 中断落盘 | CancelledError 分支调用 _persist_session，用户停止不丢已生成内容 |
 | finally endTrace | 无论成功/失败/中断都终止推理中状态，杜绝 UI 卡死 |

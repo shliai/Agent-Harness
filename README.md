@@ -78,7 +78,7 @@ docker compose up -d
 
 | 模块 | 能力 |
 |---|---|
-| 循环引擎 | 自研 ReAct · **原生 function calling** · token 流式 · 失败修正重试 · 中断落盘 |
+| 循环引擎 | 自研 ReAct · **原生 function calling** · 每轮强制工具列表(`tool_choice=required`) · 任务列表式 plan/respond 终态 · token 流式 · 失败修正重试 · 中断落盘 |
 | 商品检索 | 向量+BM25 RRF 融合 · 中文分词 · 价格/品类/库存过滤 · 预算接近度加权 |
 | 订单管理 | 归属校验 · 列表查询 · 枚举风控熔断 |
 | 售后服务 | 退货换货申请（状态机）· 退款测算（券不退+满减扣回）· 进度查询 |
@@ -107,15 +107,15 @@ src/harness/
 scripts/            init_db / eval / export_badcase
 data/seed/          400 商品 + 260 订单 + 200 物流种子数据
 data/policies.json  10 条官方政策条款
-data/eval/          108 条评测用例（14 层）
-tests/              173 个测试用例
-docs/               10 份文档
+data/eval/          117 条评测用例（14 层）
+tests/              176 个测试用例
+docs/               12 份文档
 ```
 
 ## 测试与评测
 
 ```bash
-pytest tests/ -v                    # 173 个测试
+pytest tests/ -v                    # 176 个测试
 python scripts/eval.py              # L0 离线确定性（51/51 PASS，CI 闸门）
 python scripts/eval.py --mode L1    # 完整评测：L0 五层确定性 + 在线九层（含参数正确性/容错行为/安全对齐/跨会话隔离）
 python scripts/eval.py --mode L1 --runs 3   # 在线层跑 3 次：输出复现率与 flaky 用例
@@ -135,7 +135,7 @@ python scripts/eval.py --mode L1 --runs 3   # 在线层跑 3 次：输出复现�
 | [接口文档](docs/API.md) | REST/SSE 端点规范 |
 | [运维手册](docs/OPERATIONS.md) | 日志聚合、指标告警、灰度发布、密钥管理 |
 | [评测报告](docs/EVALUATION.md) | 多层评测方法论与详细结果（历史归档见 EVALUATION_HISTORY.md） |
-| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.8.1 演进史 |
+| [更新日志](docs/CHANGELOG.md) | v0.1.0 → v0.8.2 演进史 |
 
 ## 技术栈
 

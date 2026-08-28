@@ -1,6 +1,6 @@
 # Agent Harness 功能说明文档
 
-> 版本：v0.7.7 · 架构详情见 [ARCHITECTURE.md](ARCHITECTURE.md) · 接口规范见 [API.md](API.md)
+> 版本：v0.8.2 · 架构详情见 [ARCHITECTURE.md](ARCHITECTURE.md) · 接口规范见 [API.md](API.md)
 
 ## 系统定位
 
@@ -12,14 +12,21 @@
 
 ## 一、对话能力
 
-### 1.1 ReAct 循环
+### 1.1 ReAct 循环（任务列表式 v0.8.2）
 
-每轮对话按 thought → tool_call → observation 循环执行（OpenAI 原生 function calling，模型结构化输出 `tool_calls`），直到 LLM 认为信息足够输出最终回答，或达到最大迭代次数（默认 6 步）。
+每轮对话都**必须产出非空工具列表**（`tool_choice="required"`，配置 `agent_tool_choice`），按工具类型走三种模式，直到 `respond` 终态收尾或达到最大迭代次数：
+
+- **PROPOSE（提案待确认）**：模型先调 `plan` 给出任务清单并向用户提问，**本轮回合不执行任何工具**，把计划写入工作记忆等待用户确认——实现「人审任务清单」而非静默盲跑
+- **EXECUTE（执行）**：领域工具（检索/订单/物流/政策/售后…）顺序执行，结果回写工作记忆，下一轮继续推理；保留轮内顺序纠错
+- **ANSWER（终态回复）**：模型调 `respond` 以 `content` 收尾；若同一轮混有领域工具 + `respond`，先执行工具再用 `respond` 总结（避免丢工具）
+
+> `plan` / `respond` 为**拦截型控制流工具**（`run` 永不真正执行，由循环在调度前拦截），不计入领域工具命中；前端将两者渲染为「提案提问」「回复」卡片并隐藏原始 tool_call JSON。
 
 - **流式输出**：回答以 token 级增量实时推送到前端
 - **失败重试**：工具执行失败时自动让 LLM 修正参数重试（上限 `tool_max_retries`）
 - **结构化调用**：工具调用采用 OpenAI 原生 function calling，模型结构化输出 `tool_calls`，由推理服务端保证结构合法，**无文本/JSON 解析失败面**；上游瞬时错误由 LLM 客户端指数退避重试兜底
 - **确定性工具预拦截**：首轮模型输出前，命中商品信号即强制 `knowledge_retrieval` 防幻觉；命中指代追问/计算/政策可行性/投诉转人工/订单物流查询等规则即强制对应只读工具（见 2.1 防幻觉护栏）
+- **安全熔断**：`agent_tool_budget`（单轮工具上限，默认 20）与 `agent_stuck_threshold`（连续 `plan` 无进展熔断，默认 3）；端点不识别 `required` 时回退为「纯文本即终态回答」不崩溃
 - **中断保护**：用户停止或断网时已生成的部分内容落盘保存
 - **空回复兜底**：LLM 返回空内容时生成友好提示而非空气泡
 

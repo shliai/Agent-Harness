@@ -1,10 +1,12 @@
 # Agent 评测报告与完整评测体系
 
-> 版本：v0.8.1（评测体系 v3）· 评测日期：2026-08-27 16:57 · 数据规模：400 商品 / 260 订单 / 精确 200 物流轨迹
+> 版本：v0.8.2（评测体系 v3）· 评测日期：2026-08-28 · 数据规模：400 商品 / 260 订单 / 精确 200 物流轨迹
 >
 > 规划文档：[EVALUATION_PLAN.md](./EVALUATION_PLAN.md) · 历史归档（排障实录/旧快照）：[EVALUATION_HISTORY.md](./EVALUATION_HISTORY.md) · 用例集：`data/eval/golden_set.jsonl` · 报告：`data/eval/report_*.json`
 >
-> **最新全量评测（2026-08-27 16:57 · L1 `--runs 3`）**：`data/eval/report_20260827_171020.json` → **109/117 PASS**。L0 离线确定性 **51/51**；在线层 3 跑均值全部过 gate；一致性 0.94–1.0，3 个 flaky 用例（弱模型 runtime 方差，非架构回归）。
+> **基线全量评测（2026-08-27 16:57 · L1 `--runs 3`，重设计前）**：`data/eval/report_20260827_171020.json` → **109/117 PASS**。L0 离线确定性 **51/51**；在线层 3 跑均值全部过 gate；一致性 0.94–1.0，3 个 flaky 用例（弱模型 runtime 方差，非架构回归）。
+>
+> ⚠️ **架构变更提示（v0.8.2 任务列表式循环）**：循环已重构为「每轮强制工具列表（`tool_choice="required"`）+ `plan` 提案待确认 / 领域工具执行 / `respond` 终态回复」三模式（见 [CHANGELOG.md](./CHANGELOG.md) v0.8.2 与 [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) §3.6）。**上述 109/117 是重设计前的基线**，新循环下的全量 `L1 --runs 3` 尚未重跑（详见 §1.2）。新循环的评测改造：`domain_invoked()` 已排除 `plan`/`respond` 控制流工具；新增确定性 `hitl` 层。
 >
 > **设计变更提示**：长期记忆已在 v0.7.7 重构为「学习机制」（确定性、单用户、无向量、全量注入系统提示词），对应评测改为 `eval_memory.py` 对 `LearningStore` 的确定性断言（`memory` 层 4/4）。当前设计见 [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) §3.4 与 [CHANGELOG.md](./CHANGELOG.md) v0.7.7。
 
@@ -40,6 +42,23 @@
 | perf 非功能 | L1 | 5/5（仅报告） | 5 | 报告 | PASS |
 
 **总计 109/117 PASS**。L0 五层（检索/预算/鲁棒/学习机制/工作记忆流）共 51 例全绿；在线九层 3 跑均值全部过 gate。残余失分全部为弱模型 runtime 方差（见 §三）。
+
+---
+
+### 1.2 新循环架构（v0.8.2 任务列表式）当前验证
+
+循环重构为「每轮 `tool_choice="required"` + `plan` 提案 / 领域工具执行 / `respond` 终态」后，**全量 `L1 --runs 3` 尚未在重设计后重跑**（成本高、且与 §1.1 基线属不同循环）。已完成的新循环验证：
+
+| 验证项 | 模式 | 结果 | 说明 |
+|---|---|---|---|
+| 单测 + 集成 | 离线 | **176 passed** | 原 173 → 新增 3 个循环模式用例（respond 终态 / plan 提案待确认 / 单轮多工具执行）；`FakeLLM`/`MockLLM` 支持 `tool_choice` 与单轮多 tool_call |
+| L0 离线确定性 | L0 | **51/51** | 与循环解耦的确定性层（检索/预算/鲁棒/学习机制/工作记忆流）在重构后全绿 |
+| 路由 + 护栏（真实 LLM 冒烟） | L1 | **28/28** | routing 16/16 + guardrail 12/12；闲聊正确产出零领域工具、商品咨询正确路由 |
+| HITL 任务清单层 | L1（确定性） | **1/1** | 新增 `eval_hitl.py`：脚本化断言 PROPOSE→等待→EXECUTE→ANSWER 全流程 |
+
+> **评测口径变更**：`domain_invoked()` 现排除 `plan`/`respond`（控制流工具不计入领域命中），routing/guardrail/workflow/tooluse/security 各层判定随之修正；旧 109/117 基线报告中的相关统计是在旧口径下产出的，重跑后数字可能小幅变动（预期不变差）。
+>
+> **建议后续**：在新循环上重跑 `python scripts/eval.py --mode L1 --runs 3` 刷新 §1.1 基线，并确认 3 个历史 flaky（F05/T06/P08）在 `required` 约束下是否收敛。
 
 ---
 

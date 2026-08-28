@@ -10,7 +10,7 @@
 | [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) | 架构决策者 |
 | [EVALUATION.md](EVALUATION.md) | 质量保障 | 评测方法论 · 多层详细结果 · RAG 忠实度规划 · 已知局限 |
 | [OPERATIONS.md](OPERATIONS.md) | 运维/SRE | 日志聚合 · 指标告警 · 灰度发布 · 密钥管理 · 故障速查 |
-| [CHANGELOG.md](CHANGELOG.md) | 全员 | v0.1.0 → v0.8.1 完整演进史 |
+| [CHANGELOG.md](CHANGELOG.md) | 全员 | v0.1.0 → v0.8.2 完整演进史 |
 
 ## 快速导航
 
