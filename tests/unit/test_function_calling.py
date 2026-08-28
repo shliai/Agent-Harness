@@ -29,12 +29,12 @@ class FakeLLM(AbstractLLMClient):
         self.calls: list[dict] = []
 
     async def chat_async(self, messages, temperature=None, tools=None,
-                         tool_call_sink=None):
+                          tool_call_sink=None, **kwargs):
         self.calls.append({"tools": tools, "messages": messages})
         item = self._next()
         if isinstance(item, Exception):
             raise item
-        calls = [item] if isinstance(item, dict) else []
+        calls = self._to_calls(item)
         if tool_call_sink is not None and calls:
             tool_call_sink["tool_calls"] = calls
         return LLMReply(
@@ -44,15 +44,23 @@ class FakeLLM(AbstractLLMClient):
         )
 
     async def stream_chat_async(self, messages, temperature=None, tools=None,
-                                tool_call_sink=None):
+                                 tool_call_sink=None, **kwargs):
         self.calls.append({"tools": tools, "messages": messages})
         item = self._next()
         if isinstance(item, Exception):
             raise item
-        calls = [item] if isinstance(item, dict) else []
+        calls = self._to_calls(item)
         if tool_call_sink is not None and calls:
             tool_call_sink["tool_calls"] = calls
         yield "" if calls else str(item)
+
+    @staticmethod
+    def _to_calls(item):
+        if isinstance(item, dict):
+            return [item]
+        if isinstance(item, list):
+            return item
+        return []
 
     def _next(self):
         if self.idx >= len(self.script):
@@ -170,3 +178,62 @@ async def test_bad_native_args_go_through_retry_chain():
     assert executed and executed[0].tool_call.tool_name == "echo"
     assert result.success
     assert llm.calls[0]["tools"] and llm.calls[1]["tools"]
+
+
+@pytest.mark.asyncio
+async def test_respond_finalizes_answer():
+    """终态工具 respond 承载最终回复；不出现裸文本回答"""
+    llm = FakeLLM([
+        {"id": "r1", "name": "respond", "arguments": {"content": "这是最终回复内容"}},
+    ])
+    loop = build_loop(llm)
+    result = await collect(loop, "你好")
+
+    assert result.success
+    assert result.answer == "这是最终回复内容"
+    # 终态 step 以 respond 工具记录
+    final_steps = [s for s in result.steps if s.tool_call is not None]
+    assert final_steps and final_steps[-1].tool_call.tool_name == "respond"
+
+
+@pytest.mark.asyncio
+async def test_plan_proposes_and_awaits_user():
+    """需确认的操作先 plan 提案并向用户提问，不直接执行工具"""
+    llm = FakeLLM([
+        {"id": "p1", "name": "plan",
+         "arguments": {"actions": ["echo 执行某操作"], "message": "请确认是否执行？"}},
+    ])
+    loop = build_loop(llm)
+    result = await collect(loop, "帮我做点事")
+
+    assert result.success
+    # 答案即提案提问语，未真正执行 echo
+    assert result.answer == "请确认是否执行？"
+    assert not any(s.tool_call is not None and s.tool_call.tool_name == "echo"
+                   for s in result.steps)
+    plan_steps = [s for s in result.steps if s.tool_call is not None]
+    assert plan_steps and plan_steps[-1].tool_call.tool_name == "plan"
+
+
+@pytest.mark.asyncio
+async def test_multiple_tool_calls_execute_in_one_round():
+    """一轮内多个工具调用顺序执行，结果一并回灌下一轮"""
+    llm = FakeLLM([
+        [
+            {"id": "a", "name": "echo", "arguments": {"text": "第一件"}},
+            {"id": "b", "name": "echo", "arguments": {"text": "第二件"}},
+        ],
+        {"id": "r", "name": "respond", "arguments": {"content": "已全部处理"}},
+    ])
+    loop = build_loop(llm)
+    result = await collect(loop, "都处理一下")
+
+    assert result.success
+    executed = [s for s in result.steps if s.tool_call is not None]
+    # 两个 echo 在同一轮（round_index 相同）顺序执行，后接 respond 终态
+    echo_steps = [s for s in executed if s.tool_call.tool_name == "echo"]
+    assert len(echo_steps) == 2
+    assert echo_steps[0].round_index == echo_steps[1].round_index
+    fed = " ".join(m.content for m in llm.calls[1]["messages"])
+    assert "第一件" in fed
+    assert "第二件" in fed

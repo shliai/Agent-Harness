@@ -43,10 +43,12 @@ def _norm(value: str) -> str:
 
 
 def _collect_calls(steps: list[Any]) -> list[tuple[str, dict]]:
+    from _eval_common import NON_DOMAIN_TOOLS
+
     return [
         (s.tool_call.tool_name, dict(s.tool_call.arguments or {}))
         for s in steps
-        if s.tool_call is not None
+        if s.tool_call is not None and s.tool_call.tool_name not in NON_DOMAIN_TOOLS
     ]
 
 

@@ -34,6 +34,8 @@ from harness.tools.logistics_query import LogisticsQueryTool
 from harness.tools.aftersale import AfterSaleApplyTool, AfterSaleQueryTool
 from harness.tools.order_query import MyOrdersTool, OrderQueryTool
 from harness.tools.policy_query import PolicyQueryTool, TransferHumanTool
+from harness.tools.respond import RespondTool
+from harness.tools.plan import PlanTool
 
 logger = logging.getLogger("harness.web.api")
 
@@ -107,6 +109,9 @@ def _build_agent() -> Agent:
     registry.register_tool(MyOrdersTool())
     registry.register_tool(AfterSaleApplyTool())
     registry.register_tool(AfterSaleQueryTool())
+    # 终态 / 提案工具：承载「每轮必须输出工具」约束下的回复与人工确认环节
+    registry.register_tool(RespondTool())
+    registry.register_tool(PlanTool())
 
     guardrails = GuardrailPipeline()
     guardrails.add(InputValidator(max_length=4096))

@@ -22,7 +22,9 @@ _MAX_SINGLE_TURN_RETRIEVAL = 2
 
 
 def _invoked_sequence(steps: list[Any]) -> list[str]:
-    return [s.tool_call.tool_name for s in steps if s.tool_call is not None]
+    from _eval_common import domain_invoked
+
+    return domain_invoked(steps)
 
 
 async def eval_guardrail(cases: list[dict], products: list[dict] | None = None) -> dict:

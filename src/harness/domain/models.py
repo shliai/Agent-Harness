@@ -49,6 +49,7 @@ class StepRecord(BaseModel):
     thought: str
     tool_call: ToolCall | None = None
     tool_result: ToolResult | None = None
+    round_index: int | None = None  # 同一轮模型推理产出的多个工具调用共享同一分组键
     timestamp: datetime = Field(default_factory=datetime.now)
 
 

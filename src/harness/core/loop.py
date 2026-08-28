@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
 import time
@@ -37,6 +38,11 @@ from harness.observability.tracer import Tracer
 from harness.tools.base import BaseTool
 
 logger = logging.getLogger("harness.core.loop")
+
+# 终态 / 提案工具：承载「每轮必须输出工具」约束下的回复与人工确认环节。
+# respond=最终回复，plan=先问用户/需确认（不直接执行）。
+FINALIZE_TOOL = "respond"
+PLAN_TOOL = "plan"
 
 # 寒暄/无信息量输入：跳过轮末学习与长期记忆写入
 _TRIVIAL_INPUT_RE = re.compile(
@@ -184,6 +190,16 @@ SYSTEM_PROMPT_TEMPLATE = """你是专业的电商智能客服助手「小慧」�
   query 应传 "高性能手机 3999元以内"，让检索做价格过滤；
 - 收到结果后用自然语言回复；不需要工具时直接回答。
 
+## 工具调用约束（每轮都必须产出工具列表）
+- 本系统强制要求：**你的每一次回复都必须是一次工具调用，不得输出裸文本**；
+- 最终回复用户时用 **respond** 工具承载（content 字段填自然语言答案）；
+- 需要用户确认、或缺失必填参数、或有副作用（提交售后/改地址/转人工等写操作）时，
+  先调用 **plan** 工具：actions 填拟执行的工具人类可读清单，message 填你的问题/确认语；
+  用户回复后你再调用真正的工具并以正确参数填入，不要重复念出方案本身；
+- 一次性可执行的只读/参数齐备操作（如查询、计算、检索）直接调用对应工具，无需 plan；
+- 若一轮需要多步操作，可在同一回复里一并给出多个工具调用，它们将按顺序执行，
+  结果会一并交回给你继续推理，直到你调用 respond 给出最终回复。
+
 ## 必调工具清单（硬性，不可凭记忆绕过）
 以下意图**必须调用对应工具**，即使你觉得能凭常识回答也要调——工具返回才是唯一可信源：
 - 任何含数字计算、金额、折扣、优惠、总价、算式（如 "(2999+499)*0.85"）→ **calculator**
@@ -298,6 +314,10 @@ class ReActLoop:
         # 注意：本类可能以单例被并发调用，严禁挂任何跨请求可变实例状态——
         # 身份/会话信息一律以局部变量与事件载荷传递。
         self._pending_finalize: dict[str, asyncio.Task] = {}
+        # 每轮请求内的护栏计数器（run() 开头重置，避免单例跨请求污染）
+        self._stuck_count = 0
+        self._last_call_key: str | None = None
+        self._tool_calls_total = 0
 
     # ── 原生 function calling（唯一工具调用协议）──────────
 
@@ -440,6 +460,11 @@ class ReActLoop:
 
             result: AgentResult | None = None
 
+            # 重置每轮护栏计数器（Agent 实例可能被多请求复用）
+            self._stuck_count = 0
+            self._last_call_key = None
+            self._tool_calls_total = 0
+
             for step_index in range(self.max_iterations):
                 # 首轮前置拦截（确定性护栏）：模型输出前先做两类强制调用，
                 # 避免流式输出"凭记忆"内容再被回滚：
@@ -512,8 +537,7 @@ class ReActLoop:
 
                 # token 级流式：增量即时推送前端；若本轮实际是工具规划，
                 # 由 delta_reset 事件通知前端回滚临时文本。
-                # 原生 function calling：携带 tools 载荷，结构化 tool_calls
-                # 经 sink 返回——格式由推理服务保证，无文本解析失败面。
+                # 受 tool_choice=required 约束，模型每轮都必须产出非空 tool_call 列表。
                 buf: list[str] = []
                 usage_sink: dict = {}
                 tc_sink: dict = {}
@@ -524,6 +548,7 @@ class ReActLoop:
                 call_messages = messages
                 if tools:
                     call_kwargs["tools"] = tools
+                    call_kwargs["tool_choice"] = settings.agent_tool_choice
                     call_kwargs["tool_call_sink"] = tc_sink
                     call_messages = self._to_native_messages(messages)
                 async for delta in self.llm.stream_chat_async(call_messages, **call_kwargs):
@@ -546,27 +571,19 @@ class ReActLoop:
 
                 self._account_budget(sid, wm, tokens)
 
-                # 工具调用解析：仅接受原生结构化 tool_calls；
-                # 无调用即视为最终回答（文本协议已移除）
+                # 工具调用解析：仅接受原生结构化 tool_calls；无调用即视为最终回答。
+                # 原生不支持 required 的端点若退回纯文本，按最终回复兜底（不崩溃）。
                 native_calls = tc_sink.get("tool_calls") or []
-                tool_call: ToolCall | None = None
-                if native_calls:
-                    nc = native_calls[0]
-                    thought = thought or f"调用工具 {nc['name']}"
-                    tool_call = ToolCall(tool_name=nc["name"], arguments=nc["arguments"])
-
-                # 商品意图已在循环开头前置拦截并强制检索，此处无需重复处理
-                if tool_call is None:
+                if not native_calls:
+                    # ── 兜底：端点的 required 被忽略，返回纯文本 → 当作最终回复 ──
                     filtered = self.guardrails.check_output(thought, session_id=sid)
                     if not filtered.strip():
                         filtered = "（本次未产生有效回复，请换个问法或稍后再试。）"
                     if filtered != thought:
                         yield {"type": "answer_replace", "content": filtered}
-                    # 先脱敏再入记忆/历史，防止敏感信息经上下文回流
                     memory.add(AgentMessage(role=ChatRole.assistant, content=filtered))
                     self.tracer.record_step(step_index, thought, None, None, session_id=sid)
-                    steps.append(StepRecord(step_index=step_index, thought=thought))
-
+                    steps.append(StepRecord(step_index=step_index, thought=thought, round_index=step_index))
                     yield {
                         "type": "step",
                         "step_index": step_index,
@@ -574,15 +591,11 @@ class ReActLoop:
                         "final": True,
                     }
                     await asyncio.sleep(0.001)
-
                     duration = (time.perf_counter() - start_time) * 1000
                     self._record_duration(req_metrics, duration)
-
-                    # 澄清式反问检测：记录等待项，下一轮注入任务状态防止重复追问
                     clarify = _CLARIFY_RE.search(filtered)
                     if clarify:
                         wm.set_awaiting(clarify.group(1) or "相关信息")
-
                     result = AgentResult(
                         answer=filtered,
                         steps=steps,
@@ -592,38 +605,146 @@ class ReActLoop:
                     )
                     break
 
-                # ── 工具调用路径 ──
-                step_result = await self._execute_tool_step(
-                    sid=sid,
-                    step_index=step_index,
-                    system_prompt=system_prompt,
-                    memory=memory,
-                    initial_thought=thought,
-                    initial_call=tool_call,
-                    req_metrics=req_metrics,
-                    chapters=chapters,
-                    state_note=state_note,
+                # 解析全部工具调用（任务列表式 ReAct：一轮可产出多个工具）
+                parsed: list[ToolCall] = []
+                for nc in native_calls:
+                    thought = thought or f"调用工具 {nc['name']}"
+                    parsed.append(ToolCall(tool_name=nc["name"], arguments=nc["arguments"]))
+
+                # 死循环护栏：连续相同调用且无新结果 → 强制终态
+                call_key = json.dumps(
+                    [(c.tool_name, sorted(c.arguments.items())) for c in parsed],
+                    ensure_ascii=False,
                 )
-                total_tokens += step_result["extra_tokens"]
-                self._account_budget(sid, wm, step_result["extra_tokens"])
-                steps.append(step_result["record"])
-                self.tracer.record_step(
-                    step_index, step_result["final_thought"],
-                    step_result["tool_call"], step_result["tool_result"], session_id=sid,
-                )
-                # 修正重试发生在步骤内部（无流式输出），推事件让前端
-                # 显示「修正中」而非静默卡顿；下一轮 delta_reset 前先清残留文本
-                if step_result.get("retried"):
-                    yield {"type": "delta_reset", "reason": "tool_retry"}
-                payload: dict[str, Any] = {
-                    "type": "step",
-                    "step_index": step_index,
-                    "thought": step_result["final_thought"],
-                    "tool_call": step_result["tool_call"].model_dump(),
-                    "tool_result": step_result["tool_result"].model_dump(),
-                }
-                yield payload
-                await asyncio.sleep(0.001)
+                if call_key == self._last_call_key:
+                    self._stuck_count += 1
+                else:
+                    self._stuck_count = 0
+                    self._last_call_key = call_key
+                if self._stuck_count >= settings.agent_stuck_threshold:
+                    result, _rec, _f, _r = self._finalize_answer(
+                        "（已多次尝试相同操作仍无新进展，为避免死循环已停止；请补充更明确的信息或参数后继续。）",
+                        step_index=step_index, parsed=parsed, memory=memory,
+                        req_metrics=req_metrics, steps=steps, total_tokens=total_tokens,
+                        start_time=start_time, sid=sid, wm=wm,
+                    )
+                    yield {"type": "step", "step_index": step_index, "thought": _f, "final": True}
+                    break
+
+                call_names = {c.tool_name for c in parsed}
+
+                # ── PROPOSE 模式：plan 提案待确认，不直接执行 ──
+                if PLAN_TOOL in call_names:
+                    plan_call = next(c for c in parsed if c.tool_name == PLAN_TOOL)
+                    actions = plan_call.arguments.get("actions") or []
+                    message = plan_call.arguments.get("message") or ""
+                    wm.set_pending_plan(actions, message)
+                    result, rec, filtered, raw = self._finalize_answer(
+                        message, step_index=step_index, parsed=[plan_call], memory=memory,
+                        req_metrics=req_metrics, steps=steps, total_tokens=total_tokens,
+                        start_time=start_time, sid=sid, wm=wm, tool_name=PLAN_TOOL,
+                    )
+                    if filtered != raw:
+                        yield {"type": "answer_replace", "content": filtered}
+                    yield {
+                        "type": "step", "step_index": step_index, "thought": rec.thought,
+                        "tool_call": rec.tool_call.model_dump(),
+                        "tool_result": rec.tool_result.model_dump(), "final": True,
+                    }
+                    break
+
+                # ── 执行/终态拆分：领域工具先顺序执行；respond 仅承载最终回复 ──
+                domain_calls = [c for c in parsed if c.tool_name not in (PLAN_TOOL, FINALIZE_TOOL)]
+                finalize_calls = [c for c in parsed if c.tool_name == FINALIZE_TOOL]
+
+                if not domain_calls:
+                    # 仅 respond（或无工具）→ ANSWER 终态
+                    content = finalize_calls[0].arguments.get("content") or "" if finalize_calls else thought
+                    result, rec, filtered, raw = self._finalize_answer(
+                        content, step_index=step_index,
+                        parsed=[finalize_calls[0]] if finalize_calls else [],
+                        memory=memory, req_metrics=req_metrics, steps=steps,
+                        total_tokens=total_tokens, start_time=start_time, sid=sid, wm=wm,
+                        tool_name=FINALIZE_TOOL if finalize_calls else None,
+                    )
+                    wm.clear_pending_plan()
+                    if filtered != raw:
+                        yield {"type": "answer_replace", "content": filtered}
+                    yield {
+                        "type": "step", "step_index": step_index, "thought": rec.thought,
+                        "tool_call": rec.tool_call.model_dump() if rec.tool_call else None,
+                        "tool_result": rec.tool_result.model_dump() if rec.tool_result else None,
+                        "final": True,
+                    }
+                    break
+
+                # ── EXECUTE 模式：顺序执行领域工具列表 ──
+                budget_hit = False
+                for tc in domain_calls:
+                    self._tool_calls_total += 1
+                    if self._tool_calls_total > settings.agent_tool_budget:
+                        result, rec, _f, _r = self._finalize_answer(
+                            "（已达到本轮工具调用上限，为避免失控已停止；请补充信息后继续。）",
+                            step_index=step_index, parsed=[tc], memory=memory,
+                            req_metrics=req_metrics, steps=steps, total_tokens=total_tokens,
+                            start_time=start_time, sid=sid, wm=wm,
+                        )
+                        yield {"type": "step", "step_index": step_index, "thought": _f, "final": True}
+                        budget_hit = True
+                        break
+                    step_result = await self._execute_tool_step(
+                        sid=sid,
+                        step_index=step_index,
+                        system_prompt=system_prompt,
+                        memory=memory,
+                        initial_thought=thought,
+                        initial_call=tc,
+                        req_metrics=req_metrics,
+                        chapters=chapters,
+                        state_note=state_note,
+                    )
+                    total_tokens += step_result["extra_tokens"]
+                    self._account_budget(sid, wm, step_result["extra_tokens"])
+                    steps.append(step_result["record"])
+                    self.tracer.record_step(
+                        step_index, step_result["final_thought"],
+                        step_result["tool_call"], step_result["tool_result"], session_id=sid,
+                    )
+                    # 修正重试发生在步骤内部（无流式输出），推事件让前端
+                    # 显示「修正中」而非静默卡顿；下一轮 delta_reset 前先清残留文本
+                    if step_result.get("retried"):
+                        yield {"type": "delta_reset", "reason": "tool_retry"}
+                    yield {
+                        "type": "step",
+                        "step_index": step_index,
+                        "round_index": step_index,
+                        "thought": step_result["final_thought"],
+                        "tool_call": step_result["tool_call"].model_dump(),
+                        "tool_result": step_result["tool_result"].model_dump(),
+                    }
+                    await asyncio.sleep(0.001)
+                if budget_hit:
+                    break
+                # 本轮工具执行完：同轮含 respond 则以其内容终态，否则进入下一轮推理
+                if finalize_calls:
+                    content = finalize_calls[0].arguments.get("content") or ""
+                    result, rec, filtered, raw = self._finalize_answer(
+                        content, step_index=step_index, parsed=[finalize_calls[0]],
+                        memory=memory, req_metrics=req_metrics, steps=steps,
+                        total_tokens=total_tokens, start_time=start_time, sid=sid, wm=wm,
+                        tool_name=FINALIZE_TOOL,
+                    )
+                    wm.clear_pending_plan()
+                    if filtered != raw:
+                        yield {"type": "answer_replace", "content": filtered}
+                    yield {
+                        "type": "step", "step_index": step_index, "thought": rec.thought,
+                        "tool_call": rec.tool_call.model_dump(),
+                        "tool_result": rec.tool_result.model_dump(), "final": True,
+                    }
+                    break
+                wm.clear_pending_plan()
+                continue
             else:
                 raise MaxIterationsExceeded(f"超过最大迭代次数 ({self.max_iterations})")
 
@@ -1050,6 +1171,61 @@ class ReActLoop:
             "extra_tokens": extra_tokens,
             "retried": retried,
         }
+
+    # ── 终态统一出口 ──────────────────────────────────
+
+    def _finalize_answer(
+        self, raw_answer: str, *, step_index: int, parsed: list[ToolCall],
+        memory: ShortTermMemory, req_metrics: MetricsCollector, steps: list[StepRecord],
+        total_tokens: int, start_time: float, sid: str, wm: WorkingMemory,
+        tool_name: str | None = None,
+    ) -> tuple[AgentResult, StepRecord, str, str]:
+        """统一终态：脱敏 → 入记忆 → 记追踪 → 追加 step → 算耗时 → 产出 AgentResult。
+
+        返回 (result, record, filtered, raw)，调用方据此决定是否推送 answer_replace
+        事件（覆盖流式阶段已展示的、可能含敏感信息的原始文本）。
+        """
+        filtered = self.guardrails.check_output(raw_answer, session_id=sid)
+        if not filtered.strip():
+            filtered = "（本次未产生有效回复，请换个问法或稍后再试。）"
+        # 先脱敏再入记忆/历史，防止敏感信息经上下文回流
+        memory.add(AgentMessage(role=ChatRole.assistant, content=filtered))
+        self.tracer.record_step(step_index, filtered, None, None, session_id=sid)
+
+        tool_call = parsed[0] if parsed else None
+        tool_result: ToolResult | None = None
+        if tool_call is not None:
+            tool_result = ToolResult(
+                tool_call_id=tool_call.id,
+                tool_name=tool_name or tool_call.tool_name,
+                success=True,
+                output=filtered,
+            )
+        record = StepRecord(
+            step_index=step_index,
+            thought=filtered,
+            round_index=step_index,
+            tool_call=tool_call,
+            tool_result=tool_result,
+        )
+        steps.append(record)
+
+        duration = (time.perf_counter() - start_time) * 1000
+        self._record_duration(req_metrics, duration)
+
+        # 澄清式反问检测：记录等待项，下一轮注入任务状态防止重复追问
+        clarify = _CLARIFY_RE.search(filtered)
+        if clarify:
+            wm.set_awaiting(clarify.group(1) or "相关信息")
+
+        result = AgentResult(
+            answer=filtered,
+            steps=steps,
+            total_duration_ms=round(duration, 2),
+            total_tokens=total_tokens,
+            success=True,
+        )
+        return result, record, filtered, raw_answer
 
     # ── 观测与工具函数 ─────────────────────────────────
 

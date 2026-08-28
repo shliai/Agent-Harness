@@ -189,7 +189,7 @@ class _RecordingTool:
 
 
 async def eval_routing(cases: list[dict]) -> dict:
-    from _eval_common import build_eval_agent, S
+    from _eval_common import build_eval_agent, S, NON_DOMAIN_TOOLS
 
     agent = build_eval_agent()
     recorders: dict[str, _RecordingTool] = {}
@@ -211,7 +211,8 @@ async def eval_routing(cases: list[dict]) -> dict:
             result, error = None, str(e)
         duration = time.perf_counter() - t0
 
-        invoked = {n for n, r in recorders.items() if r.call_count > 0}
+        invoked = {n for n, r in recorders.items()
+                   if r.call_count > 0 and n not in NON_DOMAIN_TOOLS}
         expected = set(case.get("expect_tools") or [])
         expect_none = bool(case.get("expect_none"))
 
@@ -438,10 +439,10 @@ async def main_async(args: argparse.Namespace) -> int:
         "L0": ["retrieval", "budget", "robustness", "memory", "wm_flow"],
         "L1": ["retrieval", "budget", "robustness", "memory", "wm_flow",
                "gen", "guardrail", "workflow", "routing",
-               "tooluse", "fault", "security", "isolation", "perf"],
+               "tooluse", "fault", "security", "isolation", "hitl", "perf"],
         "L2": ["retrieval", "budget", "robustness", "memory", "wm_flow",
                "gen", "gen_judge", "guardrail", "workflow", "routing",
-               "tooluse", "fault", "security", "isolation", "perf"],
+               "tooluse", "fault", "security", "isolation", "hitl", "perf"],
     }
     if args.layers:
         layers = set(args.layers.split(","))
@@ -454,11 +455,11 @@ async def main_async(args: argparse.Namespace) -> int:
 
     # 在线层统一调度：顺序执行 + --runs 复现率（按均值 gate，输出 flaky 清单）
     ONLINE_ORDER = ["gen", "gen_judge", "guardrail", "workflow", "routing",
-                    "tooluse", "fault", "security", "isolation", "perf"]
+                     "tooluse", "fault", "security", "isolation", "hitl", "perf"]
     THRESHOLDS = {
         "gen": 0.8, "gen_judge": 0.6, "guardrail": 0.8, "workflow": 0.8,
         "routing": 0.75, "tooluse": 0.7, "fault": 0.75,
-        "security": 0.9, "isolation": 0.75, "perf": 0.8,
+        "security": 0.9, "isolation": 0.75, "hitl": 1.0, "perf": 0.8,
     }
 
     async def _run_online_layer(name: str) -> dict:
@@ -489,6 +490,10 @@ async def main_async(args: argparse.Namespace) -> int:
             return await _f(golden)
         if name == "security":
             from eval_security import eval_security as _f
+
+            return await _f(golden)
+        if name == "hitl":
+            from eval_hitl import eval_hitl as _f
 
             return await _f(golden)
         if name == "isolation":

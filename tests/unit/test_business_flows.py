@@ -14,7 +14,7 @@ from harness.memory.conversation_history import ConversationHistory
 class StreamFromChat:
     """为只实现了 chat_async 的脚本 LLM 补齐流式接口（整段作为单个 delta）"""
 
-    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
         reply = await self.chat_async(messages, temperature=temperature,
                                       tools=tools, tool_call_sink=tool_call_sink)
         yield reply.content
@@ -222,7 +222,7 @@ class TestAfterSale:
 # ── loop：取消落盘 + 轨迹持久化 ────────────────────────────
 
 class _HangLLM(StreamFromChat):
-    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
         await asyncio.Event().wait()
 
 
@@ -230,7 +230,7 @@ class _ToolCallLLM(StreamFromChat):
     def __init__(self) -> None:
         self.calls = 0
 
-    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
         self.calls += 1
         if self.calls == 1:
             call = {"id": "c1", "name": "mock_tool", "arguments": {"input": "x"}}

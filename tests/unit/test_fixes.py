@@ -34,7 +34,7 @@ from harness.llm.base import LLMReply
 class StreamFromChat:
     """为只实现了 chat_async 的脚本 LLM 补齐流式接口（整段作为单个 delta）"""
 
-    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
         reply = await self.chat_async(messages, temperature=temperature,
                                       tools=tools, tool_call_sink=tool_call_sink)
         yield reply.content
@@ -452,7 +452,7 @@ class _ScriptedSubtaskLLM:
 
 
 
-    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
 
         from harness.domain.models import ChatRole
 
@@ -542,7 +542,7 @@ class TestSubtaskControlFlow:
 
                 self.calls = 0
 
-            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
 
                 self.calls += 1
 
@@ -650,7 +650,7 @@ class TestLoopRobustness:
 
 
 
-            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
 
                 self.calls += 1
 
@@ -716,7 +716,7 @@ class TestLoopRobustness:
 
         class PIILLM(StreamFromChat):
 
-            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
 
                 captured["messages"] = messages
 

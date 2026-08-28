@@ -32,3 +32,30 @@ _RUN_STAMP = time.strftime("%Y%m%d%H%M%S")
 
 def S(tag: str) -> str:
     return f"{tag}-{_RUN_STAMP}"
+
+
+# ── 终态/提案工具（任务列表式 ReAct）：不计入领域工具调用 ──
+try:
+    from harness.core.loop import FINALIZE_TOOL, PLAN_TOOL
+except Exception:  # pragma: no cover - 仅在离线单测极端情况触发
+    FINALIZE_TOOL, PLAN_TOOL = "respond", "plan"
+
+NON_DOMAIN_TOOLS = frozenset({FINALIZE_TOOL, PLAN_TOOL})
+
+
+def domain_invoked(steps) -> list[str]:
+    """从 steps 抽取「领域工具」调用序列，剔除终态(respond)/提案(plan)工具。
+
+    任务列表式 ReAct 下，模型每轮都必须产出工具调用（终态用 respond、需确认用
+    plan），但这些不是「业务领域工具」，不应计入 routing/guardrail/tooluse/workflow
+    等层对领域工具调用的断言（否则闲聊零工具用例会因 respond 而误判为「有工具」）。
+    """
+    out: list[str] = []
+    for s in steps:
+        if s.tool_call is None:
+            continue
+        name = s.tool_call.tool_name
+        if name in NON_DOMAIN_TOOLS:
+            continue
+        out.append(name)
+    return out

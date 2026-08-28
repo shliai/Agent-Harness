@@ -17,7 +17,7 @@ from harness.memory.working_memory import WorkingMemory
 class StreamFromChat:
     """为只实现了 chat_async 的脚本 LLM 补齐流式接口（整段作为单个 delta）"""
 
-    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def stream_chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
         reply = await self.chat_async(messages, temperature=temperature,
                                       tools=tools, tool_call_sink=tool_call_sink)
         yield reply.content
@@ -150,7 +150,7 @@ class _SummaryLLM(StreamFromChat):
         self.calls: list[list[AgentMessage]] = []
         self.summarize_called = False
 
-    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
         self.calls.append(list(messages))
         from harness.core.loop import ReActLoop
 
@@ -409,7 +409,7 @@ class TestChapterMemory:
         """LLM 摘要失败 → 降级保留完整历史，绝不丢数据"""
 
         class BrokenSummaryLLM(_SummaryLLM):
-            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+            async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
                 from harness.core.loop import ReActLoop
 
                 if any(m.content.startswith(ReActLoop.SUMMARY_SYSTEM_PROMPT) for m in messages):
@@ -454,7 +454,7 @@ class _FoldAwareLLM(StreamFromChat):
         self.fold_calls: list[list[AgentMessage]] = []
         self.fold_called = False
 
-    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
         from harness.core.loop import FOLD_SYSTEM_PROMPT, ReActLoop
 
         if any(m.content.startswith(ReActLoop.SUMMARY_SYSTEM_PROMPT) for m in messages):
@@ -469,7 +469,7 @@ class _FoldAwareLLM(StreamFromChat):
 class _LongAnswerLLM(_SummaryLLM):
     """非摘要请求时输出超过折叠门控长度阈值的正常回答"""
 
-    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None):
+    async def chat_async(self, messages, temperature=None, tools=None, tool_call_sink=None, **kwargs):
         from harness.core.loop import ReActLoop
 
         if any(m.content.startswith(ReActLoop.SUMMARY_SYSTEM_PROMPT) for m in messages):

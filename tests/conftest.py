@@ -24,6 +24,7 @@ class MockLLMClient(AbstractLLMClient):
     async def chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None,
         tools: list[dict] | None = None, tool_call_sink: dict | None = None,
+        tool_choice: str | None = None,
     ) -> LLMReply:
         self.last_messages = messages
         self.all_calls.append(list(messages))
@@ -36,6 +37,7 @@ class MockLLMClient(AbstractLLMClient):
     async def stream_chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None,
         tools: list[dict] | None = None, tool_call_sink: dict | None = None,
+        tool_choice: str | None = None,
     ) -> AsyncGenerator[str, None]:
         self.last_messages = messages
         self.all_calls.append(list(messages))

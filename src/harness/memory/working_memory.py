@@ -106,6 +106,7 @@ class WorkingMemory(BaseModel):
     user_constraints: list[str] = Field(default_factory=list)
     user_corrections: list[str] = Field(default_factory=list)
     awaiting_slot: str | None = None  # 上一轮向用户发起的澄清（等待补充的信息）
+    pending_plan: dict | None = None  # 模型已提案(plan)并等待用户确认/补充参数的执行方案
     # 轮末折叠式滚动摘要 S_t（cheap_llm 生成）：记录"对话进展到哪了"。
     # 只在本会话/本周期内有效：随 WM 烘焙前作废（不进章节快照），
     # reset_for_new_cycle 后由新周期重新积累
@@ -237,6 +238,13 @@ class WorkingMemory(BaseModel):
         """记录本轮向用户发起的澄清（由循环在最终回答含反问时调用）"""
         self.awaiting_slot = slot_desc[:60]
 
+    def set_pending_plan(self, actions: list[str], message: str) -> None:
+        """记录模型已提出的工具执行方案，等待用户确认/补充参数后本轮执行。"""
+        self.pending_plan = {"actions": list(actions or []), "message": message}
+
+    def clear_pending_plan(self) -> None:
+        self.pending_plan = None
+
     # ── 用户信号抽取（确定性，长期学习机制数据源） ──────
 
     @staticmethod
@@ -321,5 +329,15 @@ class WorkingMemory(BaseModel):
             lines.append(f"- 对话进展（摘要）：{self.rolling_summary}")
         if self.awaiting_slot:
             lines.append(f"- 等待用户提供：{self.awaiting_slot}（若用户本轮已给出则直接使用，勿再追问）")
+        if self.pending_plan:
+            actions = self.pending_plan.get("actions") or []
+            msg = self.pending_plan.get("message") or ""
+            act_line = "、".join(actions) if actions else "（待用户确认/补充参数）"
+            lines.append(
+                f"- 你已向用户提出执行方案：{act_line}。用户本轮已回复，请据此执行对应工具并以"
+                f"正确参数填入，不要把方案本身当作最终答案重复念出。"
+            )
+            if msg:
+                lines.append(f"  （上次提问：{msg}）")
 
         return "\n".join(lines)

@@ -37,10 +37,11 @@ class OpenAICompatibleClient(AbstractLLMClient):
     async def chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None,
         tools: list[dict] | None = None, tool_call_sink: dict | None = None,
+        tool_choice: str | None = None,
     ) -> LLMReply:
         t0 = time.perf_counter()
         try:
-            payload = self._payload(messages, temperature, tools)
+            payload = self._payload(messages, temperature, tools, tool_choice=tool_choice)
             resp = await self._post_with_retry(payload)
             resp.raise_for_status()
             reply = self._parse_reply(resp.json(), elapsed_ms=(time.perf_counter() - t0) * 1000)
@@ -63,11 +64,12 @@ class OpenAICompatibleClient(AbstractLLMClient):
     async def stream_chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None,
         tools: list[dict] | None = None, tool_call_sink: dict | None = None,
+        tool_choice: str | None = None,
     ) -> AsyncGenerator[str, None]:
         t0 = time.perf_counter()
         tc_acc: dict[int, dict] = {}  # index → {id,name,arguments} 分片累积
         try:
-            payload = self._payload(messages, temperature, tools)
+            payload = self._payload(messages, temperature, tools, tool_choice=tool_choice)
             payload["stream"] = True
             if settings.stream_include_usage:
                 # OpenAI v1 扩展：最后一个 chunk 携带 usage；不支持的供应商会忽略该字段
@@ -95,7 +97,7 @@ class OpenAICompatibleClient(AbstractLLMClient):
 
     def _payload(
         self, messages: list[AgentMessage], temperature: float | None,
-        tools: list[dict] | None = None,
+        tools: list[dict] | None = None, tool_choice: str | None = None,
     ) -> dict:
         payload = {
             "model": self.model,
@@ -105,10 +107,11 @@ class OpenAICompatibleClient(AbstractLLMClient):
             "stream": False,
         }
         if tools:
-            # 原生 function calling：tool_choice=auto 由模型自主决定是否调用；
+            # 原生 function calling：tool_choice 由调用方控制
+            # （required=强制每轮带工具，auto=模型自主决定）；
             # 不支持 tools 的端点会返回 4xx，由调用方的降级逻辑处理
             payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+            payload["tool_choice"] = tool_choice or "auto"
         return payload
 
     def _parse_reply(self, data: dict, elapsed_ms: float) -> LLMReply:

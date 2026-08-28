@@ -48,6 +48,7 @@ class StatefulMockLLM(AbstractLLMClient):
     async def chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None,
         tools: list[dict] | None = None, tool_call_sink: dict | None = None,
+        tool_choice: str | None = None,
     ):
         from harness.llm.base import LLMReply
 
@@ -61,6 +62,7 @@ class StatefulMockLLM(AbstractLLMClient):
     async def stream_chat_async(
         self, messages: list[AgentMessage], temperature: float | None = None,
         tools: list[dict] | None = None, tool_call_sink: dict | None = None,
+        tool_choice: str | None = None,
     ):
         item = self._next_reply()
         if isinstance(item, dict):

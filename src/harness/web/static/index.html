@@ -809,12 +809,39 @@ function endTrace(w){
 function addStep(w,ev){
 
   const has=!!ev.tool_call,th=ev.thought||"";
+  const tname = has ? ev.tool_call.tool_name : null;
+  const isPlan = tname==="plan";
+  const isRespond = tname==="respond";
 
-  const sum=has?`${ev.tool_call.tool_name}(${Object.keys(ev.tool_call.arguments||{}).slice(0,2).join(", ")})`
-
-               :th.replace(/^THOUGHT[:：]\s*/i,"").slice(0,44)||"直接回答";
+  // 终态(respond)/提案(plan)工具：在思考过程里折叠为友好卡片，不展开原始 tool_call JSON
+  let sum;
+  if(isPlan){
+    const acts=(ev.tool_call.arguments&&ev.tool_call.arguments.actions)||[];
+    sum = "提案" + (acts.length ? (" · "+acts.join("、")) : "");
+  } else if(isRespond){
+    sum = "回复";
+  } else {
+    sum = has ? `${tname}(${Object.keys(ev.tool_call.arguments||{}).slice(0,2).join(", ")})`
+              : th.replace(/^THOUGHT[:：]\s*/i,"").slice(0,44) || "直接回答";
+  }
 
   const c=document.createElement("div");c.className="step";
+  if(isPlan)c.classList.add("plan");
+  if(isRespond)c.classList.add("respond");
+
+  // 工具部分过滤：respond/plan 不展示原始 JSON
+  let actionBlock="";
+  if(has && !isPlan && !isRespond){
+    actionBlock=`<b>Action</b><pre>${esc(JSON.stringify(ev.tool_call,null,2))}</pre>`;
+  } else if(isPlan){
+    const msg=(ev.tool_call.arguments&&ev.tool_call.arguments.message)||"";
+    actionBlock=`<b>提案提问</b><pre>${esc(msg)}</pre>`;
+  }
+
+  const thoughtBlock = (th && !isRespond) ? `<b>Thought</b><pre>${esc(th)}</pre>` : "";
+  const obsBlock = (ev.tool_result && !isPlan && !isRespond)
+    ? `<b>Observation</b><pre style="${ev.tool_result.success===false?"color:var(--err)":""}">${esc(ev.tool_result.output||"")}</pre>`
+    : "";
 
   c.innerHTML=`<div class="sbar"><span class="kind">${has?"TOOL":"THINK"}</span>
 
@@ -824,17 +851,17 @@ function addStep(w,ev){
 
     <div class="sbody">
 
-      ${th?`<b>Thought</b><pre>${esc(th)}</pre>`:""}
+      ${thoughtBlock}
 
-      ${has?`<b>Action</b><pre>${esc(JSON.stringify(ev.tool_call,null,2))}</pre>`:""}
+      ${actionBlock}
 
-      ${ev.tool_result?`<b>Observation</b><pre style="${ev.tool_result.success===false?"color:var(--err)":""}">${esc(ev.tool_result.output||"")}</pre>`:""}
+      ${obsBlock}
 
     </div>`;
 
   c.querySelector(".sbar").addEventListener("click",()=>c.classList.toggle("open"));
 
-  if(has&&ev.tool_result)c.classList.add("open");
+  if(has&&ev.tool_result&&!isPlan&&!isRespond)c.classList.add("open");
 
   w.querySelector(".steps").appendChild(c);
 
