@@ -21,6 +21,17 @@ from harness.tools.base import BaseTool, ToolSpec
 
 logger = logging.getLogger("harness.tools.knowledge_retrieval")
 
+
+def _as_float(v: Any) -> float | None:
+    """把可能为字符串/数字的价格参数安全地转成 float；空/非法返回 None。"""
+    if v is None or v == "":
+        return None
+    try:
+        return float(v)
+    except (ValueError, TypeError):
+        return None
+
+
 COLLECTION_NAME = "ecommerce_knowledge"
 
 # RRF 常数（业界标准值）：抑制排名靠后文档的贡献，避免分数被头部文档垄断
@@ -121,16 +132,40 @@ class KnowledgeRetrievalTool(BaseTool):
 
     spec = ToolSpec(
         name="knowledge_retrieval",
-        description="检索电商商品知识库，用于回答商品信息、价格查询、参数对比、商品推荐等业务问题",
+        description=(
+            "检索电商商品知识库，用于回答商品信息、价格查询、参数对比、商品推荐等业务问题。"
+            "支持结构化过滤：可直接填 category(品类)/brand(品牌)/price_min/price_max(价格区间)，"
+            "这比把全部条件塞进一句话 query 更可靠；query 仍可用于自然语言描述（如'拍照好'）。"
+        ),
         parameters={
             "type": "object",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "用户的问题，如'5000元以下的拍照手机'",
-                }
+                    "description": "自然语言描述/需求关键词，如'拍照好的''性价比高'（与下方结构化字段互补，可选）",
+                },
+                "category": {
+                    "type": "string",
+                    "description": "商品品类，如 手机/笔记本/平板/耳机/穿戴/电视/路由器/配件（按目录实际品类填写）",
+                },
+                "brand": {
+                    "type": "string",
+                    "description": "品牌，如 小米/红米/华为（可选）",
+                },
+                "price_min": {
+                    "type": "number",
+                    "description": "价格下限（元），可选",
+                },
+                "price_max": {
+                    "type": "number",
+                    "description": "价格上限（元），可选",
+                },
+                "top_k": {
+                    "type": "integer",
+                    "description": "返回条数，默认 5",
+                },
             },
-            "required": ["query"],
+            "required": [],
         },
     )
 
@@ -171,6 +206,8 @@ class KnowledgeRetrievalTool(BaseTool):
         conditions: list[dict] = [{"status": "在售"}]
         if filters.get("category"):
             conditions.append({"category": filters["category"]})
+        if filters.get("brand"):
+            conditions.append({"brand": filters["brand"]})
         price_max = filters.get("price_max")
         if price_max is not None:
             try:
@@ -211,32 +248,68 @@ class KnowledgeRetrievalTool(BaseTool):
     # ── 主流程 ─────────────────────────────────────────
 
     async def run(self, **kwargs: Any) -> str:
-        user_query = str(kwargs.get("query", ""))
-        if not user_query.strip():
-            return "请输入有效的问题"
+        query = str(kwargs.get("query") or "")
+        category = kwargs.get("category") or None
+        brand = kwargs.get("brand") or None
+        price_min = _as_float(kwargs.get("price_min"))
+        price_max = _as_float(kwargs.get("price_max"))
+        top_k = kwargs.get("top_k")
+        eff_top_k = int(top_k) if top_k else settings.retrieval_top_k
+
+        # 结构化过滤条件优先；完全没给结构化字段时才回退到 query 文本解析（向后兼容）
+        filters: dict[str, Any] = {}
+        if category:
+            filters["category"] = str(category)
+        if brand:
+            filters["brand"] = str(brand)
+        if price_min is not None:
+            filters["price_min"] = price_min
+        if price_max is not None:
+            filters["price_max"] = price_max
+        if not filters:
+            if not query.strip():
+                return "请输入有效的问题，或指定检索条件（品类/品牌/价格区间）。"
+            filters = self._extract_filters(query)
+
+        where_clause = self._build_where(filters)
+
+        # 向量/BM25/重排用的匹配文本：优先用 query，否则用 brand+category 拼
+        match_text = query.strip() or " ".join(
+            [str(x) for x in (brand, category) if x]
+        ).strip()
+        if not match_text:
+            return "请输入有效的问题，或指定检索条件（品类/品牌/价格区间）。"
 
         if self.collection is None:
             return "知识库未就绪，请联系管理员导入数据"
 
         try:
             try:
-                candidates = await self._retrieve_candidates(user_query)
+                candidates = await self._retrieve_candidates(match_text, where_clause)
             except _EmptyKnowledgeBase:
                 return "知识库为空，暂无商品信息"
 
             if not candidates:
-                return self._no_result_message(user_query)
+                # 结构化品类/价格可能填错导致空结果 → 放宽（去品类、再去价格）重试一次
+                relaxed_where = self._build_where(
+                    {k: v for k, v in filters.items() if k not in ("category", "price_min", "price_max")}
+                )
+                candidates = await self._retrieve_candidates(match_text, relaxed_where)
+                if not candidates:
+                    return self._no_result_message(filters)
 
             # ── Agentic 检索：同义变体多路召回（合并去重后统一精排）──
             from harness.tools.context import current_budget
 
             budget = current_budget.get()
-            category = next((c for kw, c in KNOWN_CATEGORIES.items() if kw in user_query), None)
-            variants = [v for v in expand_query(user_query, budget, category) if v != user_query][:3]
+            cat_for_variant = filters.get("category") or next(
+                (c for kw, c in KNOWN_CATEGORIES.items() if kw in match_text), None
+            )
+            variants = [v for v in expand_query(match_text, budget, cat_for_variant) if v != match_text][:3]
             seen = {c["document"] for c in candidates}
             for v in variants:
                 try:
-                    extra = await self._retrieve_candidates(v)
+                    extra = await self._retrieve_candidates(v, where_clause)
                 except Exception as e:
                     logger.warning("变体召回失败(跳过) %s: %s", v, e)
                     continue
@@ -245,25 +318,28 @@ class KnowledgeRetrievalTool(BaseTool):
                         candidates.append(c)
                         seen.add(c["document"])
 
-            ranked = await asyncio.to_thread(self._rank, candidates, user_query)
+            ranked = await asyncio.to_thread(self._rank, candidates, match_text)
 
             # ── 自校正：向量最远距离超阈值视为召回不相关 → 放宽价格重查 ──
             floor = settings.retrieval_relevance_floor
             best_dist = min(c["distance"] for c in ranked)
             relaxed_note = ""
             if best_dist > floor:
-                relaxed = await self._retrieve_relaxed(user_query)
+                relaxed_where = self._build_where(
+                    {k: v for k, v in filters.items() if k not in ("price_min", "price_max")}
+                )
+                relaxed = await self._retrieve_relaxed(match_text, relaxed_where)
                 if relaxed:
                     merged = {c["document"]: c for c in relaxed}
                     for c in ranked:
                         merged.setdefault(c["document"], c)
                     ranked = list(merged.values())
-                    ranked = await asyncio.to_thread(self._rank, ranked, user_query)
+                    ranked = await asyncio.to_thread(self._rank, ranked, match_text)
                     relaxed_note = "（已按需求放宽价格条件重新匹配）\n\n"
 
             # ── LLM 精排（可开关；失败自动回退 RRF 序）──
             ranked = await reranker.rerank(
-                f"{user_query}" + (f"（预算{int(budget)}元）" if budget else ""), ranked
+                f"{match_text}" + (f"（预算{int(budget)}元）" if budget else ""), ranked
             )
 
             # 意图分层兜底：LLM 重排只看语义相关度，不知道意图词硬约束，
@@ -272,7 +348,7 @@ class KnowledgeRetrievalTool(BaseTool):
             # 全部为 0 命中时排序退化为恒等（稳定），无副作用。
             ranked.sort(key=lambda c: -c.get("_hits", 0))
 
-            top = ranked[: settings.retrieval_top_k]
+            top = ranked[: eff_top_k]
 
             lines = []
             for d in top:
@@ -293,8 +369,7 @@ class KnowledgeRetrievalTool(BaseTool):
             raise ToolExecutionError(f"商品检索失败: {e}") from e
 
     @staticmethod
-    def _no_result_message(user_query: str) -> str:
-        filters = KnowledgeRetrievalTool._extract_filters(user_query)
+    def _no_result_message(filters: dict[str, Any]) -> str:
         pm = filters.get("price_max")
         hint = (
             f"当前价位（≤{int(pm)}元）暂无匹配商品。"
@@ -305,10 +380,8 @@ class KnowledgeRetrievalTool(BaseTool):
             "也可以直接说「放宽预算再找一次」。"
         )
 
-    async def _retrieve_candidates(self, user_query: str) -> list[dict]:
+    async def _retrieve_candidates(self, match_text: str, where_clause: dict) -> list[dict]:
         """第一阶段：向量召回候选池（价格/品类过滤下推到 where，线程池执行阻塞调用）"""
-        filters = self._extract_filters(user_query)
-        where_clause = self._build_where(filters)
 
         def _do() -> tuple[list[dict], bool] | None:
             count = self.collection.count()
@@ -316,7 +389,7 @@ class KnowledgeRetrievalTool(BaseTool):
                 return ([], True)  # 知识库为空标记
             n_results = min(count, max(settings.retrieval_candidates, settings.retrieval_top_k))
             result = self.collection.query(
-                query_texts=[user_query], n_results=n_results, where=where_clause
+                query_texts=[match_text], n_results=n_results, where=where_clause
             )
             docs = (result or {}).get("documents", [[]])[0]
             metas = (result or {}).get("metadatas", [[]])[0]
@@ -335,19 +408,15 @@ class KnowledgeRetrievalTool(BaseTool):
             raise _EmptyKnowledgeBase()
         return candidates
 
-    async def _retrieve_relaxed(self, user_query: str) -> list[dict]:
-        """自校正二次召回：去掉价格约束、保留品类与在售状态"""
-        filters = self._extract_filters(user_query)
-        filters.pop("price_max", None)
-        filters.pop("price_min", None)
-        where_clause = self._build_where(filters)
+    async def _retrieve_relaxed(self, match_text: str, where_clause: dict) -> list[dict]:
+        """自校正二次召回：用调用方传入的（已去掉价格约束的）where 重新查询"""
 
         def _do():
             count = self.collection.count()
             if count == 0:
                 return []
             n_results = min(count, settings.retrieval_top_k * 2)
-            res = self.collection.query(query_texts=[user_query], n_results=n_results,
+            res = self.collection.query(query_texts=[match_text], n_results=n_results,
                                         where=where_clause)
             docs = (res or {}).get("documents", [[]])[0]
             metas = (res or {}).get("metadatas", [[]])[0]

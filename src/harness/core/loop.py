@@ -93,6 +93,13 @@ _MY_ORDERS_RE = re.compile(
     r"我买过|我下过|我的订单|买过什么|买过哪些|买过啥|下过哪些|不记得订单号|看看最近买|最近买|我买的东西|订单列表"
 )
 
+# 组合 / 套装 / 多套配置类意图：不应触发「单条宽泛强制检索」，
+# 交由模型按协议分解为每品类一次结构化检索
+_BUNDLE_INTENT_RE = re.compile(
+    r"全家桶|套装|组合|搭配|多套|几套|各来|分别买|每.{0,3}一套|配\s*\d+\s*套|一套.*一套|凑\s*\d+\s*件",
+    re.IGNORECASE,
+)
+
 
 def _plan_forced_readonly(user_input: str, wm: WorkingMemory) -> tuple[str, dict] | None:
     """按优先级返回应前置强制的只读工具调用；无需强制时返回 None。
@@ -228,12 +235,32 @@ SYSTEM_PROMPT_TEMPLATE = """你是专业的电商智能客服助手「小慧」�
 ## 商品咨询场景
 - 推荐类问题**必须先 knowledge_retrieval**；只能引用其返回的商品，未返回的型号/价格/参数一律不得出现；
 - 品牌口碑等常识可简述，但不得据此编造在售型号与价格；
+- 调用 knowledge_retrieval 时**优先用结构化字段填槽**（category/brand/price_min/price_max），
+  而非把所有条件塞进 query 一句话；例：`knowledge_retrieval(category="手机", brand="小米", price_max=8000)`；
+  query 仅用于自然语言描述（如"拍照好的""性价比高"），与结构化字段互补；
 - **预算 = 刚性上限**：绝不推荐超预算商品，也绝不把"3999的手机"放宽成"4000左右"；
-  优先推荐接近预算上限的款，多个选项按价格降序；
+   优先推荐接近预算上限的款，多个选项按价格降序；
 - 预算内无匹配：允许换关键词/放宽区间再试 1 次；仍无结果则如实告知并给出建议
-  （调整预算/换品类），**到此为止**；
+   （调整预算/换品类），**到此为止**；
 - **空结果红线：凡未出现在工具返回中的型号、商品编号、价格，一律不得出现在回答里——
-  空结果不是编造的理由，也绝不陷入同类查询的死循环**。
+   空结果不是编造的理由，也绝不陷入同类查询的死循环**。
+
+## 组合 / 套装 / 多套配置类任务处理协议
+用户要「全家桶 / 套装 / 组合 / 配 N 套 / 每类各来一个」等多品类组合时，本质是
+**多个独立商品咨询的汇总**，不是一次宽泛查询。处理原则：
+1. **不要**用一句话把所有条件塞进 knowledge_retrieval 的 query（会被解析成垃圾查询）；
+2. 先想清楚要覆盖哪些品类（手机/笔记本/平板/耳机/穿戴/电视/路由器…），
+   **对每个品类各调用一次 knowledge_retrieval，且用结构化字段填槽**：
+   `knowledge_retrieval(category="手机", brand="小米", price_max=8000)`
+   字段：category(品类)/brand(品牌)/price_min/price_max(价格区间) 直接填，比 query 可靠；
+3. 每品类挑 1 款后，用 **calculator** 逐款算价、再求总价，不得心算；
+4. 用 respond 一次性给出「每套包含哪些品类+型号+价格+总价」；某品类检索为空则
+   透明说明并建议调整预算/品类，**绝不编造型号或价格**。
+
+示例：
+- 用户："3万预算配4套不同配置的小米全家桶"
+  → 拆手机/笔记本/平板/耳机四类，分别 knowledge_retrieval(category=..., brand="小米", price_max=...)
+  → 每类 calculator 算价、合计 → respond 给四套清单与总价。
 
 ## 售后场景
 - 退换货：确认订单归属与状态 → after_sale_apply 提交 → 告知售后单号与后续流程；
@@ -476,6 +503,7 @@ class ReActLoop:
                     if (
                         "knowledge_retrieval" in self.registry.list_tools()
                         and _PRODUCT_INTENT_RE.search(validated_input)
+                        and not _BUNDLE_INTENT_RE.search(validated_input)
                         and not (
                             _POLICY_FEAS_RE.search(validated_input)
                             or _COMPLAINT_RE.search(validated_input)

@@ -19,7 +19,7 @@ class TestSettings:
         from harness.config import Settings
         # 显式忽略 .env（CI 无 .env），验证 config.py 默认值本身，避免断言依赖本地环境
         s = Settings(_env_file=None)
-        assert s.max_iterations == 6
+        assert s.max_iterations == 20
         assert s.retrieval_top_k == 5
 
     def test_env_override(self) -> None:
