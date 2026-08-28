@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     max_tokens: int = 2048   # 减少最大token数量
 
     # ── ReAct 循环 ───────────────────────────────────
-    max_iterations: int = 6   # 单轮用户请求内的最大「模型推理轮」数（终态护栏之一）
+    max_iterations: int = 100   # 单轮用户请求内的最大「模型推理轮」数（终态护栏之一）
 
     # ── Agent 工具调用约束（任务列表式 ReAct）──────────
     # 每轮模型必须返回一个非空 tool_call 列表（function calling 的 tool_choice）。
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # 此时若模型返回纯文本则按最终回复兜底，不崩溃。
     # 终态工具：respond 承载最终回复、plan 承载「先问用户/需确认」的提案。
     agent_tool_choice: str = "required"   # auto / none / required
-    agent_tool_budget: int = 20           # 单轮用户请求内累计工具调用次数上限
+    agent_tool_budget: int = 100           # 单轮用户请求内累计工具调用次数上限
     agent_stuck_threshold: int = 3        # 连续相同调用且无新结果 → 强制终态
 
     # ── 记忆 ─────────────────────────────────────────
@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     rate_limit_window_seconds: int = 60
 
     # ── 工具重试 ────────────────────────────────────
-    tool_max_retries: int = 1
+    tool_max_retries: int = 3  # 每个工具调用最大重试次数
 
     # ── 知识库 ──────────────────────────────────────
     knowledge_store_path: Path = Path("./data/chroma_db")
