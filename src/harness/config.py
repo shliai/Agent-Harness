@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     max_tokens: int = 2048   # 减少最大token数量
 
     # ── ReAct 循环 ───────────────────────────────────
-    max_iterations: int = 100   # 单轮用户请求内的最大「模型推理轮」数（终态护栏之一）
+    max_iterations: int = 20    # 单轮用户请求内的最大「模型推理轮」数（终态护栏之一；上限同时约束成本）
 
     # ── Agent 工具调用约束（任务列表式 ReAct）──────────
     # 每轮模型必须返回一个非空 tool_call 列表（function calling 的 tool_choice）。
