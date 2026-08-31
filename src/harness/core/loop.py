@@ -173,6 +173,9 @@ class ReActLoop:
         # 请求级身份上下文：订单归属校验 / 我的订单 / 工单归属 都从这里取
         current_user_id.set(uid)
         current_session_id.set(sid)
+        # 每请求清空 calculator 缓存，避免跨轮误复用
+        if hasattr(self, "_calc_cache"):
+            self._calc_cache.clear()
         memory = ShortTermMemory(track_full=True)
 
         # 上一轮的轮末落盘可能仍在后台运行：先等它完成再加载状态，避免读到过期状态
@@ -282,6 +285,28 @@ class ReActLoop:
                         readonly = _plan_forced_readonly(validated_input, wm)
                         if readonly is not None:
                             tool_name, arguments = readonly
+                            # plan 工具特殊：触发提案模式而非直接执行
+                            if tool_name == PLAN_TOOL:
+                                actions = arguments.get("actions") or []
+                                message = arguments.get("message") or ""
+                                wm.set_pending_plan(actions, message)
+                                logger.info(
+                                    "会话 %s 前置强制 plan 提案: %s",
+                                    sid, message[:40],
+                                )
+                                yield {"type": "delta_reset", "reason": "forced_retrieval"}
+                                result, rec, filtered, raw = self._finalize_answer(
+                                    message, step_index=step_index, parsed=[], memory=memory,
+                                    req_metrics=req_metrics, steps=steps, total_tokens=total_tokens,
+                                    start_time=start_time, sid=sid, wm=wm, tool_name=PLAN_TOOL,
+                                )
+                                if filtered != raw:
+                                    yield {"type": "answer_replace", "content": filtered}
+                                yield {
+                                    "type": "step", "step_index": step_index, "thought": rec.thought,
+                                    "tool_call": None, "tool_result": None, "final": True,
+                                }
+                                break
                             logger.info(
                                 "会话 %s 指代追问前置强制查询 %s: %s",
                                 sid, tool_name, validated_input[:40],
@@ -848,6 +873,40 @@ class ReActLoop:
         state_note: str | None = None,
     ) -> dict[str, Any]:
         """执行一次「LLM 决定调工具 → 执行（含修正重试）→ 结果入记忆」的完整步骤"""
+        # calculator 同参数去重：同一轮同表达式只执行一次，直接复用结果
+        if initial_call.tool_name == "calculator":
+            expr = str(initial_call.arguments.get("expression", "")).strip()
+            cache_key = f"calc:{sid}:{expr}"
+            if not hasattr(self, "_calc_cache"):
+                self._calc_cache = {}
+            if cache_key in self._calc_cache:
+                logger.info("calculator 同参数复用结果: %s", expr)
+                cached = self._calc_cache[cache_key]
+                return {
+                    "record": StepRecord(
+                        step_index=step_index,
+                        thought=f"复用计算结果: {expr}",
+                        tool_call=ToolCall(tool_name="calculator", arguments={"expression": expr}),
+                        tool_result=ToolResult(
+                            tool_call_id=initial_call.id,
+                            tool_name="calculator",
+                            success=True,
+                            output=cached,
+                        ),
+                        round_index=step_index,
+                    ),
+                    "extra_tokens": 0,
+                    "retried": False,
+                    "final_thought": f"复用计算结果: {expr}",
+                    "tool_call": ToolCall(tool_name="calculator", arguments={"expression": expr}),
+                    "tool_result": ToolResult(
+                        tool_call_id=initial_call.id,
+                        tool_name="calculator",
+                        success=True,
+                        output=cached,
+                    ),
+                }
+
         thought = initial_thought
         tool_call = initial_call
         extra_tokens = 0
@@ -873,6 +932,13 @@ class ReActLoop:
                     output=masked_output,
                     duration_ms=round(tool_duration, 2),
                 )
+                # calculator 同参数缓存：本轮后续相同表达式直接复用
+                if tool_call.tool_name == "calculator":
+                    expr = str(tool_call.arguments.get("expression", "")).strip()
+                    if expr:
+                        if not hasattr(self, "_calc_cache"):
+                            self._calc_cache = {}
+                        self._calc_cache[f"calc:{sid}:{expr}"] = masked_output
                 break
 
             except ToolNotFoundError:
@@ -897,6 +963,49 @@ class ReActLoop:
                         output=str(e),
                     )
                     break
+
+                logger.warning(
+                    "工具 %s 执行失败(第%d次), 交由 LLM 修正: %s", tool_call.tool_name, retry_count, e
+                )
+                retried = True
+                # 失败的 thought 一并写入，LLM 能看到自己上一步的动作
+                memory.add(AgentMessage(role=ChatRole.assistant, content=thought))
+                memory.add(AgentMessage(
+                    role=ChatRole.tool,
+                    content=f"[工具 {tool_call.tool_name}] 执行失败(重试{retry_count}/{max_r}): {e}",
+                    tool_name=tool_call.tool_name,
+                    tool_call_id=tool_call.id,
+                ))
+
+                messages = self._build_messages(system_prompt, memory, chapters, state_note)
+                tools = self._native_tools()
+                tc_sink2: dict = {}
+                chat_kwargs: dict = {"temperature": settings.temperature}
+                chat_messages = messages
+                if tools:
+                    chat_kwargs["tools"] = tools
+                    chat_kwargs["tool_call_sink"] = tc_sink2
+                    chat_messages = self._to_native_messages(messages)
+                reply = await self.llm.chat_async(chat_messages, **chat_kwargs)
+                thought = reply.content
+                tokens = reply.total_tokens or estimate_tokens(thought)
+                self._record_llm(req_metrics, tokens)
+                extra_tokens += tokens
+
+                native_calls = (tc_sink2.get("tool_calls") if tools else None) \
+                    or reply.tool_calls
+                if native_calls:
+                    nc = native_calls[0]
+                    thought = thought or f"调用工具 {nc['name']}"
+                    new_call = ToolCall(tool_name=nc["name"], arguments=nc["arguments"])
+                else:
+                    new_call = None
+                if new_call is None:
+                    logger.info("子任务 %s 工具失败后 LLM 给出结论: %s", sid, thought[:80])
+                    memory.add(AgentMessage(role=ChatRole.assistant, content=thought))
+                    return "", thought
+                tool_call = new_call
+                continue
 
                 logger.warning(
                     "工具 %s 执行失败(第%d次), 交由 LLM 修正: %s", tool_call.tool_name, retry_count, e

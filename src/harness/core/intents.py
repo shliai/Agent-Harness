@@ -38,11 +38,12 @@ _ORDER_STATUS_RE = re.compile(r"(状态|到哪|哪里了|发货了吗|什么时�
 _NEW_ORDER_ID_RE = re.compile(r"(?<!\d)20\d{9,13}(?!\d)")
 _NEW_TRACKING_RE = re.compile(r"(?i)(?<![A-Z0-9])(SF|YT|ZTO|STO|JD|EMS)\d{9,12}(?!\d)")
 
-# 计算类：显式算式或明确要求计算 → 强制 calculator（杜绝心算偏差/漏调）
+# 计算类：仅显式算式 → 强制 calculator（杜绝心算偏差/漏调）；
+# 自然语言“算一下/计算/等于多少”交由模型自发判断，避免“为啥触发计算器”误触发
 _EXPR_RE = re.compile(
     r"[\d.()]+\s*[\+\-\*×÷/%(]\s*[\d.()]+(?:\s*[\+\-\*×÷/%(]\s*[\d.()]+)*"
 )
-_CALC_RE = re.compile(r"(?:" + _EXPR_RE.pattern + r")|算一下|计算|等于多少|算出来")
+_CALC_RE = _EXPR_RE
 # 投诉 / 赔偿 / 纠纷 / 转人工 → 强制 transfer_human
 _COMPLAINT_RE = re.compile(r"投诉|赔偿|纠纷|维权|转人工|叫人|人工客服|找人工|处理不了|解决不了")
 # 政策可行性（能否/可以 + 退换/保修/价保/发票等）→ 强制 policy_query；
@@ -63,6 +64,15 @@ _BUNDLE_INTENT_RE = re.compile(
     re.IGNORECASE,
 )
 
+# 明确售后申请意图（我要退货/换货/申请售后）→ 强制 plan 提案确认
+_AFTERSALE_APPLY_RE = re.compile(
+    r"(?:我要|要|申请|提交|发起).{0,6}(?:退货|换货|售后|退款)"
+)
+# 明确转人工意图（确认后再转）→ 强制 plan 提案确认
+_TRANSFER_HUMAN_EXPLICIT_RE = re.compile(
+    r"(?:我要|要|申请|确认).{0,6}(?:转人工|叫人|人工客服|找人工)"
+)
+
 
 def _plan_forced_readonly(user_input: str, wm: WorkingMemory) -> tuple[str, dict] | None:
     """按优先级返回应前置强制的只读工具调用；无需强制时返回 None。
@@ -73,7 +83,11 @@ def _plan_forced_readonly(user_input: str, wm: WorkingMemory) -> tuple[str, dict
     """
     text = user_input.strip()
 
-    # 计算类：显式算式 / 明确要求计算 → 强制 calculator（杜绝心算偏差、漏调）
+    # 白名单：元问题/追问原因类，不做强制工具拦截，交由模型自由回答
+    if re.search(r"(?:为什么|为啥|为什么|怎么|咋|原因|啥原因|哪里|哪条|哪句).{0,8}(?:触发|调用|报错|报错|失败|死循环|卡住|一直|老是|总是)", text):
+        return None
+
+    # 计算类：显式算式 → 强制 calculator（杜绝心算偏差、漏调）
     if _CALC_RE.search(text):
         em = _EXPR_RE.search(text)
         return ("calculator", {"expression": em.group(0) if em else text})
@@ -95,6 +109,24 @@ def _plan_forced_readonly(user_input: str, wm: WorkingMemory) -> tuple[str, dict
     # 显式订单号 → 直接 order_query（优先级高于"我的订单"泛指，避免有单号还拉列表）
     if _NEW_ORDER_ID_RE.search(text):
         return ("order_query", {"order_id": _NEW_ORDER_ID_RE.search(text).group(0)})
+
+    # 明确售后申请意图 → 强制 plan 提案（退货/换货/售后申请需用户确认）
+    if _AFTERSALE_APPLY_RE.search(text):
+        actions = ["after_sale_apply"]
+        # 若有显式单号，带上；否则提示用户补充
+        order_id = _NEW_ORDER_ID_RE.search(text)
+        msg = "检测到售后申请意图"
+        if order_id:
+            msg += f"，订单号：{order_id.group(0)}"
+        msg += "，确认提交售后申请吗？"
+        return ("plan", {"actions": actions, "message": msg})
+
+    # 明确转人工意图 → 强制 plan 提案
+    if _TRANSFER_HUMAN_EXPLICIT_RE.search(text):
+        return ("plan", {
+            "actions": ["transfer_human"],
+            "message": "确认转接人工客服吗？"
+        })
 
     # 查本人订单列表（不记得单号 / 我买过什么，且无显式单号）→ 强制 order_list
     if _MY_ORDERS_RE.search(text):
