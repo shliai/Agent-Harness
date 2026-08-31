@@ -29,13 +29,6 @@ class Registry:
     def list_tools(self) -> list[str]:
         return list(self._tools.keys())
 
-    def get_tool_descriptions(self) -> str:
-        lines: list[str] = []
-        for name, tool in self._tools.items():
-            lines.append(f"- {name}: {tool.spec.description}")
-            lines.append(f"  参数: {tool.spec.parameters}")
-        return "\n".join(lines)
-
     def get_tool_briefs(self) -> str:
         """紧凑版工具清单（每工具一行：名称 + 描述），供注入系统提示词。
 

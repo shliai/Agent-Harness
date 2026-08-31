@@ -1,6 +1,6 @@
 # Agent Harness 架构文档
 
-> 版本：v0.7.7 · 更新日期：2026-08-27
+> 版本：v0.8.2 · 更新日期：2026-08-31
 
 ## 设计思想
 
@@ -20,14 +20,14 @@ Agent = LLM（推理内核）+ Harness（调度外壳）
 │   FastAPI · SSE 流式事件 · 会话锁 · 商品管理 API(鉴权+限流)          │
 ├──────────────────────────────────────────────────────────────────┤
 │                     Agent 装配层 (core/agent.py)                   │
-│       LLM 工厂 + Registry(10工具) + GuardrailPipeline + 记忆       │
+│       LLM 工厂 + Registry(12工具) + GuardrailPipeline + 记忆       │
 ├──────────────────────────────────────────────────────────────────┤
 │                  ReAct 循环引擎 (core/loop.py)                     │
 │   token流式 → 原生function calling → 工具执行(修正重试) → 脱敏 → 持久化  │
 ├───────┬──────────┬──────────┬──────────┬──────────┬─────────────┤
 │ 工具层 │  记忆层   │  护栏层   │  观测层   │  存储层   │   LLM 层    │
 │tools/ │ memory/  │guardrails│observ-   │ storage/ │ llm/        │
-│ 10个  │ 四层架构  │ 7道护栏   │ability/  │ SQLite + │ OpenAI v1   │
+│ 12个  │ 四层架构  │ 7道护栏   │ability/  │ SQLite + │ OpenAI v1   │
 │       │          │          │          │ ChromaDB │ 兼容协议     │
 ├───────┴──────────┴──────────┴──────────┴──────────┴─────────────┤
 │            领域模型 domain/ · 配置中心 config.py                    │
@@ -38,31 +38,40 @@ Agent = LLM（推理内核）+ Harness（调度外壳）
 
 `src/harness/main.py` → `warmup()`（启动预热 BGE 嵌入模型，约 21s）→ `run_web`
 → `harness.web.api.run_server`（FastAPI/uvicorn）。Web 装配层 `web/api.py`
-负责注册 9 个工具与 7 道护栏并构造 `Agent`。
+负责注册 11 个工具与 7 道护栏并构造 `Agent`；`Agent.__init__` 再注册
+`subtask_dispatch`（共 12 个工具）。
 
 ## 模块职责
 
-### 1. 循环引擎 (`core/loop.py`)
+### 1. 循环引擎 (`core/loop.py` + `core/intents.py` + `core/prompts.py`)
+
+三文件分工：
+
+| 文件 | 职责 | 约 |
+|---|---|---|
+| `prompts.py` | 纯内容：系统提示词 `SYSTEM_PROMPT_TEMPLATE`、折叠摘要提示词 `FOLD_SYSTEM_PROMPT`、常量 `ROLLING_SUMMARY_MAX_CHARS` | 便于评审/版本化，无逻辑 |
+| `intents.py` | 意图正则（`_PRODUCT_INTENT_RE` 等）、强制只读规划 `_plan_forced_readonly` / `_build_forced_query`、澄清检测 `_CLARIFY_RE`、token 估算 `estimate_tokens` | 所有确定性意图/规划逻辑 |
+| `loop.py` | 仅 `ReActLoop` 编排流程（不含任何正则/提示词字面量） | 纯调度 |
 
 ```
 execute_stream(user_input, session_id, user_id):
-  1. 设置请求上下文(ContextVar: user_id/session_id)
-     —— 订单归属校验、工单归属的数据基础（学习机制为单用户，无需 user_id 隔离）
+  1. 设置请求上下文(ContextVar: user_id/session_id/budget/llm_usage)
+     —— 订单归属校验、工单归属、预算透传
   2. 加载会话状态(messages + chapters + working_memory + traces)
-     —— 学习机制为轮末随会话同步落盘，无独立后台维护任务
   3. Guardrails.check_input()（含审计留痕）
   4. 工作记忆规则抽取（预算/单号/偏好，正则确定性）→ 状态尾注
   5. 上下文装配顺序（KV-cache 友好）：
      [system 人设+工具+记忆层级说明] → [system 冻结章节×k(带第N/M段序)] → [历史消息(只追加)]
      → [system 状态尾注=当期WM槽位+滚动摘要] → [本轮输入]
-  6. for step in range(max_iterations)（默认 6，取自 settings.max_iterations）:
+  6. for step in range(max_iterations)（默认 20，取自 settings.max_iterations）:
      a. 首步确定性前置拦截（模型输出之前执行）：
-        - 商品意图命中 `_PRODUCT_INTENT_RE`（品类/品牌/推荐/价格等）且非政策/
-          投诉/计算类 → delta_reset + 强制 knowledge_retrieval（防幻觉）
+        - 商品意图命中 `_PRODUCT_INTENT_RE`（品类/品牌/推荐/价格等）
+          且**非**组合/套装意图（`_BUNDLE_INTENT_RE`）、非政策/投诉/计算类
+          → delta_reset + 强制 knowledge_retrieval（防幻觉）
         - 否则指代/进度/投诉/政策可行性/订单号/订单列表/物流/订单状态类输入
           → `_plan_forced_readonly()` 强制 calculator / transfer_human /
-          after_sale_query / policy_query / order_query / order_list /
-          logistics_query（写操作仍交由模型按指代追问协议执行）
+           after_sale_query / policy_query / order_query / order_list /
+           logistics_query（写操作仍交由模型按指代追问协议执行）
         - 前置拦截命中则直接执行该只读工具，跳过本轮模型生成
      b. 非前置拦截步：stream_chat_async 携带原生 tools 载荷流式生成，
         结构化 tool_calls 经 `tool_call_sink` 返回（原生 OpenAI function calling，
@@ -74,7 +83,7 @@ execute_stream(user_input, session_id, user_id):
                        反问检测写入 awaiting_slot（澄清式多轮）
      d. tracer 记录（带 session_id）+ SSE step 事件
   7. 收尾：压缩判定 → 基础状态事务落盘 → 记忆整理（折叠滚动摘要(小模型，门控) →
-      确定性学习信号落盘，启用时）转入 asyncio 后台任务，立即结束 SSE 流不阻塞响应
+     确定性学习信号落盘，启用时）转入 asyncio 后台任务，立即结束 SSE 流不阻塞响应
   异常分支：GuardrailError / MaxIterationsExceeded /
            CancelledError（客户端断开也落盘部分状态，不丢对话）
 ```
@@ -83,6 +92,9 @@ execute_stream(user_input, session_id, user_id):
 - **请求级隔离**：MetricsCollector 每请求独立实例；进程级聚合只增不减
 - **脱敏前移**：最终回答先过滤再入记忆/历史，敏感信息无法经上下文回流
 - **token 级流式**：delta / delta_reset / answer_replace 三事件协议（见 API.md）
+- **安全护栏（v0.8.2 新增）**：
+  - `transfer_human` 一次性封顶：同一请求内仅允许 1 次转人工，后续调用直接终态
+  - stuck 检测按**工具名**单键（忽略参数），且排除 `knowledge_retrieval`（正常多轮查询不计入）
 
 ### 2. 存储层 (`storage/`) —— v0.4 起
 
@@ -95,11 +107,11 @@ execute_stream(user_input, session_id, user_id):
 **事实源原则**：SQLite 是商品/订单唯一事实源；ChromaDB 只是可随时全量重建的检索索引。
 管理端删除商品 = DB 删除 + 向量 delete 同步；检索 where 恒定附带 `status=在售` 双保险。
 
-### 3. 工具层 (`tools/`) —— 10 个
+### 3. 工具层 (`tools/`) —— 12 个
 
 | 工具 | 类型 | 要点 |
 |---|---|---|
-| knowledge_retrieval | 读 | 混合检索：BGE 向量 + BM25 经 RRF 融合（hybrid_search_alpha）；query_enricher 同义/预算/品类扩展多路召回（≤5 变体）；LLM-as-reranker 精排（解析失败回退 RRF 序）；相关性低于阈值自动放宽价格重查；中文数量词归一化(万/块/k)、价格品类过滤下推、预算接近度加权、在售状态双保险；索引富化（类别同义词/标签/特性词降噪、展示剥离富化后缀） |
+| knowledge_retrieval | 读 | **结构化参数**（category/brand/price_min/price_max/top_k 优先），兼容旧 query；混合检索：BGE 向量 + BM25 经 RRF 融合；query_enricher 同义/预算/品类扩展多路召回（≤5 变体）；LLM-as-reranker 精排；相关性低于阈值自动放宽价格重查；空结果自动放宽品类/价格重试；中文数量词归一化、价格品类过滤下推、预算接近度加权、在售状态双保险；索引富化、展示剥离富化后缀 |
 | calculator | 读 | AST 白名单求值器（仅四则/幂/一元运算，幂运算限界），零注入面 |
 | order_query | 读 | SQLite 精确查询 + 归属校验 + 枚举风控熔断 |
 | order_list | 读 | 按当前用户列订单（不记得单号的入口） |
@@ -107,10 +119,12 @@ execute_stream(user_input, session_id, user_id):
 | after_sale_apply | 写 | 售后申请：状态前置校验、幂等防重复、状态机落库 |
 | after_sale_query | 读 | 本人售后单进度 |
 | policy_query | 读 | 结构化政策库 BM25 命中；未命中明确告知并引导转人工——杜绝编造条款 |
-| transfer_human | 写 | 转人工工单落盘 data/tickets/*.jsonl |
+| transfer_human | 写 | 转人工工单落盘 data/tickets/*.jsonl；**同一请求仅允许 1 次** |
 | subtask_dispatch | 编排 | 多子任务隔离执行，防递归，输出过护栏 |
+| plan | 编排 | 提案待确认（不直接执行），用于复杂多步确认流 |
+| respond | 终态 | 最终回复承载工具，配合 `tool_choice=required` 约束 |
 
-工具通过 ContextVar（`tools/context.py`）获取 user_id/session_id，
+工具通过 ContextVar（`tools/context.py`）获取 `current_user_id`/`current_session_id`/`current_budget`/`llm_usage_sink`，
 并共享 EnumerationGuard（同会话连续 8 次未命中即熔断 30 分钟）。
 
 
@@ -184,13 +198,13 @@ OpenAI / 智谱 / DeepSeek / 通义 / 本地 vLLM 仅需配置
 
 ```
 用户"订单20240601003要退货"
- → 原生 function calling 触发 order_query（order_id）
- → 工具查 SQLite + 归属校验 ✓ → 返回订单文本
- → 原生 function calling 触发 after_sale_apply（type:"退货"）
- → 工具校验状态(已完成✓)/幂等检查 → 状态机落库 待审核
- → LLM 组织话术（含售后单号+时效说明，引用政策口径）
- → 脱敏 → delta 已流式上屏 → result 事件收尾
- → 会话状态+工作记忆+推理轨迹 事务落盘 → 学习机制落盘（启用时）
+  → 原生 function calling 触发 order_query（order_id）
+  → 工具查 SQLite + 归属校验 ✓ → 返回订单文本
+  → 原生 function calling 触发 after_sale_apply（type:"退货"）
+  → 工具校验状态(已完成✓)/幂等检查 → 状态机落库 待审核
+  → LLM 组织话术（含售后单号+时效说明，引用政策口径）
+  → 脱敏 → delta 已流式上屏 → result 事件收尾
+  → 会话状态+工作记忆+推理轨迹 事务落盘 → 学习机制落盘（启用时）
 ```
 
 ## 部署形态
