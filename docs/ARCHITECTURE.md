@@ -92,6 +92,7 @@ execute_stream(user_input, session_id, user_id):
 - **请求级隔离**：MetricsCollector 每请求独立实例；进程级聚合只增不减
 - **脱敏前移**：最终回答先过滤再入记忆/历史，敏感信息无法经上下文回流
 - **token 级流式**：delta / delta_reset / answer_replace 三事件协议（见 API.md）
+- **计算护栏（v0.8.2 新增）**：calculator 三重防护——① 仅显式算式触发强制拦截（去掉"算一下/计算/等于多少"等泛词）；② 强制拦截前白名单（"为什么/为啥/怎么/原因…触发/调用/死循环/卡住"等元问题跳过拦截，交由模型自由回答）；③ 同参数去重（`_execute_tool_step` 内 `calc:{sid}:{expr}` 缓存命中复用结果，每请求开头清空）
 - **安全护栏（v0.8.2 新增）**：
   - `transfer_human` 一次性封顶：同一请求内仅允许 1 次转人工，后续调用直接终态
   - stuck 检测按**工具名**单键（忽略参数），且排除 `knowledge_retrieval`（正常多轮查询不计入）
@@ -112,7 +113,7 @@ execute_stream(user_input, session_id, user_id):
 | 工具 | 类型 | 要点 |
 |---|---|---|
 | knowledge_retrieval | 读 | **结构化参数**（category/brand/price_min/price_max/top_k 优先），兼容旧 query；混合检索：BGE 向量 + BM25 经 RRF 融合；query_enricher 同义/预算/品类扩展多路召回（≤5 变体）；LLM-as-reranker 精排；相关性低于阈值自动放宽价格重查；空结果自动放宽品类/价格重试；中文数量词归一化、价格品类过滤下推、预算接近度加权、在售状态双保险；索引富化、展示剥离富化后缀 |
-| calculator | 读 | AST 白名单求值器（仅四则/幂/一元运算，幂运算限界），零注入面 |
+| calculator | 读 | AST 白名单求值器（仅四则/幂/一元运算，幂运算限界），零注入面。三重防护：① `_CALC_RE` 仅匹配显式算式（不匹配"算一下/计算/等于多少"等泛词），杜绝"为啥触发计算器"误拦截；② `_plan_forced_readonly` 白名单：匹配"为什么/为啥/怎么/原因…触发/调用/死循环/卡住/一直/老是/总是"时跳过强制拦截；③ `_execute_tool_step` 同参数去重：`calc:{sid}:{expr}` 缓存命中直接复用结果，每请求开头清空 |
 | order_query | 读 | SQLite 精确查询 + 归属校验 + 枚举风控熔断 |
 | order_list | 读 | 按当前用户列订单（不记得单号的入口） |
 | logistics_query | 读 | 物流轨迹查询 + 枚举风控 |
